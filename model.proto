@@ -1,0 +1,191 @@
+;// The draft of domain models. For models that are not changing frequently, such as 
+// User/Post, we will create individual database tables for them; for other nested/internal or 
+// frequently changing models, we will using protoc to generate domain language model
+// implementation to use.
+//
+// Models that are not covered here include:
+// - UserCache(id, name, location, ...)
+// - LocationLog(user_id, location, ...)
+// - FriendshipGraph(user_id, user_id, weight)
+
+syntax = "proto2";
+
+package com.gm.model;
+
+// The user profile.
+message User {
+  required int64 id = 1;
+  
+  // We allow the user to enter any name they like. But it's better to encourage them using real
+  // names.
+  required string name = 2; // max length: 32
+
+  // The phone number is the key for our application. We need to use phone number to grab and match
+  // user's friends. We will validate user's phone number during the registration process.
+  required string phone = 3;
+  
+  required string password_hash = 4;
+  
+  // The rating is calculated based on the user's previous activities.
+  optional Rating rating = 5;
+  message Rating {
+    // TODO: finalized this.    
+  }
+  
+  // The location stored here might have longer latency than that stored in the memory cache/logs.
+  optional GeoLoc location = 6;
+  message GeoLoc {
+    required double lat = 1;
+    required double lng = 2;
+    required int64 timestamp = 3;
+  }
+  
+  // We use this to measure the purchase power of a user. Initially we start with only virtual
+  // balance, i.e. gold. We believe it will motivate friends to interact with each other. We might
+  // want to add some real currency into this system in the future.
+  required Currency balance = 7;
+  
+  // Ranked list of friends posts. Ranking criterias include:
+  // - friendship
+  // - geo location
+  // - freshness
+  // - ...
+  repeated Post friend_feed = 8;      // max size: 200
+  
+  // My current posts (combined only DRAFT and PUBLISHED posts). Posts of DEAL status will be
+  // removed from user's profile and archived into slower storage system.
+  repeated Post my_post = 9;          // max size: 10
+  
+  // My current activities, could be either what I'm working on or what I'm watching at.
+  repeated Activity my_activity = 10; // max size: 10
+  
+  // User's mobile device information.
+  repeated Device device = 11;
+  message Device {
+    required OS os = 1;
+    enum OS {
+      ANDROID = 0;
+      IOS = 1;
+      WINDOWS = 2;
+      NOKIA = 3;
+      BB = 4;
+    }
+    optional string version_info = 2;
+  }
+}
+
+// The currency used in our system, currently only support virtual gold.
+message Currency {
+  optional int64 gold = 1;
+}
+
+// User's application preference settings.
+message UserPref {
+  required int64 user_id = 1;
+  optional bool geo_loc = 2 [ default = true ];
+}
+
+// The information of user's inquiry.
+message Post {
+  required int64 id = 1;
+  
+  // Who created this post.
+  required string owner_id = 2;
+  
+  // The description of the task.
+  required Task task = 2;
+
+  // Who will be able to see this post, set by the owner. Normally, we will recommend a group of 
+  // owner's friends. We don't want to support public posts that are visible to everyone. 
+  repeated string audience_id = 3; // max size: 20?
+
+  // How much this post (it's task) worth.
+  optional Currency price = 4;
+  
+  // How long this post lasts.
+  optional LifeSpan life_span = 5;
+  message LifeSpan {
+    required int64 start = 1;
+    optional int64 end = 2;
+    
+    optional Repeat repeat = 3;
+    enum Repeat {
+      DAILY = 0;
+      WEEKLY = 1;
+      BIWEEKLY = 2;
+      MONTH = 3;
+    }
+  } 
+  
+  // The status of this post. Transitions include: [start] DRAFT <-> PUBLISHED -> DEAL [end]
+  required Status status = 6;
+  enum Status {
+    DRAFT = 0;
+    PUBLISHED = 1;
+    DEAL = 2;
+  }
+
+  // Who explicitly expressed that they are interested in this post. They can also bid a value.
+  repeated Applicant applicant = 6;
+  message Applicant {
+    required int64 user_id = 1;
+    optional Currency bid = 2;
+  }
+}
+
+// When a post reaches DEAL status, it will generate an activity, tracking the working stages of a
+// task.
+message Activity {
+  required int64 id = 1;
+  
+  // The original posts, could be one or two (a pair of matched buy/sell posts).
+  repeated int64 source_id = 2;
+  
+  // Copied from the post's task.
+  required Task task = 3;
+  
+  // Transitions include: [start] READY -> ONGOING -> DONE|CANCELLED [end]
+  // - Reaching DONE will mark this activity as complete. Associated users can write feedback later.
+  // - Reaching CANCELLED will allow the supervisor to convert this back to a new post.
+  required Status status = 4;
+  enum Status {
+    READY = 0;
+    ONGOING = 1;
+    DONE = 2;
+    CANCELLED = 3;
+  }
+  
+  // Who is buying service, and watching the progress of this task.
+  required int64 supervisor_id = 5;
+  
+  // Who are working on the task.
+  repeated int64 worker_id = 6;
+  
+  // If there are multiple people working on this, they can have a coordinator.
+  optional int64 coordinator_id = 7;
+  
+  // Reviews of the activity. Open for edit after this task is DONE.
+  optional Feedback feedback = 8;
+  message Feedback {
+    // TODO: finalize this.
+  }
+}
+
+// The description of a task, independent of any schedule/workflow information.
+message Task {
+  required string name = 2;
+  optional string description = 3;
+  
+  required bool buy_or_sell = 4; // This field might fit into the Post message better???
+  required Type type = 5;
+  enum Type {
+    LOGISTICS = 0;
+    BABYSITTING = 1;
+    GOODS = 2;
+  }
+  
+  required Metadata metadata = 6;
+  message Metadata {
+    // TODO: extends this.
+  }
+}
