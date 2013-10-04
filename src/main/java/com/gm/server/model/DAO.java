@@ -204,11 +204,11 @@ public final class DAO {
 
     private T convert(Entity entity, T object) {
     		if(entity!=null){
-      for (Map.Entry<String, PropertySpec> entry : Persistable.getProperties(type).entrySet()) {
-        entry.getValue().set(object, entity.getProperty(entry.getKey()));
-      }
-      object.entity = entity;
-      return object;
+    			for (Map.Entry<String, PropertySpec> entry : Persistable.getProperties(type).entrySet()) {
+    				entry.getValue().set(object, entity.getProperty(entry.getKey()));
+    			}
+    			object.entity = entity;
+    			return object;
     		}else{
     			return null;
     		}
