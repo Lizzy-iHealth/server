@@ -3,4 +3,10 @@
     <datastore-index kind="Greeting" ancestor="true" source="manual">
         <property name="date" direction="desc"/>
     </datastore-index>
+        <datastore-index kind="mobiCodeRecord" ancestor="true" source="manual">
+        <property name="mobileNumber" direction="desc"/>
+    </datastore-index>
+        <datastore-index kind="User" ancestor="true" source="manual">
+        <property name="mobileNumber" direction="desc"/>
+    </datastore-index>
 </datastore-indexes>
