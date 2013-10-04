@@ -12,6 +12,22 @@
         <servlet-name>sign</servlet-name>
         <url-pattern>/sign</url-pattern>
     </servlet-mapping>
+        <servlet>
+        <servlet-name>register</servlet-name>
+        <servlet-class>com.gm.server.Register</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>register</servlet-name>
+        <url-pattern>/register</url-pattern>
+    </servlet-mapping>
+        <servlet>
+        <servlet-name>bind</servlet-name>
+        <servlet-class>com.gm.server.BindMobile</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>bind</servlet-name>
+        <url-pattern>/bind</url-pattern>
+    </servlet-mapping>
     <welcome-file-list>
         <welcome-file>guestbook.jsp</welcome-file>
     </welcome-file-list>

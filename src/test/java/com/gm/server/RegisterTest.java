@@ -57,7 +57,7 @@ public class RegisterTest {
 	    when(request.getParameter("mobileNumber")).thenReturn(mobileNumber);
 	    when(request.getParameter("verifyCode")).thenReturn(verifyCode);
 	    when(request.getParameter("password")).thenReturn(password);
-
+	    
 	    Date priorToRequest = new Date();
 
 	    register.doPost(request, response);
@@ -68,13 +68,13 @@ public class RegisterTest {
 
 	   
 
-	    Entity greeting = DatastoreServiceFactory.getDatastoreService().prepare(new Query()).asSingleEntity();
+	    Entity e = DatastoreServiceFactory.getDatastoreService().prepare(new Query()).asSingleEntity();
 
 	 
-	    assertEquals(mobileNumber, greeting.getProperty("mobileNumber"));
-	    assertEquals(verifyCode, greeting.getProperty("verifyCode"));
+	    assertEquals(mobileNumber, e.getProperty("mobileNumber"));
+	    assertEquals(verifyCode, e.getProperty("verifyCode"));
 
-	    Date date = (Date) greeting.getProperty("generateTime");
+	    Date date = (Date) e.getProperty("generateTime");
 	    assertTrue("The date in the entity [" + date + "] is prior to the request being performed",
 	        priorToRequest.before(date) || priorToRequest.equals(date));
 	    assertTrue("The date in the entity [" + date + "] is after to the request completed",
