@@ -54,8 +54,6 @@ public class RegisterServletTest extends ModelTest{
 	    when(request.getParameter("phone")).thenReturn(phone);
 	    when(request.getParameter("token")).thenReturn(verifyCode);
 	    when(request.getParameter("password")).thenReturn(password);
-	    when(request.getParameter("secret")).thenReturn(secret);
-	    when(request.getParameter("key")).thenReturn(key);
 	    when(response1.getWriter()).thenReturn(writer);
 	    Date priorToRequest = new Date();
 
@@ -72,8 +70,8 @@ public class RegisterServletTest extends ModelTest{
 	 
 	    assertEquals(phone, e.getProperty("phone"));
 	    assertEquals(password, e.getProperty("password"));
-	    assertEquals(secret, e.getProperty("secret"));
-	    assertEquals(key, e.getProperty("key"));
+	    assertNotNull(e.getProperty("secret"));
+	    assertNotNull(e.getProperty("key"));
 	    Date createTime = (Date) e.getProperty("createTime");
 	    Date lastLogin = (Date) e.getProperty("lastLoginTime");
 	    
@@ -98,12 +96,11 @@ public class RegisterServletTest extends ModelTest{
 	   
 	     query = new Query("User").setFilter(eq("phone", phone));
 	     e = DatastoreServiceFactory.getDatastoreService().prepare(query).asSingleEntity();
-
 	 
 	    assertEquals(phone, e.getProperty("phone"));
 	    assertEquals(password, e.getProperty("password"));
-	    assertEquals(secret, e.getProperty("secret"));
-	    assertEquals(key, e.getProperty("key"));
+	    assertNotNull(e.getProperty("secret"));
+	    assertNotNull(e.getProperty("key"));
 	    createTime = (Date) e.getProperty("createTime");
 	    lastLogin = (Date) e.getProperty("lastLoginTime");
 	    
@@ -125,9 +122,6 @@ public class RegisterServletTest extends ModelTest{
 	    when(request.getParameter("phone")).thenReturn(phone);
 	    when(request.getParameter("token")).thenReturn("wrong verify Code");
 	    when(request.getParameter("password")).thenReturn(password);
-	    when(request.getParameter("secret")).thenReturn(secret);
-	    when(request.getParameter("key")).thenReturn(key);
-	    
 	    
 	    binder.doPost(request, response);
 
@@ -146,9 +140,7 @@ public class RegisterServletTest extends ModelTest{
 	      when(request.getParameter("phone")).thenReturn("wrong phone number");
 	      when(request.getParameter("token")).thenReturn(verifyCode);
 	      when(request.getParameter("password")).thenReturn(password);
-	      when(request.getParameter("secret")).thenReturn(secret);
-	      when(request.getParameter("key")).thenReturn(key);
-	      
+
 	      
 	      binder.doPost(request, response);
 

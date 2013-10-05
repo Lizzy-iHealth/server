@@ -9,7 +9,8 @@ public enum ParamKey {
 	password,
 	token,
 	key,
-	secret;
+	secret, 
+	hmac;
 	
 	public String getValue(HttpServletRequest req) {
 		return req.getParameter(name());

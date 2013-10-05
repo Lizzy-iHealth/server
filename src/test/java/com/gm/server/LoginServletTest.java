@@ -66,8 +66,8 @@ public class LoginServletTest extends ModelTest{
 	    public void verifyUserInDB(String mobileNumber,User mockUser, Date before, Date after){
 	    	  User userEntity=dao.query(User.class).filterBy(Filters.eq("phone", mockUser.getPhone())).prepare().asSingle();
 	    		assertEquals(userEntity.getPhone(),mockUser.getPhone()); 
-	  	    assertEquals(userEntity.getSecret(),mockUser.getSecret());
-	  	    assertEquals(userEntity.getKey(),mockUser.getKey());
+	  	    assertNotNull(userEntity.getSecret());
+	  	    assertNotNull(userEntity.getKey());
 	  	    assertEquals(userEntity.getPassword(),mockUser.getPassword());
 	  	    Date dateSeq[] = {
 	  		  	   userEntity.getCreateTime()
@@ -90,8 +90,6 @@ public class LoginServletTest extends ModelTest{
 		HttpServletRequest request = mock(HttpServletRequest.class);
 	    when(request.getParameter("phone")).thenReturn(user.getPhone());
 	    when(request.getParameter("password")).thenReturn(user.getPassword());
-	    when(request.getParameter("secret")).thenReturn(user.getSecret());
-	    when(request.getParameter("key")).thenReturn(user.getKey());
 		return request;
 	}
 	    

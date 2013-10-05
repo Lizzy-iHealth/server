@@ -1,64 +1,83 @@
 package com.gm.server;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
+import java.net.URLEncoder;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.gm.common.crypto.Hmac;
+import com.gm.common.net.ErrorCode;
 import com.gm.server.model.DAO;
 import com.gm.server.model.Token;
 import com.gm.server.model.User;
-import com.gm.common.net.ErrorCode;
 import com.google.common.base.Strings;
 
 public enum API {
+  
+  ping("/", true) {
+
+    @Override
+    public void handle(HttpServletRequest req, HttpServletResponse resp)
+        throws ApiException, IOException {
+    }
+  },
 
   login("/auth/", false) {
     @Override
-    public void handle(HttpServletRequest req, HttpServletResponse resp) throws ApiException {
+    public void handle(HttpServletRequest req, HttpServletResponse resp) throws ApiException, IOException {
       String phone = stringNotEmpty(ParamKey.phone.getValue(req), 
           ErrorCode.auth_invalid_phone);
       String password = stringNotEmpty(ParamKey.password.getValue(req), 
           ErrorCode.auth_invalid_password);
-      String key = stringNotEmpty(ParamKey.key.getValue(req), 
-          ErrorCode.auth_invalid_key_or_secret);
-      String secret = stringNotEmpty(ParamKey.secret.getValue(req), 
-          ErrorCode.auth_invalid_key_or_secret);
       
       User user = checkNotNull(dao.querySingle("phone", phone, User.class),
           ErrorCode.auth_phone_not_registered);
       check(password.equals(user.getPassword()), ErrorCode.auth_incorrect_password);
       
+      String key = UUID.randomUUID().toString();
+      String secret = UUID.randomUUID().toString();
+      
       user.login(secret, key);
       dao.save(user);
+      
+      resp.getWriter().write(key);
+      resp.getWriter().write(",");
+      resp.getWriter().write(secret);
     }
   },
 
   register("/auth/", false) {
     @Override
-    public void handle(HttpServletRequest req, HttpServletResponse resp) throws ApiException {
+    public void handle(HttpServletRequest req, HttpServletResponse resp) throws ApiException, IOException {
       String phone = stringNotEmpty(ParamKey.phone.getValue(req), 
           ErrorCode.auth_invalid_phone);
       String password = stringNotEmpty(ParamKey.password.getValue(req), 
           ErrorCode.auth_invalid_password);
       String token = stringNotEmpty(ParamKey.token.getValue(req), 
           ErrorCode.auth_invalid_token);
-      String key = stringNotEmpty(ParamKey.key.getValue(req), 
-          ErrorCode.auth_invalid_key_or_secret);
-      String secret = stringNotEmpty(ParamKey.secret.getValue(req), 
-          ErrorCode.auth_invalid_key_or_secret);
       
       Token tokenStore = checkNotNull(dao.querySingle("phone", phone, Token.class),
           ErrorCode.auth_token_not_sent);
       check(token.equalsIgnoreCase(tokenStore.token), ErrorCode.auth_incorrect_token);
       
-      check(!User.existsByPhone(phone), ErrorCode.auth_phone_registered); 
+      check(!User.existsByPhone(phone), ErrorCode.auth_phone_registered);
+      
+      String key = UUID.randomUUID().toString();
+      String secret = UUID.randomUUID().toString();
       User user = new User(phone,password,secret,key);
 
       dao.create(user);
+      
+      resp.getWriter().write(key);
+      resp.getWriter().write(",");
+      resp.getWriter().write(secret);
     }
   },
 
@@ -121,21 +140,47 @@ public enum API {
    * @throws IOException
    */
   public void execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-    if (requiresHmac) {
-      // TODO: check hmac, if it fails, return error code 400
-    }
     try {
+      if (requiresHmac) {
+        String key = stringNotEmpty(ParamKey.key.getValue(req), ErrorCode.auth_invalid_key_or_secret);
+        String hmac = stringNotEmpty(ParamKey.hmac.getValue(req), ErrorCode.auth_invalid_key_or_secret);
+        String body = new String(readStream(req.getInputStream()));
+        
+        // |------------ body -------------|
+        // ........&key=....&hmac=..........
+        // |--- message ---||-- hmacPart --|
+        
+        String hmacPart = ParamKey.hmac.name() + "=" + URLEncoder.encode(hmac, "UTF-8");
+        int index = body.indexOf(hmacPart);
+        check(index > 1, ErrorCode.auth_invalid_key_or_secret);
+        String message = body.substring(0, index - 1); // get rid of last '&'
+        
+        User user = checkNotNull(dao.querySingle("key", key, User.class), ErrorCode.auth_invalid_key_or_secret);
+        String match = Hmac.generate(message, user.getSecret());
+        check(hmac.equals(match), ErrorCode.auth_invalid_key_or_secret);
+        
+        // TODO: need test
+      }
+
       handle(req, resp);
       resp.setStatus(HttpServletResponse.SC_OK); // API executed successfully
     } catch (ApiException e) {
       resp.setStatus(HttpServletResponse.SC_BAD_REQUEST); // API failed on validation
       resp.getWriter().print(e.error);
-    } catch (RuntimeException e) {
+    } catch (Exception e) {
       resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);  // Unknown error
       e.printStackTrace(new PrintWriter(resp.getOutputStream())); // TODO: remove me when release
       info(e, "unknow API error %s", e.getMessage());
-      throw e;
     }
+  }
+  
+  private static byte[] readStream(InputStream in) throws IOException {
+    byte[] buf = new byte[1024];
+    int count = 0;
+    ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
+    while ((count = in.read(buf)) != -1)
+      out.write(buf, 0, count);
+    return out.toByteArray();
   }
   
   static final void info(Throwable t, String msg, Object...args) {
