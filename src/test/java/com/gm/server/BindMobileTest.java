@@ -24,7 +24,7 @@ import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestC
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 
 public class BindMobileTest extends ModelTest{
-	  private BindMobile binder;
+	  private RegisterServlet binder;
 	    String mobileNumber = "1234567890";
 	    String verifyCode = "1234";
 	    String password = "hello";
@@ -40,7 +40,7 @@ public class BindMobileTest extends ModelTest{
         mobiCodeRecord.setProperty("verifyCode", verifyCode);
         DatastoreServiceFactory.getDatastoreService().put(mobiCodeRecord);
  	  
-        binder = new BindMobile();
+        binder = new RegisterServlet();
 	}
 
 

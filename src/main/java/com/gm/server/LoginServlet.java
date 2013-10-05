@@ -30,7 +30,8 @@ public class LoginServlet extends HttpServlet {
 	@Override
     public void doPost(HttpServletRequest req, HttpServletResponse resp)
                 throws IOException {
-
+	  API.login.execute(req, resp);
+/*
         String mobileNumber = req.getParameter("mobileNumber");
    
         String password = req.getParameter("password");
@@ -47,7 +48,7 @@ public class LoginServlet extends HttpServlet {
         		case NOT_FOUND:
         			resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
         }
-        	
+        	*/
     }
 	
 

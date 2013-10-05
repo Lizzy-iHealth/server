@@ -15,7 +15,7 @@ import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.Query;
 import com.gm.server.model.User;
-public class BindMobile extends HttpServlet {
+public class RegisterServlet extends HttpServlet {
 
 	/**
 	 * 
@@ -28,7 +28,9 @@ public class BindMobile extends HttpServlet {
 	@Override
     public void doPost(HttpServletRequest req, HttpServletResponse resp)
                 throws IOException {
-
+	  
+	  API.register.execute(req, resp);
+/*
         String mobileNumber = req.getParameter("mobileNumber");
         String verifyCode = req.getParameter("verifyCode");
         String passwd = req.getParameter("password");
@@ -54,7 +56,7 @@ public class BindMobile extends HttpServlet {
       
         		
         }	
-        	
+        	*/
     }
 	
 

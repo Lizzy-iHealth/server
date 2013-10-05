@@ -4,100 +4,93 @@ import java.util.Date;
 
 @Entity
 public class User extends Persistable<User> {
-	public void login(String secret, String key){
-		this.secret=secret;
+  
+  public static final boolean existsByPhone(String phone) {
+    return DAO.get().query(User.class).filterBy(Filters.eq("phone", phone)).prepare().count() > 0;
+  }
+  
+	public void login(String secret, String key) {
+		this.secret = secret;
 		this.key = key;
 		lastLoginTime = new Date();
 	}
-	
-	public String getMobileNumber() {
-		return mobileNumber;
+
+	public String getPhone() {
+		return phone;
 	}
 
-
-	public void setMobileNumber(String mobileNumber) {
-		this.mobileNumber = mobileNumber;
+	public void setPhone(String phone) {
+		this.phone = phone;
 	}
-
 
 	public String getPassword() {
 		return password;
 	}
 
-
 	public void setPassword(String password) {
 		this.password = password;
 	}
-
 
 	public String getSecret() {
 		return secret;
 	}
 
-
 	public void setSecret(String secret) {
 		this.secret = secret;
 	}
-
 
 	public String getKey() {
 		return key;
 	}
 
-
 	public void setKey(String key) {
 		this.key = key;
 	}
-
 
 	public Date getCreateTime() {
 		return createTime;
 	}
 
-
 	public void setCreateTime(Date createTime) {
 		this.createTime = createTime;
 	}
-
 
 	public Date getLastLoginTime() {
 		return lastLoginTime;
 	}
 
-
 	public void setLastLoginTime(Date lastLoginTime) {
 		this.lastLoginTime = lastLoginTime;
 	}
 
+	@Property
+	private String phone = "";
 
 	@Property
-	  private String mobileNumber="";
-	
+	private String password = "";
+
 	@Property
-	  private String password="";
-	
+	private String secret = "";
+
 	@Property
-	  private String secret="";
-	
+	private String key = "";
+
 	@Property
-	  private String key="";
-	
+	private Date createTime = new Date();
+
 	@Property
-	  private Date createTime= new Date();
-	
-	@Property
-	  private Date lastLoginTime=new Date();
-	
-		private static final User _ = new User();
+	private Date lastLoginTime = new Date();
+
+	private static final User _ = new User();
+
 	@Override
 	public User touch() {
 		return this;
 	}
 
-	public User(String mobileNumber, String password, String secret,
-			String key) {
+	public User(String mobileNumber, String password, String secret, String key) {
 		super();
-		this.mobileNumber = mobileNumber;
+		this.phone = mobileNumber;
 		this.password = password;
 		this.secret = secret;
 		this.key = key;
@@ -108,6 +101,5 @@ public class User extends Persistable<User> {
 	public User() {
 		// TODO Auto-generated constructor stub
 	}
-	
-	
+
 }

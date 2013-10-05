@@ -58,11 +58,11 @@ public class LoginServletTest extends ModelTest{
 	    verify(responses[2]).setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
 	    
 	  
-	    verifyUserInDB(rightUser.getMobileNumber(),rightUser,before,after);
+	    verifyUserInDB(rightUser.getPhone(),rightUser,before,after);
 	}
 	    public void verifyUserInDB(String mobileNumber,User mockUser, Date before, Date after){
-	    	  User userEntity=dao.query(User.class).filterBy(Filters.eq("mobileNumber", mockUser.getMobileNumber())).prepare().asSingle();
-	    		assertEquals(userEntity.getMobileNumber(),mockUser.getMobileNumber()); 
+	    	  User userEntity=dao.query(User.class).filterBy(Filters.eq("mobileNumber", mockUser.getPhone())).prepare().asSingle();
+	    		assertEquals(userEntity.getPhone(),mockUser.getPhone()); 
 	  	    assertEquals(userEntity.getSecret(),mockUser.getSecret());
 	  	    assertEquals(userEntity.getKey(),mockUser.getKey());
 	  	    assertEquals(userEntity.getPassword(),mockUser.getPassword());
@@ -85,7 +85,7 @@ public class LoginServletTest extends ModelTest{
 	
 	public HttpServletRequest getMockRequestWithUser(User user) {
 		HttpServletRequest request = mock(HttpServletRequest.class);
-	    when(request.getParameter("mobileNumber")).thenReturn(user.getMobileNumber());
+	    when(request.getParameter("mobileNumber")).thenReturn(user.getPhone());
 	    when(request.getParameter("password")).thenReturn(user.getPassword());
 	    when(request.getParameter("secret")).thenReturn(user.getSecret());
 	    when(request.getParameter("key")).thenReturn(user.getKey());

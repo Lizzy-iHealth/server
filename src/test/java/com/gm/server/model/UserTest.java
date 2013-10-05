@@ -47,7 +47,7 @@ public class UserTest {
 		User user = new User(mobileNumber,password,secret,key);
 		user.login(secret, key);
 		Date after = new Date();
-		assertEquals(mobileNumber,user.getMobileNumber());
+		assertEquals(mobileNumber,user.getPhone());
 		assertEquals(password,user.getPassword());
 		assertEquals(secret,user.getSecret());
 		assertEquals(key,user.getKey());

@@ -26,7 +26,7 @@ import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 
 public class RegisterTest {
 
-	  private Register register;
+	  private RequestTokenServlet register;
 
 	  private final LocalServiceTestHelper helper =
 	      new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig())
@@ -37,7 +37,7 @@ public class RegisterTest {
 	  @Before
 	  public void setupRegister() {
 	    helper.setUp();
-	    register = new Register();
+	    register = new RequestTokenServlet();
 	  }
 
 	  @After

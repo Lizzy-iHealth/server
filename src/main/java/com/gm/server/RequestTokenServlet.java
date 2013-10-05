@@ -18,19 +18,20 @@ import com.google.appengine.api.datastore.Query;
 
 
 
-public class Register extends HttpServlet {
+public class RequestTokenServlet extends HttpServlet {
 
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
 	
-	private static final Logger log = Logger.getLogger(Register.class.getName());
+	private static final Logger log = Logger.getLogger(RequestTokenServlet.class.getName());
 	private DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
     @Override
     public void doPost(HttpServletRequest req, HttpServletResponse resp)
                 throws IOException {
-
+      API.request_token.execute(req, resp);
+/*
         String mobileNumber = req.getParameter("mobileNumber");
         
         boolean succ = storeAndSendVerifyCode(mobileNumber);
@@ -40,6 +41,7 @@ public class Register extends HttpServlet {
         	}else{
         		resp.setStatus(resp.SC_SERVICE_UNAVAILABLE);
         	}
+        	*/
     }
 
 
