@@ -24,9 +24,9 @@ import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestC
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 
 
-public class RegisterTest {
+public class RequestTokenServletTest {
 
-	  private RequestTokenServlet register;
+	  private RequestTokenServlet rt;
 
 	  private final LocalServiceTestHelper helper =
 	      new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig())
@@ -37,7 +37,7 @@ public class RegisterTest {
 	  @Before
 	  public void setupRegister() {
 	    helper.setUp();
-	    register = new RequestTokenServlet();
+	    rt = new RequestTokenServlet();
 	  }
 
 	  @After
@@ -50,29 +50,25 @@ public class RegisterTest {
 		HttpServletRequest request = mock(HttpServletRequest.class);
 	    HttpServletResponse response = mock(HttpServletResponse.class);
 
-	    String mobileNumber = "9173489948";
+	    String phone = "9173489948";
 	    String verifyCode = "1234";
-	    String password = "hello";
+	    //String password = "hello";
 
-	    when(request.getParameter("mobileNumber")).thenReturn(mobileNumber);
-	    when(request.getParameter("verifyCode")).thenReturn(verifyCode);
-	    when(request.getParameter("password")).thenReturn(password);
+	    when(request.getParameter("phone")).thenReturn(phone);
+	    when(request.getParameter("token")).thenReturn(verifyCode);
+	    //when(request.getParameter("password")).thenReturn(password);
 	    
 	    Date priorToRequest = new Date();
 
-	    register.doPost(request, response);
+	    rt.doPost(request, response);
 
 	    Date afterRequest = new Date();
-
-	//    verify(response).getWriter().println("VerifyCodeSent=true");
-
-	   
 
 	    Entity e = DatastoreServiceFactory.getDatastoreService().prepare(new Query()).asSingleEntity();
 
 	 
-	    assertEquals(mobileNumber, e.getProperty("mobileNumber"));
-	    assertEquals(verifyCode, e.getProperty("verifyCode"));
+	    assertEquals(phone, e.getProperty("phone"));
+	    assertEquals(verifyCode, e.getProperty("token"));
 
 	    Date date = (Date) e.getProperty("generateTime");
 	    assertTrue("The date in the entity [" + date + "] is prior to the request being performed",

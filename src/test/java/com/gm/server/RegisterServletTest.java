@@ -7,6 +7,7 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Date;
 
 import javax.servlet.http.HttpServletRequest;
@@ -16,16 +17,18 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.gm.server.model.Token;
 import com.gm.server.model.User;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
+import com.gm.common.net.ErrorCode;
 
-public class BindMobileTest extends ModelTest{
+public class RegisterServletTest extends ModelTest{
 	  private RegisterServlet binder;
-	    String mobileNumber = "1234567890";
+	    String phone = "1234567890";
 	    String verifyCode = "1234";
 	    String password = "hello";
 	    String secret="mysecret";
@@ -34,12 +37,9 @@ public class BindMobileTest extends ModelTest{
 
 	@Before
 	public void setUpData() throws Exception {
-		//entity in data store of kind "mobiCodeRecord"
-	    Entity mobiCodeRecord = new Entity("mobiCodeRecord");
-        mobiCodeRecord.setProperty("mobileNumber", mobileNumber);
-        mobiCodeRecord.setProperty("verifyCode", verifyCode);
-        DatastoreServiceFactory.getDatastoreService().put(mobiCodeRecord);
- 	  
+
+      Token token = new Token(phone,verifyCode);
+      dao.save(token);
         binder = new RegisterServlet();
 	}
 
@@ -48,15 +48,15 @@ public class BindMobileTest extends ModelTest{
 	public void testDoPost() throws IOException {
 		HttpServletRequest request = mock(HttpServletRequest.class);
 	    HttpServletResponse response1 = mock(HttpServletResponse.class);
+	    PrintWriter writer = mock(PrintWriter.class);
 
 
-
-	    when(request.getParameter("mobileNumber")).thenReturn(mobileNumber);
-	    when(request.getParameter("verifyCode")).thenReturn(verifyCode);
+	    when(request.getParameter("phone")).thenReturn(phone);
+	    when(request.getParameter("token")).thenReturn(verifyCode);
 	    when(request.getParameter("password")).thenReturn(password);
 	    when(request.getParameter("secret")).thenReturn(secret);
 	    when(request.getParameter("key")).thenReturn(key);
-	    
+	    when(response1.getWriter()).thenReturn(writer);
 	    Date priorToRequest = new Date();
 
 	    binder.doPost(request, response1);
@@ -64,13 +64,13 @@ public class BindMobileTest extends ModelTest{
 	    Date afterRequest = new Date();
 
 	    verify(response1).setStatus(HttpServletResponse.SC_OK);
-
+	    
 	   
-	    Query query = new Query("User").setFilter(eq("mobileNumber", mobileNumber));
+	    Query query = new Query("User").setFilter(eq("phone", phone));
 	    Entity e = DatastoreServiceFactory.getDatastoreService().prepare(query).asSingleEntity();
 
 	 
-	    assertEquals(mobileNumber, e.getProperty("mobileNumber"));
+	    assertEquals(phone, e.getProperty("phone"));
 	    assertEquals(password, e.getProperty("password"));
 	    assertEquals(secret, e.getProperty("secret"));
 	    assertEquals(key, e.getProperty("key"));
@@ -86,20 +86,21 @@ public class BindMobileTest extends ModelTest{
 	    
 	    // Bind Again, test exist(...)
 	    HttpServletResponse response2 = mock(HttpServletResponse.class);
+	    when(response2.getWriter()).thenReturn(writer);
 	     priorToRequest = new Date();
 
 	    binder.doPost(request, response2);
 
 	     afterRequest = new Date();
 
-	    verify(response2).setStatus(HttpServletResponse.SC_CONFLICT);
-
+	    verify(response2).setStatus(HttpServletResponse.SC_BAD_REQUEST);
+	    verify(writer).print(ErrorCode.auth_phone_registered);
 	   
-	     query = new Query("User").setFilter(eq("mobileNumber", mobileNumber));
+	     query = new Query("User").setFilter(eq("phone", phone));
 	     e = DatastoreServiceFactory.getDatastoreService().prepare(query).asSingleEntity();
 
 	 
-	    assertEquals(mobileNumber, e.getProperty("mobileNumber"));
+	    assertEquals(phone, e.getProperty("phone"));
 	    assertEquals(password, e.getProperty("password"));
 	    assertEquals(secret, e.getProperty("secret"));
 	    assertEquals(key, e.getProperty("key"));
@@ -117,11 +118,12 @@ public class BindMobileTest extends ModelTest{
 	public void testWrongVerifyCode() throws IOException {
 		HttpServletRequest request = mock(HttpServletRequest.class);
 	    HttpServletResponse response = mock(HttpServletResponse.class);
+	    PrintWriter writer = mock(PrintWriter.class);
+	    when(response.getWriter()).thenReturn(writer);
 
 
-
-	    when(request.getParameter("mobileNumber")).thenReturn(mobileNumber);
-	    when(request.getParameter("verifyCode")).thenReturn("wrong verify Code");
+	    when(request.getParameter("phone")).thenReturn(phone);
+	    when(request.getParameter("token")).thenReturn("wrong verify Code");
 	    when(request.getParameter("password")).thenReturn(password);
 	    when(request.getParameter("secret")).thenReturn(secret);
 	    when(request.getParameter("key")).thenReturn(key);
@@ -129,25 +131,29 @@ public class BindMobileTest extends ModelTest{
 	    
 	    binder.doPost(request, response);
 
-	    verify(response).setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
+	    verify(response).setStatus(HttpServletResponse.SC_BAD_REQUEST);
+	    verify(writer).print(ErrorCode.auth_incorrect_token);;
 	}
 	
-	@Test
-	public void testWrongMobileNumber() throws IOException {
-		HttpServletRequest request = mock(HttpServletRequest.class);
-	    HttpServletResponse response = mock(HttpServletResponse.class);
+	 @Test
+	  public void testWrongPhone() throws IOException {
+	    HttpServletRequest request = mock(HttpServletRequest.class);
+	      HttpServletResponse response = mock(HttpServletResponse.class);
+	      PrintWriter writer = mock(PrintWriter.class);
+	      when(response.getWriter()).thenReturn(writer);
 
 
+	      when(request.getParameter("phone")).thenReturn("wrong phone number");
+	      when(request.getParameter("token")).thenReturn(verifyCode);
+	      when(request.getParameter("password")).thenReturn(password);
+	      when(request.getParameter("secret")).thenReturn(secret);
+	      when(request.getParameter("key")).thenReturn(key);
+	      
+	      
+	      binder.doPost(request, response);
 
-	    when(request.getParameter("mobileNumber")).thenReturn("wrong mobile number");
-	    when(request.getParameter("verifyCode")).thenReturn(verifyCode);
-	    when(request.getParameter("password")).thenReturn(password);
-	    when(request.getParameter("secret")).thenReturn(secret);
-	    when(request.getParameter("key")).thenReturn(key);
-	    
-	    
-	    binder.doPost(request, response);
+	      verify(response).setStatus(HttpServletResponse.SC_BAD_REQUEST);
+	      verify(writer).print(ErrorCode.auth_token_not_sent);;
+	  }
 
-	    verify(response).setStatus(HttpServletResponse.SC_NOT_FOUND);
-	}
 }

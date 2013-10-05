@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Date;
 
 import javax.servlet.http.HttpServletRequest;
@@ -43,25 +44,27 @@ public class LoginServletTest extends ModelTest{
 	    User users[]={rightUser,wrongMobile,wrongPassword};
 	    HttpServletRequest[] requests=new HttpServletRequest[3];
 	    HttpServletResponse[] responses=new HttpServletResponse[3];
+	    PrintWriter writer = mock(PrintWriter.class);
 	    Date before = new Date();
 	    
 	    for(int i =0;i<users.length;i++){
 	    		requests[i]=getMockRequestWithUser(users[i]);
 	    		responses[i]= mock(HttpServletResponse.class);
+	    		when(responses[i].getWriter()).thenReturn(writer);
 	    		login.doPost(requests[i], responses[i]);
 	    }
 	    
 	    Date after = new Date();
 	    
 	    verify(responses[0]).setStatus(HttpServletResponse.SC_OK);
-	    verify(responses[1]).setStatus(HttpServletResponse.SC_NOT_FOUND);
-	    verify(responses[2]).setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
+	    verify(responses[1]).setStatus(HttpServletResponse.SC_BAD_REQUEST);
+	    verify(responses[2]).setStatus(HttpServletResponse.SC_BAD_REQUEST);
 	    
 	  
 	    verifyUserInDB(rightUser.getPhone(),rightUser,before,after);
 	}
 	    public void verifyUserInDB(String mobileNumber,User mockUser, Date before, Date after){
-	    	  User userEntity=dao.query(User.class).filterBy(Filters.eq("mobileNumber", mockUser.getPhone())).prepare().asSingle();
+	    	  User userEntity=dao.query(User.class).filterBy(Filters.eq("phone", mockUser.getPhone())).prepare().asSingle();
 	    		assertEquals(userEntity.getPhone(),mockUser.getPhone()); 
 	  	    assertEquals(userEntity.getSecret(),mockUser.getSecret());
 	  	    assertEquals(userEntity.getKey(),mockUser.getKey());
@@ -85,7 +88,7 @@ public class LoginServletTest extends ModelTest{
 	
 	public HttpServletRequest getMockRequestWithUser(User user) {
 		HttpServletRequest request = mock(HttpServletRequest.class);
-	    when(request.getParameter("mobileNumber")).thenReturn(user.getPhone());
+	    when(request.getParameter("phone")).thenReturn(user.getPhone());
 	    when(request.getParameter("password")).thenReturn(user.getPassword());
 	    when(request.getParameter("secret")).thenReturn(user.getSecret());
 	    when(request.getParameter("key")).thenReturn(user.getKey());

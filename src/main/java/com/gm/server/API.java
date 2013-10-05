@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.gm.server.model.DAO;
 import com.gm.server.model.Token;
 import com.gm.server.model.User;
+import com.gm.common.net.ErrorCode;
 import com.google.common.base.Strings;
 
 public enum API {
@@ -19,20 +20,19 @@ public enum API {
     @Override
     public void handle(HttpServletRequest req, HttpServletResponse resp) throws ApiException {
       String phone = stringNotEmpty(ParamKey.phone.getValue(req), 
-          Error.auth_invalid_phone);
+          ErrorCode.auth_invalid_phone);
       String password = stringNotEmpty(ParamKey.password.getValue(req), 
-          Error.auth_invalid_password);
+          ErrorCode.auth_invalid_password);
       String key = stringNotEmpty(ParamKey.key.getValue(req), 
-          Error.auth_invalid_key_or_secret);
+          ErrorCode.auth_invalid_key_or_secret);
       String secret = stringNotEmpty(ParamKey.secret.getValue(req), 
-          Error.auth_invalid_key_or_secret);
+          ErrorCode.auth_invalid_key_or_secret);
       
       User user = checkNotNull(dao.querySingle("phone", phone, User.class),
-          Error.auth_phone_not_registered);
-      check(password.equals(user.getPassword()), Error.auth_incorrect_password);
+          ErrorCode.auth_phone_not_registered);
+      check(password.equals(user.getPassword()), ErrorCode.auth_incorrect_password);
       
-      user.setKey(key);
-      user.setSecret(secret);
+      user.login(secret, key);
       dao.save(user);
     }
   },
@@ -41,27 +41,23 @@ public enum API {
     @Override
     public void handle(HttpServletRequest req, HttpServletResponse resp) throws ApiException {
       String phone = stringNotEmpty(ParamKey.phone.getValue(req), 
-          Error.auth_invalid_phone);
+          ErrorCode.auth_invalid_phone);
       String password = stringNotEmpty(ParamKey.password.getValue(req), 
-          Error.auth_invalid_password);
+          ErrorCode.auth_invalid_password);
       String token = stringNotEmpty(ParamKey.token.getValue(req), 
-          Error.auth_invalid_token);
+          ErrorCode.auth_invalid_token);
       String key = stringNotEmpty(ParamKey.key.getValue(req), 
-          Error.auth_invalid_key_or_secret);
+          ErrorCode.auth_invalid_key_or_secret);
       String secret = stringNotEmpty(ParamKey.secret.getValue(req), 
-          Error.auth_invalid_key_or_secret);
-      
-      check(!User.existsByPhone(phone), Error.auth_phone_registered);
+          ErrorCode.auth_invalid_key_or_secret);
       
       Token tokenStore = checkNotNull(dao.querySingle("phone", phone, Token.class),
-          Error.auth_invalid_token);
-      check(token.equalsIgnoreCase(tokenStore.token), Error.auth_incorrect_token);
+          ErrorCode.auth_token_not_sent);
+      check(token.equalsIgnoreCase(tokenStore.token), ErrorCode.auth_incorrect_token);
       
-      User user = new User();
-      user.setPassword(password);
-      user.setPhone(phone);
-      user.setKey(key);
-      user.setSecret(secret);
+      check(!User.existsByPhone(phone), ErrorCode.auth_phone_registered); 
+      User user = new User(phone,password,secret,key);
+
       dao.create(user);
     }
   },
@@ -71,11 +67,11 @@ public enum API {
     public void handle(HttpServletRequest req, HttpServletResponse resp)
         throws ApiException, IOException {
       String phone = stringNotEmpty(ParamKey.phone.getValue(req),
-          Error.auth_invalid_phone);
+          ErrorCode.auth_invalid_phone);
       String msg = "1234"; // TODO: generate random token and send by sms
       Token token = new Token(phone, msg);
       dao.save(token);
-      resp.getOutputStream().write(msg.getBytes());
+    
     }
   };
 
@@ -89,17 +85,17 @@ public enum API {
 
   private static final DAO dao = DAO.get();
 
-  static void check(boolean condition, Error error) throws ApiException {
+  static void check(boolean condition, int error) throws ApiException {
     if (!condition)
       throw new ApiException(error);
   }
 
-  static String stringNotEmpty(String string, Error error) throws ApiException {
+  static String stringNotEmpty(String string, int error) throws ApiException {
     check(!Strings.isNullOrEmpty(string), error);
     return string;
   }
 
-  static <T> T checkNotNull(T reference, Error error) throws ApiException {
+  static <T> T checkNotNull(T reference, int error) throws ApiException {
     if (reference == null)
       throw new ApiException(error);
     return reference;
@@ -129,12 +125,12 @@ public enum API {
     }
     try {
       handle(req, resp);
-      resp.setStatus(200); // API executed successfully
+      resp.setStatus(HttpServletResponse.SC_OK); // API executed successfully
     } catch (ApiException e) {
-      resp.setStatus(424); // API failed on validation
-      resp.getOutputStream().write(Integer.toString(e.error.code).getBytes());
+      resp.setStatus(HttpServletResponse.SC_BAD_REQUEST); // API failed on validation
+      resp.getWriter().print(e.error);
     } catch (RuntimeException e) {
-      resp.setStatus(500);  // Unknown error
+      resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);  // Unknown error
       e.printStackTrace(new PrintWriter(resp.getOutputStream())); // TODO: remove me when release
       info(e, "unknow API error %s", e.getMessage());
       throw e;

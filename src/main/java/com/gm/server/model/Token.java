@@ -1,5 +1,7 @@
 package com.gm.server.model;
 
+import java.util.Date;
+
 
 @Entity
 public class Token extends Persistable<Token> {
@@ -11,6 +13,9 @@ public class Token extends Persistable<Token> {
   
   @Property
   public String token = "";
+  
+  @Property
+  public Date generateTime = new Date();
   
   public Token() {
     
