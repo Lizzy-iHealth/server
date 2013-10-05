@@ -4,9 +4,11 @@ import java.util.Date;
 
 @Entity
 public class User extends Persistable<User> {
-  
+
+  //public static final User _ = new User();
+
   public static final boolean existsByPhone(String phone) {
-    return DAO.get().query(User.class).filterBy(Filters.eq("phone", phone)).prepare().count() > 0;
+    return DAO.get().querySingle("phone", phone, User.class) != null;
   }
   
 	public void login(String secret, String key) {
@@ -80,8 +82,6 @@ public class User extends Persistable<User> {
 
 	@Property
 	private Date lastLoginTime = new Date();
-
-	private static final User _ = new User();
 
 	@Override
 	public User touch() {

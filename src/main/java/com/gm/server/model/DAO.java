@@ -1,8 +1,11 @@
 package com.gm.server.model;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.gm.server.model.Persistable.PropertySpec;
 import com.google.appengine.api.datastore.DatastoreService;
@@ -24,7 +27,7 @@ import com.google.common.collect.Lists;
 
 public final class DAO {
   
-
+  private static final Logger logger = Logger.getLogger(DAO.class.getName());
 
   private final static DAO instance = new DAO();
   
@@ -97,11 +100,21 @@ public final class DAO {
     try {
       return query(type).filterBy(Filters.eq(property, value)).prepare().asSingle();
     } catch (Exception e) {
+      logger.log(Level.INFO, "Reading single error: " + e.getMessage(), e);
       return null;
     }
   }
   
   public <T extends Persistable<?>> QueryBuilder<T> query(Class<T> type) {
+    if (Persistable.getProperties(type) == null) {
+      try {
+        type.getConstructor().newInstance();
+        logger.info("instantiate type " + type);
+      } catch (Exception e) {
+        logger.log(Level.INFO, "error when instantiate type " + type, e);
+      }
+    }
+
     Query q = new Query(Persistable.nameOf(type));
 
     // Projection setup

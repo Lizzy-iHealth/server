@@ -1,6 +1,9 @@
 package com.gm.server;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -48,12 +51,11 @@ public enum API {
       String secret = stringNotEmpty(ParamKey.secret.getValue(req), 
           Error.auth_invalid_key_or_secret);
       
-      check(dao.query(User.class).filterBy(Filters.eq("phone", phone)).prepare().count() == 0,
-          Error.auth_phone_registered);
+      check(!User.existsByPhone(phone), Error.auth_phone_registered);
       
       Token tokenStore = checkNotNull(dao.querySingle("phone", phone, Token.class),
           Error.auth_invalid_token);
-      check(token.equalsIgnoreCase(tokenStore.token), Error.auth_invalid_token);
+      check(token.equalsIgnoreCase(tokenStore.token), Error.auth_incorrect_token);
       
       User user = new User();
       user.setPassword(password);
@@ -131,9 +133,21 @@ public enum API {
     } catch (ApiException e) {
       resp.setStatus(424); // API failed on validation
       resp.getOutputStream().write(Integer.toString(e.error.code).getBytes());
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       resp.setStatus(500);  // Unknown error
-      // TODO: log the error
+      e.printStackTrace(new PrintWriter(resp.getOutputStream())); // TODO: remove me when release
+      info(e, "unknow API error %s", e.getMessage());
+      throw e;
     }
   }
+  
+  static final void info(Throwable t, String msg, Object...args) {
+    logger.log(Level.INFO, String.format(msg, args), t);
+  }
+  
+  static final void info(String msg, Object...args) {
+    logger.log(Level.INFO, String.format(msg, args));
+  }
+  
+  private static final Logger logger = Logger.getLogger(API.class.getName());
 }
