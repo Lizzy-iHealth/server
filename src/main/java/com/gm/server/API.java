@@ -69,9 +69,10 @@ public enum API {
       String phone = stringNotEmpty(ParamKey.phone.getValue(req),
           ErrorCode.auth_invalid_phone);
       String msg = "1234"; // TODO: generate random token and send by sms
-      Token token = new Token(phone, msg);
+      Token token = dao.querySingle("phone", phone, Token.class);
+      if (token == null) token = new Token(phone, msg);
+      token.token = msg;
       dao.save(token);
-    
     }
   };
 
