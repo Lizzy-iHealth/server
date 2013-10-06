@@ -1,6 +1,5 @@
 package com.gm.server.model;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;

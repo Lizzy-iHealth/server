@@ -1,0 +1,7 @@
+syntax = "proto2";
+
+package com.gm.server.model;
+
+message AuthorList {
+  repeated string author = 1;
+}

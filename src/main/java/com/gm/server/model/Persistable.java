@@ -2,27 +2,46 @@ package com.gm.server.model;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Map;
 
+import com.google.appengine.api.datastore.Blob;
 import com.google.appengine.api.datastore.Key;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import com.google.protobuf.GeneratedMessage;
 
 public abstract class Persistable<T extends Persistable<?>> {
   
   public static final class PropertySpec {
     
     private final Field field;
+    private Method parseFrom;
+    private Method toBuilder;
     
     PropertySpec(Field field) {
       this.field = field;
       field.setAccessible(true);
+      
+      try {
+        Class<?> protoType = field.getType().getEnclosingClass();
+        parseFrom = protoType.getDeclaredMethod("parseFrom", byte[].class);
+        toBuilder = protoType.getDeclaredMethod("toBuilder");
+      } catch (Exception e) {
+        parseFrom = null;
+        toBuilder = null;
+      }
     }
     
     public Object get(Object instance) {
       try {
-        return field.get(instance);
+        Object value = field.get(instance);
+        if (value instanceof GeneratedMessage.Builder) {
+          return new Blob(((GeneratedMessage.Builder<?>) value).build().toByteArray());
+        } else {
+          return value;
+        }
       } catch (Exception e) {
         throw new ModelException(e);
       }
@@ -30,6 +49,9 @@ public abstract class Persistable<T extends Persistable<?>> {
     
     public void set(Object instance, Object value) {
       try {
+        if (value instanceof Blob) {
+          value = toBuilder.invoke(parseFrom.invoke(null, ((Blob) value).getBytes()));
+        }
         field.set(instance, value);
       } catch (Exception e) {
         throw new ModelException(e);
