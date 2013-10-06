@@ -2,6 +2,8 @@ package com.gm.server.model;
 
 import java.util.Date;
 
+import com.google.appengine.api.datastore.KeyFactory;
+
 @Entity
 public class User extends Persistable<User> {
 
@@ -11,9 +13,8 @@ public class User extends Persistable<User> {
     return DAO.get().querySingle("phone", phone, User.class) != null;
   }
   
-	public void login(String secret, String key) {
+	public void login(String secret) {
 		this.secret = secret;
-		this.key = key;
 		lastLoginTime = new Date();
 	}
 
@@ -42,11 +43,7 @@ public class User extends Persistable<User> {
 	}
 
 	public String getKey() {
-		return key;
-	}
-
-	public void setKey(String key) {
-		this.key = key;
+		return KeyFactory.keyToString(getEntityKey());
 	}
 
 	public Date getCreateTime() {
@@ -75,9 +72,6 @@ public class User extends Persistable<User> {
 	private String secret = "";
 
 	@Property
-	private String key = "";
-
-	@Property
 	private Date createTime = new Date();
 
 	@Property
@@ -88,12 +82,11 @@ public class User extends Persistable<User> {
 		return this;
 	}
 
-	public User(String mobileNumber, String password, String secret, String key) {
+	public User(String mobileNumber, String password, String secret) {
 		super();
 		this.phone = mobileNumber;
 		this.password = password;
 		this.secret = secret;
-		this.key = key;
 		this.createTime = new Date();
 		this.lastLoginTime = createTime;
 	}

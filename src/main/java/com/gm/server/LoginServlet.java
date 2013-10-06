@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Query;
 import com.gm.server.model.*;
 
@@ -55,12 +56,11 @@ public class LoginServlet extends HttpServlet {
 
 	private Status verifyAndLogin(String mobileNumber, String password, String secret, String key) {
 		// TODO Auto-generated method stub
-		User user = dao.query(User.class).filterBy(Filters.eq("mobileNumber", mobileNumber)).prepare()
-        .asSingle();
+		User user = dao.get(KeyFactory.stringToKey(key),User.class);
 		
 		 if(user!=null){
 			 if(password.equals(user.getPassword())){
-				 user.login(secret,key);
+				 user.login(secret);
 				 dao.save(user);
 				 return Status.OK;
 			 }else{

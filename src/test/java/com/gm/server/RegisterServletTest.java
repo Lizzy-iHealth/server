@@ -21,6 +21,7 @@ import com.gm.server.model.Token;
 import com.gm.server.model.User;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
@@ -32,7 +33,7 @@ public class RegisterServletTest extends ModelTest{
 	    String verifyCode = "1234";
 	    String password = "hello";
 	    String secret="mysecret";
-	    String key = "not secret";
+
 
 
 	@Before
@@ -66,12 +67,17 @@ public class RegisterServletTest extends ModelTest{
 	   
 	    Query query = new Query("User").setFilter(eq("phone", phone));
 	    Entity e = DatastoreServiceFactory.getDatastoreService().prepare(query).asSingleEntity();
-
+	    String secret = (String)e.getProperty("secret");
+	    String key = KeyFactory.keyToString(e.getKey());
+	    
+	    verify(writer).write(key);
+	    verify(writer).write(",");
+	    verify(writer).write(secret);
 	 
 	    assertEquals(phone, e.getProperty("phone"));
 	    assertEquals(password, e.getProperty("password"));
-	    assertNotNull(e.getProperty("secret"));
-	    assertNotNull(e.getProperty("key"));
+	    
+	    
 	    Date createTime = (Date) e.getProperty("createTime");
 	    Date lastLogin = (Date) e.getProperty("lastLoginTime");
 	    
@@ -99,8 +105,8 @@ public class RegisterServletTest extends ModelTest{
 	 
 	    assertEquals(phone, e.getProperty("phone"));
 	    assertEquals(password, e.getProperty("password"));
-	    assertNotNull(e.getProperty("secret"));
-	    assertNotNull(e.getProperty("key"));
+	    assertEquals(secret,e.getProperty("secret"));
+
 	    createTime = (Date) e.getProperty("createTime");
 	    lastLogin = (Date) e.getProperty("lastLoginTime");
 	    

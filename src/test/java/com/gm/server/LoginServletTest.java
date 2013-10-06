@@ -26,9 +26,11 @@ import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.Query;
 
 public class LoginServletTest extends ModelTest{
-	@Before
+
+	private User user;
+  @Before
 	public void setUpData() throws Exception {
-	   User user = new User("9173489948","my password","my secret","my key");
+	   user = new User("9173489948","my password","my secret");
 	   dao.save(user);
 	}
 
@@ -37,9 +39,9 @@ public class LoginServletTest extends ModelTest{
 	 
 	    LoginServlet login = new LoginServlet();
 	    
-	    User rightUser = new User("9173489948","my password","my secret","my key");
-	    User wrongMobile = new User("9173489949","my password","my secret","my key");
-	    User wrongPassword = new User("9173489948","wrong password","my secret","my key");
+	    User rightUser = new User("9173489948","my password","my secret");
+	    User wrongMobile = new User("9173489949","my password","my secret");
+	    User wrongPassword = new User("9173489948","wrong password","my secret");
 	    
 	    User users[]={rightUser,wrongMobile,wrongPassword};
 	    HttpServletRequest[] requests=new HttpServletRequest[3];
@@ -61,14 +63,16 @@ public class LoginServletTest extends ModelTest{
 	    verify(responses[2]).setStatus(HttpServletResponse.SC_BAD_REQUEST);
 	    
 	  
-	    verifyUserInDB(rightUser.getPhone(),rightUser,before,after);
+	    verifyUserInDB(rightUser.getPhone(),user,before,after,writer);
 	}
-	    public void verifyUserInDB(String mobileNumber,User mockUser, Date before, Date after){
-	    	  User userEntity=dao.query(User.class).filterBy(Filters.eq("phone", mockUser.getPhone())).prepare().asSingle();
-	    		assertEquals(userEntity.getPhone(),mockUser.getPhone()); 
-	  	    assertNotNull(userEntity.getSecret());
-	  	    assertNotNull(userEntity.getKey());
-	  	    assertEquals(userEntity.getPassword(),mockUser.getPassword());
+	    public void verifyUserInDB(String mobileNumber,User mockUser, Date before, Date after,PrintWriter writer){
+	    	  User userEntity=dao.get(mockUser.getEntityKey(), User.class);
+	    	  String secret = userEntity.getSecret();
+	    		String key = userEntity.getKey();
+	        verify(writer).write(key);
+	        verify(writer).write(",");
+	        verify(writer).write(secret);
+	  	    
 	  	    Date dateSeq[] = {
 	  		  	   userEntity.getCreateTime()
 	  		  	  ,before

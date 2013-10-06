@@ -22,13 +22,11 @@ public class UserTest {
 	@Test
 	public void testLogin () {
 		String secret = "test secret";
-		String key = "test key";
 		Date before = new Date();
 		User user = new User();
-		user.login(secret, key);
+		user.login(secret);
 		Date after = new Date();
 		assertEquals(secret,user.getSecret());
-		assertEquals(key,user.getKey());
 		
 		Date date = user.getLastLoginTime();
 	    assertTrue("The date in the entity [" + date + "] is prior to the request being performed",
@@ -42,15 +40,13 @@ public class UserTest {
 		String mobileNumber = "9173489948";
 		String password = "my password";
 		String secret = "test secret";
-		String key = "test key";
 		Date before = new Date();
-		User user = new User(mobileNumber,password,secret,key);
-		user.login(secret, key);
+		User user = new User(mobileNumber,password,secret);
+		user.login(secret);
 		Date after = new Date();
 		assertEquals(mobileNumber,user.getPhone());
 		assertEquals(password,user.getPassword());
 		assertEquals(secret,user.getSecret());
-		assertEquals(key,user.getKey());
 		assertEquals(user.getCreateTime(),user.getLastLoginTime());
 		Date date = user.getLastLoginTime();
 	    assertTrue("The date in the entity [" + date + "] is prior to the request being performed",

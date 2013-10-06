@@ -1,10 +1,12 @@
 package com.gm.server;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URLEncoder;
+import java.nio.CharBuffer;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -17,10 +19,20 @@ import com.gm.common.net.ErrorCode;
 import com.gm.server.model.DAO;
 import com.gm.server.model.Token;
 import com.gm.server.model.User;
+import com.google.appengine.api.datastore.KeyFactory;
 import com.google.common.base.Strings;
 
 public enum API {
-  
+  addFriends("/",true){
+
+    @Override
+    public void handle(HttpServletRequest req, HttpServletResponse resp)
+        throws ApiException, IOException {
+      
+      
+    }
+    
+  },
   ping("/", true) {
 
     @Override
@@ -41,12 +53,12 @@ public enum API {
           ErrorCode.auth_phone_not_registered);
       check(password.equals(user.getPassword()), ErrorCode.auth_incorrect_password);
       
-      String key = UUID.randomUUID().toString();
+     
       String secret = UUID.randomUUID().toString();
       
-      user.login(secret, key);
+      user.login(secret);
       dao.save(user);
-      
+      String key = user.getKey();
       resp.getWriter().write(key);
       resp.getWriter().write(",");
       resp.getWriter().write(secret);
@@ -62,19 +74,18 @@ public enum API {
           ErrorCode.auth_invalid_password);
       String token = stringNotEmpty(ParamKey.token.getValue(req), 
           ErrorCode.auth_invalid_token);
-      
+      //TODO : find token by token key instead of phone
       Token tokenStore = checkNotNull(dao.querySingle("phone", phone, Token.class),
           ErrorCode.auth_token_not_sent);
       check(token.equalsIgnoreCase(tokenStore.token), ErrorCode.auth_incorrect_token);
       
       check(!User.existsByPhone(phone), ErrorCode.auth_phone_registered);
       
-      String key = UUID.randomUUID().toString();
       String secret = UUID.randomUUID().toString();
-      User user = new User(phone,password,secret,key);
-
+      User user = new User(phone,password,secret);
       dao.create(user);
       
+      String key = user.getKey();
       resp.getWriter().write(key);
       resp.getWriter().write(",");
       resp.getWriter().write(secret);
@@ -155,7 +166,7 @@ public enum API {
         check(index > 1, ErrorCode.auth_invalid_key_or_secret);
         String message = body.substring(0, index - 1); // get rid of last '&'
         
-        User user = checkNotNull(dao.querySingle("key", key, User.class), ErrorCode.auth_invalid_key_or_secret);
+        User user = checkNotNull(dao.get(KeyFactory.stringToKey(key), User.class), ErrorCode.auth_invalid_key_or_secret);
         String match = Hmac.generate(message, user.getSecret());
         check(hmac.equals(match), ErrorCode.auth_invalid_key_or_secret);
         
@@ -182,6 +193,7 @@ public enum API {
       out.write(buf, 0, count);
     return out.toByteArray();
   }
+
   
   static final void info(Throwable t, String msg, Object...args) {
     logger.log(Level.INFO, String.format(msg, args), t);

@@ -140,6 +140,10 @@ public abstract class Persistable<T extends Persistable<?>> {
   public Key save() {
     return DAO.get().save(this);
   }
+  public Key getEntityKey() {
+    return entity.getKey();
+    
+  }
 
   @Override
   public String toString() {

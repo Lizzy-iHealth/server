@@ -72,7 +72,7 @@ public class RegisterServlet extends HttpServlet {
 	private void createUser(String mobileNumber, String passwd, String secret,String key) {
 		// TODO Auto-generated method stub
         
-        DAO.get().save(new User(mobileNumber,passwd,secret,key));	
+        DAO.get().save(new User(mobileNumber,passwd,secret));	
 	}
 
 
