@@ -50,11 +50,12 @@ public class User extends Persistable<User> {
 		return createTime;
 	}
 
-	public void setCreateTime(Date createTime) {
-		this.createTime = createTime;
-	}
 
-	public Date getLastLoginTime() {
+	public void setCreateTime(Date createTime) {
+    this.createTime = createTime;
+  }
+
+  public Date getLastLoginTime() {
 		return lastLoginTime;
 	}
 
@@ -76,8 +77,30 @@ public class User extends Persistable<User> {
 
 	@Property
 	private Date lastLoginTime = new Date();
+	
 
-	@Override
+  private int userID = 0;
+  
+  @Property
+  private String deviceID = "";
+  
+	public int getUserID() {
+    return userID;
+  }
+
+  public void setUserID(int userID) {
+    this.userID = userID;
+  }
+
+  public String getDeviceID() {
+    return deviceID;
+  }
+
+  public void setDeviceID(String deviceID) {
+    this.deviceID = deviceID;
+  }
+
+  @Override
 	public User touch() {
 		return this;
 	}

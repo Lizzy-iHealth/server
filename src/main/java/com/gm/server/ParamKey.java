@@ -10,7 +10,8 @@ public enum ParamKey {
 	token,
 	key,
 	secret, 
-	hmac;
+	hmac, 
+	deviceID;
 	
 	public String getValue(HttpServletRequest req) {
 		return req.getParameter(name());

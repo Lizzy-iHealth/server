@@ -1,8 +1,10 @@
 package com.gm.server;
 
+import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.*;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.UUID;
 
@@ -17,6 +19,7 @@ import org.junit.Test;
 import com.gm.common.crypto.Hmac;
 import com.gm.common.net.ErrorCode;
 import com.gm.server.model.User;
+import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.repackaged.org.apache.http.HttpRequest;
 
 import static org.mockito.Matchers.anyInt;
@@ -26,7 +29,27 @@ import static org.mockito.Mockito.when;
 
 public class APITest extends ModelTest {
 
+  
+
+
+@Test
+public void testDeviceServlet() throws IOException {
+  User userInDB = new User("12345","password","secret");
+  dao.save(userInDB);
+
+ HttpServletRequest req = getMockRequestWithUser(userInDB);
+ HttpServletResponse resp = mock(HttpServletResponse.class);
  
+ String  deviceID= new String("My Device ID");
+ when(req.getParameter("deviceID")).thenReturn(deviceID);
+ DeviceServlet ds = new DeviceServlet();
+ ds.doPost(req, resp);
+ 
+ User user = dao.get(userInDB.getEntityKey(), User.class);
+ 
+ assertEquals(deviceID,user.getDeviceID());
+ 
+}
 
  /*
   @Test

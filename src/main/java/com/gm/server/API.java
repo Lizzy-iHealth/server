@@ -23,6 +23,22 @@ import com.google.appengine.api.datastore.KeyFactory;
 import com.google.common.base.Strings;
 
 public enum API {
+  device("/auth/",true){
+
+    @Override
+    public void handle(HttpServletRequest req, HttpServletResponse resp)
+        throws ApiException, IOException {
+      // TODO Auto-generated method stub
+    String key = stringNotEmpty(ParamKey.key.getValue(req), ErrorCode.auth_invalid_key_or_secret);
+    String deviceID = stringNotEmpty(ParamKey.deviceID.getValue(req),ErrorCode.auth_invalid_deviceID);
+    
+    User user = checkNotNull(dao.get(KeyFactory.stringToKey(key), User.class),ErrorCode.auth_user_not_registered);
+    user.setDeviceID(deviceID);
+    dao.save(user);
+      
+    }
+    
+  },
   addFriends("/",true){
 
     @Override
