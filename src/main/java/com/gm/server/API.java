@@ -1,12 +1,10 @@
 package com.gm.server;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URLEncoder;
-import java.nio.CharBuffer;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,7 +28,7 @@ public enum API {
         throws ApiException, IOException {
       // TODO Auto-generated method stub
     String key = stringNotEmpty(ParamKey.key.getValue(req), ErrorCode.auth_invalid_key_or_secret);
-    String deviceID = stringNotEmpty(ParamKey.deviceID.getValue(req),ErrorCode.auth_invalid_deviceID);
+    String deviceID = stringNotEmpty(ParamKey.deviceID.getValue(req),ErrorCode.auth_invalid_device_id);
     
     User user = checkNotNull(dao.get(KeyFactory.stringToKey(key), User.class),ErrorCode.auth_user_not_registered);
     user.setDeviceID(deviceID);
