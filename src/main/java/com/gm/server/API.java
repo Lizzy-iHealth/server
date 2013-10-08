@@ -5,12 +5,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.json.JSONException;
 
 import com.gm.common.crypto.Hmac;
 import com.gm.common.net.ErrorCode;
@@ -19,6 +25,7 @@ import com.gm.server.model.Model.Friend.Type;
 import com.gm.server.model.ModelException;
 import com.gm.server.model.Token;
 import com.gm.server.model.User;
+import com.gm.server.push.Pusher;
 import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
@@ -59,7 +66,10 @@ public enum API {
         
         Key friendKeys[] = new Key[friendIDs.length];
         
-        ApiException error = null;      
+        ApiException error = null;   
+        Map<String, String> notice = new HashMap<String, String>();
+        notice.put("notice", "friend");
+        ArrayList<String> idsToNotify = new ArrayList<String>(friendIDs.length); 
         for(int i=0;i<friendIDs.length;i++){
           friendKeys[i]=KeyFactory.createKey("User",friendIDs[i]);
           User friend;
@@ -71,10 +81,23 @@ public enum API {
           }
             user.addFriend(friendIDs[i],Type.ADDED);
             friend.addFriend(myId,Type.WAIT_MY_CONFIRM);
+            if(friend.getDeviceID()!=null){
+              idsToNotify.add(friend.getDeviceID());
+            }
             dao.save(friend);
             
         }
         dao.save(user);
+      if (idsToNotify.size() > 0) {
+        String[] device_ids = new String[idsToNotify.size()];
+        idsToNotify.toArray(device_ids);
+        try {
+          new Pusher(device_ids).push(notice);
+        } catch (JSONException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
+      }
         if(error!=null){
           throw error;
         }

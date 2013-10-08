@@ -27,6 +27,7 @@ public abstract class ModelTest {
       when(request.getParameter("phone")).thenReturn(user.getPhone());
       when(request.getParameter("password")).thenReturn(user.getPassword());
       when(request.getParameter("key")).thenReturn(user.getKey());
+      when(request.getParameter(ParamKey.device_id.name())).thenReturn("APA91bFWFxgXtR57p3Jj2umYFFV8-U1N9PKKLQydheMybhU_2DxdngHbuYijPRHc1Y2a9dLkhdu9pyLCNd61uRBn9d2i6dggDxjMSkADyAET6rHGCQ9PFQi7HAc_hIsRBA_Z4LAkUddPSH9NxTvIjJZe-ImYHpoNgA");
     return request;
   }
 

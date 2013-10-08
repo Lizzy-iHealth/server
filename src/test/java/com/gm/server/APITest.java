@@ -44,6 +44,7 @@ public class APITest extends ModelTest {
     String[] userkeys = new String[users.length];
     long[] ids = new long[users.length];
     for(int i=0;i<users.length;i++){
+      users[i].setDeviceID("APA91bFWFxgXtR57p3Jj2umYFFV8-U1N9PKKLQydheMybhU_2DxdngHbuYijPRHc1Y2a9dLkhdu9pyLCNd61uRBn9d2i6dggDxjMSkADyAET6rHGCQ9PFQi7HAc_hIsRBA_Z4LAkUddPSH9NxTvIjJZe-ImYHpoNgA");
       dao.save(users[i]);
       userkeys[i]=users[i].getKey();
       ids[i]=KeyFactory.stringToKey(userkeys[i]).getId();
