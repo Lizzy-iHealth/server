@@ -123,30 +123,35 @@ public class User extends Persistable<User> {
 		// TODO Auto-generated constructor stub
 	}
 
-  public void addFriend(long id) {
+  public void addFriend(long id, Type type) {
     // TODO Auto-generated method stub
-    Type type = Type.WAIT_MY_CONFIRM;
     for (int i=0; i<friendship.getFriendCount();i++){
       Friend f = friendship.getFriend(i);
       if (f.getId()==id){
-      
+        if(type==f.getType()){
+          //TODO: update timestamp
+          return;
+        }
         switch (f.getType()){
           case ADDED:
             type = Type.CONFIRMED;
             break;
           case WAIT_MY_CONFIRM:
-            //TODO: update time
-            break;
-          case INVITED:
             type = Type.CONFIRMED;
             break;
+          case INVITED:
+            if(type == Type.WAIT_MY_CONFIRM){
+                type = Type.CONFIRMED;
+            }
+            break;
           default:
-             return;
+            return;
          }
         friendship.setFriend(i, f.toBuilder().setType(type).build());
-          
+        return;
       }
     }
-    friendship.addFriend(Friend.newBuilder().setType(Type.ADDED).setId(myId).build());
+    
+    friendship.addFriend(Friend.newBuilder().setType(type).setId(id).build());
   }
 }
