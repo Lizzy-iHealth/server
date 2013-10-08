@@ -32,7 +32,7 @@ public class User extends Persistable<User> {
   private Date lastLoginTime = new Date();
   
   @Property
-  private Friendship.Builder friendship;
+  private Friendship.Builder friendship= Friendship.newBuilder();
   
   private int userID = 0;
   
@@ -48,7 +48,15 @@ public class User extends Persistable<User> {
 		return phone;
 	}
 
-	public void setPhone(String phone) {
+	public Friendship.Builder getFriendship() {
+    return friendship;
+  }
+
+  public void setFriendship(Friendship.Builder friendship) {
+    this.friendship = friendship;
+  }
+
+  public void setPhone(String phone) {
 		this.phone = phone;
 	}
 
@@ -122,36 +130,67 @@ public class User extends Persistable<User> {
 	public User() {
 		// TODO Auto-generated constructor stub
 	}
-
+	
   public void addFriend(long id, Type type) {
+    // TODO Auto-generated method stub
+    int i = findFriend(id);
+    if(i != -1 ){
+        updateFriendship(i,type);
+    }else{
+        friendship.addFriend(Friend.newBuilder().setType(type).setId(id).build());
+      }
+  }
+  public void updateFriendship(int index, Type type) {
+    // TODO Auto-generated method stub
+    
+        Friend f = friendship.getFriend(index);
+  
+        if(type==f.getType()){
+            return;
+        }
+        if(type==Type.WAIT_MY_CONFIRM||type==Type.ADDED){
+          switch (f.getType()){
+            case ADDED:
+              type = Type.CONFIRMED;
+              break;
+            case WAIT_MY_CONFIRM:
+              type = Type.CONFIRMED;
+              break;
+            case INVITED:
+              if(type == Type.WAIT_MY_CONFIRM){
+                  type = Type.CONFIRMED;
+              }
+              break;
+            default:
+            return;
+         }
+        }
+      
+        friendship.setFriend(index, f.toBuilder().setType(type).build());
+      
+  }
+  private int findFriend(long id) {
     // TODO Auto-generated method stub
     for (int i=0; i<friendship.getFriendCount();i++){
       Friend f = friendship.getFriend(i);
       if (f.getId()==id){
-        if(type==f.getType()){
-          //TODO: update timestamp
-          return;
-        }
-        switch (f.getType()){
-          case ADDED:
-            type = Type.CONFIRMED;
-            break;
-          case WAIT_MY_CONFIRM:
-            type = Type.CONFIRMED;
-            break;
-          case INVITED:
-            if(type == Type.WAIT_MY_CONFIRM){
-                type = Type.CONFIRMED;
-            }
-            break;
-          default:
-            return;
-         }
-        friendship.setFriend(i, f.toBuilder().setType(type).build());
-        return;
+        return i;
       }
     }
-    
-    friendship.addFriend(Friend.newBuilder().setType(type).setId(id).build());
+    return -1;
   }
+
+  public void addFriends(long[] friendIDs) {
+    // TODO Auto-generated method stub
+    for(int i=0;i<friendIDs.length;i++){
+      int index = findFriend(friendIDs[i]);
+      if(index!=-1){
+        updateFriendship(index,Type.ADDED);
+      }else{
+        friendship.addFriend(Friend.newBuilder().setType(Type.ADDED).setId(friendIDs[i]).build());
+      }
+      
+    }
+  }
+ 
 }

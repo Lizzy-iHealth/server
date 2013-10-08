@@ -1,4 +1,4 @@
-;// The draft of domain models. For models that are not changing frequently, such as 
+// The draft of domain models. For models that are not changing frequently, such as
 // User/Post, we will create individual database tables for them; for other nested/internal or 
 // frequently changing models, we will using protoc to generate domain language model
 // implementation to use.
@@ -93,7 +93,7 @@ message Post {
   required string owner_id = 2;
   
   // The description of the task.
-  required Task task = 2;
+  required Task task = 22;
 
   // Who will be able to see this post, set by the owner. Normally, we will recommend a group of 
   // owner's friends. We don't want to support public posts that are visible to everyone. 
@@ -126,7 +126,7 @@ message Post {
   }
 
   // Who explicitly expressed that they are interested in this post. They can also bid a value.
-  repeated Applicant applicant = 6;
+  repeated Applicant applicant = 66;
   message Applicant {
     required int64 user_id = 1;
     optional Currency bid = 2;

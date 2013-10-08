@@ -15,14 +15,17 @@ import javax.servlet.http.HttpServletResponse;
 import com.gm.common.crypto.Hmac;
 import com.gm.common.net.ErrorCode;
 import com.gm.server.model.DAO;
+import com.gm.server.model.Model.Friend.Type;
+import com.gm.server.model.ModelException;
 import com.gm.server.model.Token;
 import com.gm.server.model.User;
+import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.common.base.Strings;
 
 public enum API {
-  device("/auth/", true) {
+  device("/auth/", false) {
 
     @Override
     public void handle(HttpServletRequest req, HttpServletResponse resp)
@@ -30,7 +33,7 @@ public enum API {
       // TODO Auto-generated method stub
       String key = stringNotEmpty(ParamKey.key.getValue(req),
           ErrorCode.auth_invalid_key_or_secret);
-      String deviceID = stringNotEmpty(ParamKey.deviceID.getValue(req),
+      String deviceID = stringNotEmpty(ParamKey.device_id.getValue(req),
           ErrorCode.auth_invalid_device_id);
 
       User user = checkNotNull(
@@ -41,23 +44,39 @@ public enum API {
     }
   },
 
-  addFriends("/", true) {
+  add_friends("/", false){//true) {
 
     @Override
     public void handle(HttpServletRequest req, HttpServletResponse resp)
         throws ApiException, IOException {
 
-        String[] friendIDs = ParamKey.friendIDList.getValues(req);
+        long[] friendIDs = ParamKey.friend_id.getLongs(req,-1);
         String key = ParamKey.key.getValue(req);
         long myId = getId(key);
         //KeyFactory.stringToKey(key).getId();
         User user = dao.get(key, User.class);
+
+        
         Key friendKeys[] = new Key[friendIDs.length];
-      
+        
+        ApiException error = null;      
         for(int i=0;i<friendIDs.length;i++){
-          friendKeys[i]=KeyFactory.createKey("User", Integer.getInteger(friendIDs[i]));
-          User friend = dao.get(friendKeys[i], User.class);
-          friend.addFriend(myId);
+          friendKeys[i]=KeyFactory.createKey("User",friendIDs[i]);
+          User friend;
+          try{
+             friend = checkNotNull(dao.get(friendKeys[i], User.class),ErrorCode.auth_user_not_registered);
+          }catch(ApiException e){
+            error = e;
+            continue;
+          }
+            user.addFriend(friendIDs[i],Type.ADDED);
+            friend.addFriend(myId,Type.WAIT_MY_CONFIRM);
+            dao.save(friend);
+            
+        }
+        dao.save(user);
+        if(error!=null){
+          throw error;
         }
     
     }
@@ -229,11 +248,12 @@ public enum API {
     } catch (Exception e) {
       resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // Unknown
                                                                     // error
+      info(e, "unknow API error %s", e.getMessage());
       e.printStackTrace(new PrintWriter(resp.getOutputStream())); // TODO:
                                                                   // remove me
                                                                   // when
                                                                   // release
-      info(e, "unknow API error %s", e.getMessage());
+
     }
   }
 

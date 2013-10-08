@@ -150,7 +150,7 @@ public final class DAO {
         return object;
       }
     } catch (EntityNotFoundException e) {
-      throw new ModelException("Entity not found by key " + key, e);
+      return null;
     }
     return null;
   }
@@ -167,7 +167,7 @@ public final class DAO {
         return object;
       }
     } catch (EntityNotFoundException e) {
-      throw new ModelException("Entity not found by key " + key, e);
+      return null;
     }
     return null;
   }
