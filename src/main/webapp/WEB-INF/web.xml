@@ -40,7 +40,14 @@
         <servlet-name>device</servlet-name>
         <url-pattern>/auth/device</url-pattern>
     </servlet-mapping>
-    
+     <servlet>
+        <servlet-name>add_friends</servlet-name>
+        <servlet-class>com.gm.server.AddFriendsServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>add_friends</servlet-name>
+        <url-pattern>/add_friends</url-pattern>
+    </servlet-mapping>   
     <servlet>
         <servlet-name>ping</servlet-name>
         <servlet-class>com.gm.server.PingServlet</servlet-class>
