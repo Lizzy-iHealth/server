@@ -1,0 +1,23 @@
+
+syntax = "proto2";
+
+package com.gm.server.model;
+
+message Friend {
+	required int64 id = 1;
+	required Type type = 2;
+	enum Type {
+		CONFIRMED = 0;
+		ADDED = 1;
+		WAIT_MY_CONFIRM = 2;
+
+		INVITED = 3;
+		WATCHED = 4;
+		BLOCKED = 5;
+	}
+}
+
+message Friendship {
+	repeated Friend friend = 1;
+}
+

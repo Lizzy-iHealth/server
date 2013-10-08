@@ -13,6 +13,7 @@ import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.Key;
+import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.PreparedQuery.TooManyResultsException;
 import com.google.appengine.api.datastore.PropertyProjection;
@@ -153,7 +154,23 @@ public final class DAO {
     }
     return null;
   }
-
+  public <T extends Persistable<?>> T get(String key, Class<T> type) {
+    try {
+      Entity entity = datastore.get(KeyFactory.stringToKey(key));
+      if (entity != null) {
+        T object = Persistable.newInstance(type);
+        for (Map.Entry<String, PropertySpec> entry : Persistable.getProperties(
+            object.getClass()).entrySet()) {
+          entry.getValue().set(object, entity.getProperty(entry.getKey()));
+        }
+        object.entity = entity;
+        return object;
+      }
+    } catch (EntityNotFoundException e) {
+      throw new ModelException("Entity not found by key " + key, e);
+    }
+    return null;
+  }
   public final class QueryBuilder<T extends Persistable<?>> {
 
     private final Class<T> type;

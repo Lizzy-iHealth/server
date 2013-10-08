@@ -11,7 +11,10 @@ public enum ParamKey {
 	key,
 	secret, 
 	hmac, 
-	deviceID;
+	deviceID,
+	friendKeyList,
+	friendPhoneList,
+	friendIDList;
 	
 	public String getValue(HttpServletRequest req) {
 		return req.getParameter(name());

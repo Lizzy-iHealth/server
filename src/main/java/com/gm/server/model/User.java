@@ -2,6 +2,9 @@ package com.gm.server.model;
 
 import java.util.Date;
 
+import com.gm.server.model.Model.Friend;
+import com.gm.server.model.Model.Friend.Type;
+import com.gm.server.model.Model.Friendship;
 import com.google.appengine.api.datastore.KeyFactory;
 
 @Entity
@@ -12,6 +15,29 @@ public class User extends Persistable<User> {
   public static final boolean existsByPhone(String phone) {
     return DAO.get().querySingle("phone", phone, User.class) != null;
   }
+  
+  @Property
+  private String phone = "";
+
+  @Property
+  private String password = "";
+
+  @Property
+  private String secret = "";
+
+  @Property
+  private Date createTime = new Date();
+
+  @Property
+  private Date lastLoginTime = new Date();
+  
+  @Property
+  private Friendship.Builder friendship;
+  
+  private int userID = 0;
+  
+  @Property
+  private String deviceID = "";
   
 	public void login(String secret) {
 		this.secret = secret;
@@ -62,27 +88,6 @@ public class User extends Persistable<User> {
 	public void setLastLoginTime(Date lastLoginTime) {
 		this.lastLoginTime = lastLoginTime;
 	}
-
-	@Property
-	private String phone = "";
-
-	@Property
-	private String password = "";
-
-	@Property
-	private String secret = "";
-
-	@Property
-	private Date createTime = new Date();
-
-	@Property
-	private Date lastLoginTime = new Date();
-	
-
-  private int userID = 0;
-  
-  @Property
-  private String deviceID = "";
   
 	public int getUserID() {
     return userID;
@@ -118,4 +123,30 @@ public class User extends Persistable<User> {
 		// TODO Auto-generated constructor stub
 	}
 
+  public void addFriend(long id) {
+    // TODO Auto-generated method stub
+    Type type = Type.WAIT_MY_CONFIRM;
+    for (int i=0; i<friendship.getFriendCount();i++){
+      Friend f = friendship.getFriend(i);
+      if (f.getId()==id){
+      
+        switch (f.getType()){
+          case ADDED:
+            type = Type.CONFIRMED;
+            break;
+          case WAIT_MY_CONFIRM:
+            //TODO: update time
+            break;
+          case INVITED:
+            type = Type.CONFIRMED;
+            break;
+          default:
+             return;
+         }
+        friendship.setFriend(i, f.toBuilder().setType(type).build());
+          
+      }
+    }
+    friendship.addFriend(Friend.newBuilder().setType(Type.ADDED).setId(myId).build());
+  }
 }

@@ -19,6 +19,7 @@ import com.gm.common.net.ErrorCode;
 import com.gm.server.model.DAO;
 import com.gm.server.model.Token;
 import com.gm.server.model.User;
+import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.common.base.Strings;
 
@@ -32,7 +33,7 @@ public enum API {
     String key = stringNotEmpty(ParamKey.key.getValue(req), ErrorCode.auth_invalid_key_or_secret);
     String deviceID = stringNotEmpty(ParamKey.deviceID.getValue(req),ErrorCode.auth_invalid_deviceID);
     
-    User user = checkNotNull(dao.get(KeyFactory.stringToKey(key), User.class),ErrorCode.auth_user_not_registered);
+    User user = checkNotNull(dao.get(key, User.class),ErrorCode.auth_user_not_registered);
     user.setDeviceID(deviceID);
     dao.save(user);
       
@@ -44,9 +45,21 @@ public enum API {
     @Override
     public void handle(HttpServletRequest req, HttpServletResponse resp)
         throws ApiException, IOException {
+        String[] friendIDs = ParamKey.friendIDList.getValues(req);
+        String key = ParamKey.key.getValue(req);
+        long myId = getId(key);
+        //KeyFactory.stringToKey(key).getId();
+        User user = dao.get(key, User.class);
+        Key friendKeys[] = new Key[friendIDs.length];
       
-      
+        for(int i=0;i<friendIDs.length;i++){
+          friendKeys[i]=KeyFactory.createKey("User", Integer.getInteger(friendIDs[i]));
+          User friend = dao.get(friendKeys[i], User.class);
+          friend.addFriend(myId);
+        }
+    
     }
+
     
   },
   ping("/", true) {
@@ -128,6 +141,11 @@ public enum API {
   private API(String urlPrefix, boolean requiresHmac) {
     url = urlPrefix + name();
     this.requiresHmac = requiresHmac;
+  }
+
+  protected long getId(String key) {
+    // TODO Auto-generated method stub
+    return KeyFactory.stringToKey(key).getId();
   }
 
   private static final DAO dao = DAO.get();
