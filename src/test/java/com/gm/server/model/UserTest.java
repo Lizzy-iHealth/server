@@ -9,6 +9,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.gson.Gson;
+
 public class UserTest {
 
 	@Before
@@ -44,6 +46,7 @@ public class UserTest {
 		User user = new User(mobileNumber,password,secret);
 		user.login(secret);
 		Date after = new Date();
+		
 		assertEquals(mobileNumber,user.getPhone());
 		assertEquals(password,user.getPassword());
 		assertEquals(secret,user.getSecret());

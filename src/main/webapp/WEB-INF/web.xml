@@ -4,7 +4,15 @@
         xmlns="http://java.sun.com/xml/ns/javaee"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
-   	
+   	<filter>
+        <filter-name>StreamCopyFilter</filter-name>
+        <filter-class>com.gm.server.StreamCopyFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>StreamCopyFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+ </filter-mapping>
+ 
    	<servlet>
         <servlet-name>register</servlet-name>
         <servlet-class>com.gm.server.RegisterServlet</servlet-class>
@@ -46,7 +54,15 @@
     </servlet>
     <servlet-mapping>
         <servlet-name>add_friends</servlet-name>
-        <url-pattern>/add_friends</url-pattern>
+        <url-pattern>/social/add_friends</url-pattern>
+    </servlet-mapping> 
+         <servlet>
+        <servlet-name>invite_friends</servlet-name>
+        <servlet-class>com.gm.server.InviteFriendsServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>invite_friends</servlet-name>
+        <url-pattern>/social/invite_friends</url-pattern>
     </servlet-mapping>   
     <servlet>
         <servlet-name>ping</servlet-name>

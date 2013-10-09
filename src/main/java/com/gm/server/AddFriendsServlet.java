@@ -16,5 +16,4 @@ public class AddFriendsServlet extends HttpServlet {
       throws IOException {
     API.add_friends.execute(req, resp);
   }
-
 }

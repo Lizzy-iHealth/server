@@ -1,38 +1,71 @@
 package com.gm.server;
 
 import static junit.framework.Assert.assertEquals;
-import static org.junit.Assert.*;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.URLEncoder;
-import java.util.List;
-import java.util.UUID;
-
-import javax.servlet.ServletInputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import com.gm.common.crypto.Hmac;
-import com.gm.common.net.ErrorCode;
-import com.gm.server.model.Model.Friend;
-import com.gm.server.model.Model.Friend.Type;
-import com.gm.server.model.User;
-import com.google.appengine.api.datastore.KeyFactory;
-import com.google.appengine.repackaged.org.apache.http.HttpRequest;
-
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class APITest extends ModelTest {
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.junit.Test;
+
+import com.gm.common.net.ErrorCode;
+import com.gm.server.model.Model.Friend;
+import com.gm.server.model.Model.Friend.Type;
+import com.gm.server.model.PendingUser;
+import com.gm.server.model.User;
+import com.google.appengine.api.datastore.KeyFactory;
+import com.google.gson.Gson;
+
+public class APITest extends ModelTest {
+  @Test
+  public void testGetFriends() throws IOException{
+    User user = new User("a12345","password","secret");
+    User friend = new User("b12345","password","secret");
+    dao.save(user);
+    dao.save(friend);
+    HttpServletRequest req = super.getMockRequestWithUser(user);
+    HttpServletResponse resp  = mock(HttpServletResponse.class);
+    PrintWriter writer = mock (PrintWriter.class);
+    when(resp.getWriter()).thenReturn(writer);
+    API.get_friends.execute(req, resp);
+    
+    assertEquals(0,user.getFriendship().getFriendCount());
+    
+    // Let user has a friend, then test again:
+    user.addFriend(friend.getUserID(), Type.CONFIRMED);
+    friend.addFriend(user.getUserID(), Type.CONFIRMED);
+    dao.save(user);
+    dao.save(friend);
+    API.get_friends.execute(req, resp);
+    
+    assertEquals(1,user.getFriendship().getFriendCount());
+    assertEquals(friend.getUserID(),user.getFriendship().getFriend(0).getId());
+    assertEquals(Type.CONFIRMED,user.getFriendship().getFriend(0).getType());
+  }
+  @Test
+  public void testInviteFriends() throws IOException{
+    User user = new User("a12345","password","secret");
+    String[] friend_phone = {"22345","33445"};
+    dao.save(user);
+    HttpServletRequest req = super.getMockRequestWithUser(user);
+    HttpServletResponse resp  = mock(HttpServletResponse.class);
+    when(req.getParameterValues(ParamKey.friend_phone.name())).thenReturn(friend_phone);
+    API.invite_friends.execute(req, resp);
+    
+    List<PendingUser> pu = dao.query(PendingUser.class).sortBy("phone",false).prepare().asList();
+    assertEquals(2,pu.size());
+    assertEquals(pu.get(0).getPhone(),friend_phone[0]);
+    assertEquals(pu.get(0).getInvitors().getFriend(0).getId(),user.getEntityKey().getId());
+    assertEquals(pu.get(1).getPhone(),friend_phone[1]);
+    assertEquals(pu.get(1).getInvitors().getFriend(0).getId(),user.getEntityKey().getId());
+  }
+  
   @Test
   public void testAddFriends() throws IOException {
     User[] users = {
@@ -62,6 +95,8 @@ public class APITest extends ModelTest {
    verify(resp).setStatus(HttpServletResponse.SC_OK);
    
    User ua = dao.get(users[0].getEntityKey(), User.class);
+   System.out.println("------------");
+   System.out.println((new Gson()).toJson(ua));
    List<Friend> uaf = ua.getFriendship().getFriendList();
    assertEquals(uaf.size(),1);
    assertEquals(uaf.get(0).getId(),ids[1]);

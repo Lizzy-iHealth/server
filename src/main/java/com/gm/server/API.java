@@ -7,7 +7,6 @@ import java.io.PrintWriter;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -22,17 +21,17 @@ import com.gm.common.crypto.Hmac;
 import com.gm.common.net.ErrorCode;
 import com.gm.server.model.DAO;
 import com.gm.server.model.Model.Friend.Type;
-import com.gm.server.model.ModelException;
+import com.gm.server.model.Model.Friendship;
+import com.gm.server.model.PendingUser;
 import com.gm.server.model.Token;
 import com.gm.server.model.User;
 import com.gm.server.push.Pusher;
-import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.common.base.Strings;
 
 public enum API {
-  device("/auth/", false) {
+  device("/auth/", true) {
 
     @Override
     public void handle(HttpServletRequest req, HttpServletResponse resp)
@@ -50,8 +49,22 @@ public enum API {
       dao.save(user);
     }
   },
+  
+  get_friends("/social", true){
 
-  add_friends("/", false){//true) {
+    @Override
+    public void handle(HttpServletRequest req, HttpServletResponse resp)
+        throws ApiException, IOException {
+      // TODO Auto-generated method stub
+      String key = ParamKey.key.getValue(req);
+      User user = dao.get(key, User.class);
+      Friendship friendship = user.getFriendship().build();
+      System.out.print(friendship.toByteArray());
+      resp.getWriter().print(friendship.toByteArray());
+    }
+    
+  },
+  add_friends("/social", true){//true) {
 
     @Override
     public void handle(HttpServletRequest req, HttpServletResponse resp)
@@ -104,6 +117,47 @@ public enum API {
     
     }
   },
+
+  
+  invite_friends("/social", true){//true) {
+
+    @Override
+    public void handle(HttpServletRequest req, HttpServletResponse resp)
+        throws ApiException, IOException {
+
+        String key = ParamKey.key.getValue(req);
+        String[] friendPhones = ParamKey.friend_phone.getValues(req);
+        long invitorId = getId(key);
+          
+        for(String phone:friendPhones){
+          PendingUser pu = dao.querySingle("phone", phone, PendingUser.class);
+          //already invited;
+          if(pu!=null){
+            pu.addInvitor(invitorId);
+            dao.save(pu);
+          }else {
+            User temp = dao.querySingle("phone", phone, User.class);
+          //already our user
+            if(temp != null){
+              
+              temp.addFriend(invitorId, Type.WAIT_MY_CONFIRM);
+              dao.save(temp);
+              User invitor = dao.get(key, User.class);
+              invitor.addFriend(temp.getEntityKey().getId(), Type.ADDED);
+              dao.save(invitor);
+              continue;
+            } else{
+              // newly invited user
+              pu = new PendingUser(phone,invitorId);
+              dao.create(pu);
+            }
+          }
+        }
+    }
+ 
+  },
+        
+
 
   
   ping("/", true) {
@@ -160,6 +214,10 @@ public enum API {
 
       String secret = UUID.randomUUID().toString();
       User user = new User(phone, password, secret);
+      PendingUser pu = dao.querySingle("phone", phone, PendingUser.class);
+      if(pu!=null){
+        user.setFriendship(pu.getInvitors());
+      }
       dao.create(user);
 
       String key = user.getKey();
@@ -243,6 +301,8 @@ public enum API {
         String hmac = stringNotEmpty(ParamKey.hmac.getValue(req),
             ErrorCode.auth_invalid_key_or_secret);
         String body = new String(readStream(req.getInputStream()));
+        
+        info("key = %s, hmac = %s, body = %s", key, hmac, body);
 
         // |------------ body -------------|
         // ........&key=....&hmac=..........
@@ -258,6 +318,8 @@ public enum API {
             dao.get(KeyFactory.stringToKey(key), User.class),
             ErrorCode.auth_invalid_key_or_secret);
         String match = Hmac.generate(message, user.getSecret());
+        
+        info("match = %s", match);
         check(hmac.equals(match), ErrorCode.auth_invalid_key_or_secret);
 
         // TODO: need test

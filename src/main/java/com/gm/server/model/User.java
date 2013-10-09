@@ -97,8 +97,8 @@ public class User extends Persistable<User> {
 		this.lastLoginTime = lastLoginTime;
 	}
   
-	public int getUserID() {
-    return userID;
+	public long getUserID() {
+    return getEntityKey().getId();
   }
 
   public void setUserID(int userID) {
