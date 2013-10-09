@@ -117,6 +117,45 @@ public enum API {
     
     }
   },
+  delete_friends("/social", true){//true) {
+
+    @Override
+    public void handle(HttpServletRequest req, HttpServletResponse resp)
+        throws ApiException, IOException {
+
+        long[] friendIDs = ParamKey.friend_id.getLongs(req,-1);
+        String key = ParamKey.key.getValue(req);
+        long myId = getId(key);
+        //KeyFactory.stringToKey(key).getId();
+        User user = dao.get(key, User.class);
+
+        
+        Key friendKeys[] = new Key[friendIDs.length];
+        
+        ApiException error = null;   
+                
+        for(int i=0;i<friendIDs.length;i++){
+          friendKeys[i] = KeyFactory.createKey("User", friendIDs[i]);
+          User friend;
+          try {
+            friend = checkNotNull(dao.get(friendKeys[i], User.class),
+                ErrorCode.auth_user_not_registered);
+          } catch (ApiException e) {
+            error = e;
+            continue;
+          }
+          user.deleteFriend(friendIDs[i]);
+          friend.deleteFriend(myId);
+          dao.save(friend);
+            
+        }
+        dao.save(user);
+        if(error!=null){
+          throw error;
+        }
+    
+    }
+  },
 
   
   invite_friends("/social", true){//true) {
@@ -292,6 +331,31 @@ public enum API {
    * @param resp
    * @throws IOException
    */
+  public void execute(HttpServletRequest req, HttpServletResponse resp,
+      boolean withHmac) throws IOException {
+    if (withHmac) {
+      execute(req, resp);
+    } else {
+      try {
+        handle(req, resp);
+        resp.setStatus(HttpServletResponse.SC_OK); // API executed successfully
+      } catch (ApiException e) {
+        resp.setStatus(HttpServletResponse.SC_BAD_REQUEST); // API failed on
+                                                            // validation
+        resp.getWriter().print(e.error);
+      } catch (Exception e) {
+        resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // Unknown
+                                                                      // error
+        info(e, "unknow API error %s", e.getMessage());
+        e.printStackTrace(new PrintWriter(resp.getOutputStream())); // TODO:
+                                                                    // remove me
+                                                                    // when
+                                                                    // release
+
+      }
+    }
+
+  }
   public void execute(HttpServletRequest req, HttpServletResponse resp)
       throws IOException {
     try {

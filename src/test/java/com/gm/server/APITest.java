@@ -33,7 +33,7 @@ public class APITest extends ModelTest {
     HttpServletResponse resp  = mock(HttpServletResponse.class);
     PrintWriter writer = mock (PrintWriter.class);
     when(resp.getWriter()).thenReturn(writer);
-    API.get_friends.execute(req, resp);
+    API.get_friends.execute(req, resp,false);
     
     assertEquals(0,user.getFriendship().getFriendCount());
     
@@ -56,7 +56,7 @@ public class APITest extends ModelTest {
     HttpServletRequest req = super.getMockRequestWithUser(user);
     HttpServletResponse resp  = mock(HttpServletResponse.class);
     when(req.getParameterValues(ParamKey.friend_phone.name())).thenReturn(friend_phone);
-    API.invite_friends.execute(req, resp);
+    API.invite_friends.execute(req, resp,false);
     
     List<PendingUser> pu = dao.query(PendingUser.class).sortBy("phone",false).prepare().asList();
     assertEquals(2,pu.size());
@@ -91,7 +91,7 @@ public class APITest extends ModelTest {
     String[] fl = {Long.toString(ids[1])} ;
     when(req.getParameterValues(ParamKey.friend_id.name())).thenReturn(fl);
 
-    af.doPost(req, resp);
+    API.add_friends.execute(req, resp,false);
    verify(resp).setStatus(HttpServletResponse.SC_OK);
    
    User ua = dao.get(users[0].getEntityKey(), User.class);
@@ -113,8 +113,8 @@ public class APITest extends ModelTest {
    HttpServletResponse resp2= mock(HttpServletResponse.class);
    String[] bfl = {Long.toString(ids[0]),Long.toString(ids[2])} ;
    when(req2.getParameterValues(ParamKey.friend_id.name())).thenReturn(bfl);
-
-   af.doPost(req2, resp2);
+   API.add_friends.execute(req2, resp2,false);
+  // af.doPost(req2, resp2);
   verify(resp2).setStatus(HttpServletResponse.SC_OK);
   
    ua = dao.get(users[0].getEntityKey(), User.class);
@@ -143,7 +143,8 @@ public class APITest extends ModelTest {
   String[] fl3 = {Long.toString(ids[1])} ;
   when(req3.getParameterValues(ParamKey.friend_id.name())).thenReturn(fl3);
 
-  af.doPost(req3, resp3);
+  API.add_friends.execute(req3, resp3,false);
+  //af.doPost(req3, resp3);
  verify(resp3).setStatus(HttpServletResponse.SC_OK);
  
   ua = dao.get(users[0].getEntityKey(), User.class);
@@ -171,7 +172,9 @@ public class APITest extends ModelTest {
  when(req4.getParameterValues(ParamKey.friend_id.name())).thenReturn(fl4);
  PrintWriter writer = mock(PrintWriter.class);
  when(resp4.getWriter()).thenReturn(writer);
- af.doPost(req4, resp4);
+ 
+ API.add_friends.execute(req4, resp4,false);
+ //af.doPost(req4, resp4);
 
  verify(resp4).setStatus(HttpServletResponse.SC_BAD_REQUEST);
 
@@ -190,7 +193,8 @@ when(req5.getParameterValues(ParamKey.friend_id.name())).thenReturn(fl5);
 PrintWriter writer5 = mock(PrintWriter.class);
 when(resp5.getWriter()).thenReturn(writer5);
 
-af.doPost(req5, resp5);
+API.add_friends.execute(req5, resp5,false);
+//af.doPost(req5, resp5);
 verify(resp5).setStatus(HttpServletResponse.SC_BAD_REQUEST);
 
 verify(writer5).print(ErrorCode.auth_user_not_registered);
@@ -231,7 +235,9 @@ public void testDeviceServlet() throws IOException {
  String  deviceID= new String("My Device ID");
  when(req.getParameter("device_id")).thenReturn(deviceID);
  DeviceServlet ds = new DeviceServlet();
- ds.doPost(req, resp);
+ 
+ API.device.execute(req, resp,false);
+ //ds.doPost(req, resp);
  
  User user = dao.get(userInDB.getEntityKey(), User.class);
  

@@ -192,5 +192,13 @@ public class User extends Persistable<User> {
       
     }
   }
+
+  public void deleteFriend(long l) {
+    // TODO Auto-generated method stub
+    int index = findFriend(l);
+    if(index!=-1){
+      friendship.removeFriend(index);
+    }
+  }
  
 }
