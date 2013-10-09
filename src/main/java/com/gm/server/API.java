@@ -20,6 +20,7 @@ import org.json.JSONException;
 import com.gm.common.crypto.Hmac;
 import com.gm.common.net.ErrorCode;
 import com.gm.server.model.DAO;
+import com.gm.server.model.Model.Friend;
 import com.gm.server.model.Model.Friend.Type;
 import com.gm.server.model.Model.Friendship;
 import com.gm.server.model.PendingUser;
@@ -59,7 +60,7 @@ public enum API {
       String key = ParamKey.key.getValue(req);
       User user = dao.get(key, User.class);
       Friendship friendship = user.getFriendship().build();
-      System.out.print(friendship.toByteArray());
+   //   System.out.print(friendship.toByteArray());
       resp.getWriter().print(friendship.toByteArray());
     }
     
@@ -117,6 +118,7 @@ public enum API {
     
     }
   },
+  
   delete_friends("/social", true){//true) {
 
     @Override
@@ -145,6 +147,46 @@ public enum API {
             continue;
           }
           user.deleteFriend(friendIDs[i]);
+          friend.deleteFriend(myId);
+          dao.save(friend);
+            
+        }
+        dao.save(user);
+        if(error!=null){
+          throw error;
+        }
+    
+    }
+  },
+
+  block_friends("/social", true){//true) {
+
+    @Override
+    public void handle(HttpServletRequest req, HttpServletResponse resp)
+        throws ApiException, IOException {
+
+        long[] friendIDs = ParamKey.friend_id.getLongs(req,-1);
+        String key = ParamKey.key.getValue(req);
+        long myId = getId(key);
+     
+        User user = dao.get(key, User.class);
+
+        
+        Key friendKeys[] = new Key[friendIDs.length];
+        
+        ApiException error = null;   
+                
+        for(int i=0;i<friendIDs.length;i++){
+          friendKeys[i] = KeyFactory.createKey("User", friendIDs[i]);
+          User friend;
+          try {
+            friend = checkNotNull(dao.get(friendKeys[i], User.class),
+                ErrorCode.auth_user_not_registered);
+          } catch (ApiException e) {
+            error = e;
+            continue;
+          }
+          user.blockFriend(friendIDs[i]);
           friend.deleteFriend(myId);
           dao.save(friend);
             
@@ -253,11 +295,14 @@ public enum API {
 
       String secret = UUID.randomUUID().toString();
       User user = new User(phone, password, secret);
+      dao.create(user);
       PendingUser pu = dao.querySingle("phone", phone, PendingUser.class);
       if(pu!=null){
         user.setFriendship(pu.getInvitors());
+        rewardInvitors(user.getUserID(),pu.getInvitors().build());
+        dao.delete(pu);
       }
-      dao.create(user);
+      dao.save(user);
 
       String key = user.getKey();
       resp.getWriter().write(key);
@@ -287,6 +332,29 @@ public enum API {
   private API(String urlPrefix, boolean requiresHmac) {
     url = urlPrefix + name();
     this.requiresHmac = requiresHmac;
+  }
+
+  protected void rewardInvitors(long newUserID, Friendship invitors) throws ApiException {
+    // TODO Auto-generated method stub
+    ApiException error=null;
+    for (Friend invitor:invitors.getFriendList()){
+      Key invKey = KeyFactory.createKey("User", invitor.getId());
+      
+      User inv = null;
+      try {
+        inv= checkNotNull(dao.get(invKey, User.class),ErrorCode.auth_user_not_registered);
+      } catch (ApiException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+        error = e;
+        continue;
+      }
+        inv.addFriend(newUserID, Type.INVITED);
+        dao.save(inv);
+    }
+    if(error != null){
+      throw error;
+    }
   }
 
   protected long getId(String key) {

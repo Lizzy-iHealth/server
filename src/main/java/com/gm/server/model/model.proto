@@ -14,6 +14,7 @@ message Friend {
 		INVITED = 3;
 		WATCHED = 4;
 		BLOCKED = 5;
+		MUTED = 6;
 	}
 }
 

@@ -24,6 +24,92 @@ import com.google.gson.Gson;
 
 public class APITest extends ModelTest {
   @Test
+  public void testBlockFriends() throws IOException{
+    //prepare datastore: user and friend are friends.
+    User user = new User("a12345","password","secret");
+    User friend = new User("b12345","password","secret");
+    dao.save(user);
+    dao.save(friend);
+    user.addFriend(friend.getUserID(), Type.CONFIRMED);
+    friend.addFriend(user.getUserID(), Type.CONFIRMED);
+    dao.save(user);
+    dao.save(friend);
+    
+    //verify status before test
+    User userInDB = dao.get(user.getKey(), User.class);
+    User friendInDB = dao.get(friend.getKey(), User.class);
+    assertEquals(1,userInDB.getFriendship().getFriendCount());
+    assertEquals(1,friendInDB.getFriendship().getFriendCount());
+    
+    //user block friend.
+    HttpServletRequest req = super.getMockRequestWithUser(user);
+    HttpServletResponse resp  = mock(HttpServletResponse.class);
+    PrintWriter writer = mock (PrintWriter.class);
+    String[] deleteIds = {Long.toString(friend.getUserID())};
+    when(req.getParameterValues(ParamKey.friend_id.name())).thenReturn(deleteIds);
+    when(resp.getWriter()).thenReturn(writer);
+    API.block_friends.execute(req, resp,false);
+    
+     userInDB = dao.get(user.getKey(), User.class);
+     friendInDB = dao.get(friend.getKey(), User.class);
+    assertEquals(1,userInDB.getFriendship().getFriendCount());
+    assertEquals(Type.BLOCKED,userInDB.getFriendship().getFriend(0).getType());
+    assertEquals(0,friendInDB.getFriendship().getFriendCount());
+
+    // block again, nothing should happened:
+ 
+    API.block_friends.execute(req, resp,false);
+    userInDB = dao.get(user.getKey(), User.class);
+    friendInDB = dao.get(friend.getKey(), User.class);
+    assertEquals(Type.BLOCKED,userInDB.getFriendship().getFriend(0).getType());
+    assertEquals(0,friendInDB.getFriendship().getFriendCount());
+    
+    
+
+  }
+  
+  @Test
+  public void testDeleteFriends() throws IOException{
+    //prepare datastore: user and friend are friends.
+    User user = new User("a12345","password","secret");
+    User friend = new User("b12345","password","secret");
+    dao.save(user);
+    dao.save(friend);
+    user.addFriend(friend.getUserID(), Type.CONFIRMED);
+    friend.addFriend(user.getUserID(), Type.CONFIRMED);
+    dao.save(user);
+    dao.save(friend);
+    
+    //before:
+    User userInDB = dao.get(user.getKey(), User.class);
+    User friendInDB = dao.get(friend.getKey(), User.class);
+    assertEquals(1,userInDB.getFriendship().getFriendCount());
+    assertEquals(1,friendInDB.getFriendship().getFriendCount());
+    
+    //delete
+    HttpServletRequest req = super.getMockRequestWithUser(user);
+    HttpServletResponse resp  = mock(HttpServletResponse.class);
+    PrintWriter writer = mock (PrintWriter.class);
+    String[] deleteIds = {Long.toString(friend.getUserID())};
+    when(req.getParameterValues(ParamKey.friend_id.name())).thenReturn(deleteIds);
+    when(resp.getWriter()).thenReturn(writer);
+    API.delete_friends.execute(req, resp,false);
+    
+     userInDB = dao.get(user.getKey(), User.class);
+     friendInDB = dao.get(friend.getKey(), User.class);
+    assertEquals(0,userInDB.getFriendship().getFriendCount());
+    assertEquals(0,friendInDB.getFriendship().getFriendCount());
+
+    // delete again, nothing should happened:
+ 
+    API.get_friends.execute(req, resp,false);
+    userInDB = dao.get(user.getKey(), User.class);
+    friendInDB = dao.get(friend.getKey(), User.class);
+    assertEquals(0,userInDB.getFriendship().getFriendCount());
+    assertEquals(0,friendInDB.getFriendship().getFriendCount());
+
+  }
+  @Test
   public void testGetFriends() throws IOException{
     User user = new User("a12345","password","secret");
     User friend = new User("b12345","password","secret");
@@ -42,11 +128,13 @@ public class APITest extends ModelTest {
     friend.addFriend(user.getUserID(), Type.CONFIRMED);
     dao.save(user);
     dao.save(friend);
-    API.get_friends.execute(req, resp);
+    API.get_friends.execute(req, resp,false);
     
-    assertEquals(1,user.getFriendship().getFriendCount());
-    assertEquals(friend.getUserID(),user.getFriendship().getFriend(0).getId());
-    assertEquals(Type.CONFIRMED,user.getFriendship().getFriend(0).getType());
+    User userInDB = dao.get(user.getKey(), User.class);
+    verify(writer).print(userInDB.getFriendship().build().toByteArray());
+    assertEquals(1,userInDB.getFriendship().getFriendCount());
+    assertEquals(friend.getUserID(),userInDB.getFriendship().getFriend(0).getId());
+    assertEquals(Type.CONFIRMED,userInDB.getFriendship().getFriend(0).getType());
   }
   @Test
   public void testInviteFriends() throws IOException{

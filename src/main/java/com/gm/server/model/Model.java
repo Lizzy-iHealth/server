@@ -166,6 +166,10 @@ public final class Model {
        * <code>BLOCKED = 5;</code>
        */
       BLOCKED(5, 5),
+      /**
+       * <code>MUTED = 6;</code>
+       */
+      MUTED(6, 6),
       ;
 
       /**
@@ -192,6 +196,10 @@ public final class Model {
        * <code>BLOCKED = 5;</code>
        */
       public static final int BLOCKED_VALUE = 5;
+      /**
+       * <code>MUTED = 6;</code>
+       */
+      public static final int MUTED_VALUE = 6;
 
 
       public final int getNumber() { return value; }
@@ -204,6 +212,7 @@ public final class Model {
           case 3: return INVITED;
           case 4: return WATCHED;
           case 5: return BLOCKED;
+          case 6: return MUTED;
           default: return null;
         }
       }
@@ -1334,13 +1343,13 @@ public final class Model {
   static {
     java.lang.String[] descriptorData = {
       "\n)main/java/com/gm/server/model/model.pr" +
-      "oto\022\023com.gm.server.model\"\242\001\n\006Friend\022\n\n\002i" +
+      "oto\022\023com.gm.server.model\"\255\001\n\006Friend\022\n\n\002i" +
       "d\030\001 \002(\003\022.\n\004type\030\002 \002(\0162 .com.gm.server.mo" +
-      "del.Friend.Type\"\\\n\004Type\022\r\n\tCONFIRMED\020\000\022\t" +
+      "del.Friend.Type\"g\n\004Type\022\r\n\tCONFIRMED\020\000\022\t" +
       "\n\005ADDED\020\001\022\023\n\017WAIT_MY_CONFIRM\020\002\022\013\n\007INVITE" +
-      "D\020\003\022\013\n\007WATCHED\020\004\022\013\n\007BLOCKED\020\005\"9\n\nFriends" +
-      "hip\022+\n\006friend\030\001 \003(\0132\033.com.gm.server.mode" +
-      "l.Friend"
+      "D\020\003\022\013\n\007WATCHED\020\004\022\013\n\007BLOCKED\020\005\022\t\n\005MUTED\020\006" +
+      "\"9\n\nFriendship\022+\n\006friend\030\001 \003(\0132\033.com.gm." +
+      "server.model.Friend"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {

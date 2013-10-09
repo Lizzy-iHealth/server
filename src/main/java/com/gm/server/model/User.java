@@ -156,6 +156,10 @@ public class User extends Persistable<User> {
             case WAIT_MY_CONFIRM:
               type = Type.CONFIRMED;
               break;
+            case BLOCKED:
+               if(type == Type.WAIT_MY_CONFIRM){
+                  return;
+               }
             case INVITED:
               if(type == Type.WAIT_MY_CONFIRM){
                   type = Type.CONFIRMED;
@@ -198,6 +202,20 @@ public class User extends Persistable<User> {
     int index = findFriend(l);
     if(index!=-1){
       friendship.removeFriend(index);
+    }
+  }
+  public void muteFriend(long l) {
+    // TODO Auto-generated method stub
+    int index = findFriend(l);
+    if(index!=-1){
+        updateFriendship(index, Type.MUTED);
+    }
+  }
+  public void blockFriend(long l) {
+    // TODO Auto-generated method stub
+    int index = findFriend(l);
+    if(index!=-1){
+      friendship.getFriendBuilder(index).setType(Type.BLOCKED).build();
     }
   }
  
