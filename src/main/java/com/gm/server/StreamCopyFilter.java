@@ -3,6 +3,7 @@ package com.gm.server;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Hashtable;
 import java.util.logging.Logger;
 
 import javax.servlet.Filter;
@@ -15,6 +16,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpUtils;
 
 public class StreamCopyFilter implements Filter {
   
@@ -22,11 +24,32 @@ public class StreamCopyFilter implements Filter {
 
   private static class StreamCacheRequest extends HttpServletRequestWrapper {
     
+    private static class CacheInputStream extends ServletInputStream {
+      
+      private final byte[] content;
+      private int i;
+      
+      public CacheInputStream(byte[] content) {
+        i = -1;
+        this.content = content;
+      }
+
+      @Override
+      public int read() throws IOException {
+        ++i;
+        return i < content.length ? content[i] : -1;
+      }
+      
+    }
+    
     private final byte[] content;
+    private final Hashtable<?, ?> table;
 
     public StreamCacheRequest(HttpServletRequest request, byte[] content) {
       super(request);
       this.content = content;
+      table = HttpUtils.parsePostData(content.length, new CacheInputStream(content));
+      System.out.println(table);
     }
 
     @Override
@@ -35,17 +58,19 @@ public class StreamCopyFilter implements Filter {
     }
     
     @Override
+    public String getParameter(String name) {
+      String[] values = getParameterValues(name);
+      return values == null ? null : values[0];
+    }
+    
+    @Override
+    public String[] getParameterValues(String name) {
+      return (String[]) table.get(name);
+    }
+    
+    @Override
     public ServletInputStream getInputStream() throws IOException {
-      return new ServletInputStream() {
-        
-        private int i = -1;
-        
-        @Override
-        public int read() throws IOException {
-          ++i;
-          return i < content.length ? content[i] : -1;
-        }
-      };
+      return new CacheInputStream(content);
     }
   }
 
