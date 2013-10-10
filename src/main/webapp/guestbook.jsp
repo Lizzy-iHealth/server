@@ -89,5 +89,8 @@
     <div><input type="submit" value="Switch Guestbook"/></div>
 </form>
 
+<form action="/util/push" method="post">
+	Choose User By ID: <input>
+</form>
 </body>
 </html>

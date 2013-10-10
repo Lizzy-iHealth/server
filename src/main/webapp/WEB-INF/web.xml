@@ -73,7 +73,16 @@
         <url-pattern>/ping</url-pattern>
     </servlet-mapping>
     
+   <servlet>
+        <servlet-name>push</servlet-name>
+        <servlet-class>com.gm.server.PushServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>push</servlet-name>
+        <url-pattern>/util/push</url-pattern>
+    </servlet-mapping>
+    
     <welcome-file-list>
-        <welcome-file>guestbook.jsp</welcome-file>
+        <welcome-file>TestPush.jsp</welcome-file>
     </welcome-file-list>
 </web-app>

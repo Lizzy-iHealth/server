@@ -20,7 +20,7 @@ import com.gm.server.model.Model.Friend.Type;
 import com.gm.server.model.PendingUser;
 import com.gm.server.model.User;
 import com.google.appengine.api.datastore.KeyFactory;
-import com.google.gson.Gson;
+
 
 public class APITest extends ModelTest {
   @Test
@@ -183,8 +183,6 @@ public class APITest extends ModelTest {
    verify(resp).setStatus(HttpServletResponse.SC_OK);
    
    User ua = dao.get(users[0].getEntityKey(), User.class);
-   System.out.println("------------");
-   System.out.println((new Gson()).toJson(ua));
    List<Friend> uaf = ua.getFriendship().getFriendList();
    assertEquals(uaf.size(),1);
    assertEquals(uaf.get(0).getId(),ids[1]);

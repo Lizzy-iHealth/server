@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -118,7 +119,8 @@ public enum API {
     
     }
   },
-  
+
+ 
   delete_friends("/social", true){//true) {
 
     @Override
@@ -238,8 +240,32 @@ public enum API {
  
   },
         
+  push("/util/",false){
 
-
+    @Override
+    public void handle(HttpServletRequest req, HttpServletResponse resp)
+        throws ApiException, IOException {
+      // TODO Auto-generated method stub
+      long ids[] = ParamKey.friend_id.getLongs(req, -1);
+      String data_key = "key";
+      String data_value = "This is a push message";
+      Map<String, String> data = new HashMap<String, String>();
+      data.put(data_key, data_value);
+      List<String> device_ids = new ArrayList<String>(ids.length);
+      for(long id:ids){
+        String device_id = dao.get(KeyFactory.createKey("User", id), User.class).getDeviceID();
+        device_ids.add(device_id);
+      }
+      try {
+        new Pusher(device_ids.toArray(new String[device_ids.size()])).push(data);
+      } catch (JSONException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    }
+    
+  }
+,
   
   ping("/", true) {
 
@@ -297,6 +323,7 @@ public enum API {
       User user = new User(phone, password, secret);
       dao.create(user);
       PendingUser pu = dao.querySingle("phone", phone, PendingUser.class);
+    
       if(pu!=null){
         user.setFriendship(pu.getInvitors());
         rewardInvitors(user.getUserID(),pu.getInvitors().build());
