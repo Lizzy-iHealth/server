@@ -72,7 +72,7 @@ public enum API {
     public void handle(HttpServletRequest req, HttpServletResponse resp)
         throws ApiException, IOException {
 
-        long[] friendIDs = ParamKey.friend_id.getLongs(req,-1);
+        long[] friendIDs = ParamKey.user_id.getLongs(req,-1);
         String key = ParamKey.key.getValue(req);
         long myId = getId(key);
         //KeyFactory.stringToKey(key).getId();
@@ -127,7 +127,7 @@ public enum API {
     public void handle(HttpServletRequest req, HttpServletResponse resp)
         throws ApiException, IOException {
 
-        long[] friendIDs = ParamKey.friend_id.getLongs(req,-1);
+        long[] friendIDs = ParamKey.user_id.getLongs(req,-1);
         String key = ParamKey.key.getValue(req);
         long myId = getId(key);
         //KeyFactory.stringToKey(key).getId();
@@ -167,7 +167,7 @@ public enum API {
     public void handle(HttpServletRequest req, HttpServletResponse resp)
         throws ApiException, IOException {
 
-        long[] friendIDs = ParamKey.friend_id.getLongs(req,-1);
+        long[] friendIDs = ParamKey.user_id.getLongs(req,-1);
         String key = ParamKey.key.getValue(req);
         long myId = getId(key);
      
@@ -209,7 +209,7 @@ public enum API {
         throws ApiException, IOException {
 
         String key = ParamKey.key.getValue(req);
-        String[] friendPhones = ParamKey.friend_phone.getValues(req);
+        String[] friendPhones = ParamKey.phone.getValues(req);
         long invitorId = getId(key);
           
         for(String phone:friendPhones){
@@ -246,7 +246,7 @@ public enum API {
     public void handle(HttpServletRequest req, HttpServletResponse resp)
         throws ApiException, IOException {
       // TODO Auto-generated method stub
-      long ids[] = ParamKey.friend_id.getLongs(req, -1);
+      long ids[] = ParamKey.user_id.getLongs(req, -1);
       String data_key = "key";
       String data_value = "This is a push message";
       Map<String, String> data = new HashMap<String, String>();

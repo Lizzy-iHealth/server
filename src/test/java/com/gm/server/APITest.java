@@ -46,7 +46,7 @@ public class APITest extends ModelTest {
     HttpServletResponse resp  = mock(HttpServletResponse.class);
     PrintWriter writer = mock (PrintWriter.class);
     String[] deleteIds = {Long.toString(friend.getUserID())};
-    when(req.getParameterValues(ParamKey.friend_id.name())).thenReturn(deleteIds);
+    when(req.getParameterValues(ParamKey.user_id.name())).thenReturn(deleteIds);
     when(resp.getWriter()).thenReturn(writer);
     API.block_friends.execute(req, resp,false);
     
@@ -91,7 +91,7 @@ public class APITest extends ModelTest {
     HttpServletResponse resp  = mock(HttpServletResponse.class);
     PrintWriter writer = mock (PrintWriter.class);
     String[] deleteIds = {Long.toString(friend.getUserID())};
-    when(req.getParameterValues(ParamKey.friend_id.name())).thenReturn(deleteIds);
+    when(req.getParameterValues(ParamKey.user_id.name())).thenReturn(deleteIds);
     when(resp.getWriter()).thenReturn(writer);
     API.delete_friends.execute(req, resp,false);
     
@@ -143,7 +143,7 @@ public class APITest extends ModelTest {
     dao.save(user);
     HttpServletRequest req = super.getMockRequestWithUser(user);
     HttpServletResponse resp  = mock(HttpServletResponse.class);
-    when(req.getParameterValues(ParamKey.friend_phone.name())).thenReturn(friend_phone);
+    when(req.getParameterValues(ParamKey.phone.name())).thenReturn(friend_phone);
     API.invite_friends.execute(req, resp,false);
     
     List<PendingUser> pu = dao.query(PendingUser.class).sortBy("phone",false).prepare().asList();
@@ -177,7 +177,7 @@ public class APITest extends ModelTest {
     HttpServletRequest req = getMockRequestWithUser(users[0]);
     HttpServletResponse resp = mock(HttpServletResponse.class);
     String[] fl = {Long.toString(ids[1])} ;
-    when(req.getParameterValues(ParamKey.friend_id.name())).thenReturn(fl);
+    when(req.getParameterValues(ParamKey.user_id.name())).thenReturn(fl);
 
     API.add_friends.execute(req, resp,false);
    verify(resp).setStatus(HttpServletResponse.SC_OK);
@@ -198,7 +198,7 @@ public class APITest extends ModelTest {
    HttpServletRequest req2 = getMockRequestWithUser(users[1]);
    HttpServletResponse resp2= mock(HttpServletResponse.class);
    String[] bfl = {Long.toString(ids[0]),Long.toString(ids[2])} ;
-   when(req2.getParameterValues(ParamKey.friend_id.name())).thenReturn(bfl);
+   when(req2.getParameterValues(ParamKey.user_id.name())).thenReturn(bfl);
    API.add_friends.execute(req2, resp2,false);
   // af.doPost(req2, resp2);
   verify(resp2).setStatus(HttpServletResponse.SC_OK);
@@ -227,7 +227,7 @@ public class APITest extends ModelTest {
   HttpServletRequest req3 = getMockRequestWithUser(users[0]);
   HttpServletResponse resp3 = mock(HttpServletResponse.class);
   String[] fl3 = {Long.toString(ids[1])} ;
-  when(req3.getParameterValues(ParamKey.friend_id.name())).thenReturn(fl3);
+  when(req3.getParameterValues(ParamKey.user_id.name())).thenReturn(fl3);
 
   API.add_friends.execute(req3, resp3,false);
   //af.doPost(req3, resp3);
@@ -255,7 +255,7 @@ public class APITest extends ModelTest {
  HttpServletRequest req4 = getMockRequestWithUser(users[0]);
  HttpServletResponse resp4 = mock(HttpServletResponse.class);
  String[] fl4 = {"5"} ;
- when(req4.getParameterValues(ParamKey.friend_id.name())).thenReturn(fl4);
+ when(req4.getParameterValues(ParamKey.user_id.name())).thenReturn(fl4);
  PrintWriter writer = mock(PrintWriter.class);
  when(resp4.getWriter()).thenReturn(writer);
  
@@ -275,7 +275,7 @@ assertEquals(uaf.get(0).getType(),Type.CONFIRMED);
 HttpServletRequest req5 = getMockRequestWithUser(users[0]);
 HttpServletResponse resp5 = mock(HttpServletResponse.class);
 String[] fl5 = {Long.toString(ids[1]),"5",Long.toString(ids[2])} ;
-when(req5.getParameterValues(ParamKey.friend_id.name())).thenReturn(fl5);
+when(req5.getParameterValues(ParamKey.user_id.name())).thenReturn(fl5);
 PrintWriter writer5 = mock(PrintWriter.class);
 when(resp5.getWriter()).thenReturn(writer5);
 
