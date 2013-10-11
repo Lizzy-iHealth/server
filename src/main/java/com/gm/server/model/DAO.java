@@ -62,7 +62,7 @@ public final class DAO {
     return save(object,parentKey);
   }
 
-  private Key save(Persistable<?> object, Key parentKey) {
+  public Key save(Persistable<?> object, Key parentKey) {
     if (object.entity == null) {
       // create new entity
       object.entity = new Entity(object.getKind(),parentKey);

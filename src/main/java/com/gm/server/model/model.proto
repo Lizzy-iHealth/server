@@ -23,8 +23,5 @@ message Friendship {
 }
 
 message Post {
-	required int64 post_id =1
-	required int64 owner_id = 2;
-	optional Date  submit_time = 2;
-	optional 
+	required int64 post_id =1;
 }
