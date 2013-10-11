@@ -1,4 +1,4 @@
-// The draft of domain models. For models that are not changing frequently, such as
+// The draft of domain models. For models that are not changing frequently, such as 
 // User/Post, we will create individual database tables for them; for other nested/internal or 
 // frequently changing models, we will using protoc to generate domain language model
 // implementation to use.
@@ -85,6 +85,11 @@ message UserPref {
   optional bool geo_loc = 2 [ default = true ];
 }
 
+message Feed {
+  Post post;
+  int64 referral_id[];
+}
+
 // The information of user's inquiry.
 message Post {
   required int64 id = 1;
@@ -93,15 +98,15 @@ message Post {
   required string owner_id = 2;
   
   // The description of the task.
-  required Task task = 22;
+  required Task task = 2;
 
-  // Who will be able to see this post, set by the owner. Normally, we will recommend a group of 
-  // owner's friends. We don't want to support public posts that are visible to everyone. 
-  repeated string audience_id = 3; // max size: 20?
+  repeated Visibility visibility = 3;
+  message Visibility {
+    required int64 owner_id = 1;
+    repeated int64 audience_id = 2;
+    required int64 post_time = 3;
+  }
 
-  // How much this post (it's task) worth.
-  optional Currency price = 4;
-  
   // How long this post lasts.
   optional LifeSpan life_span = 5;
   message LifeSpan {
@@ -125,12 +130,18 @@ message Post {
     DEAL = 2;
   }
 
+  required bool buy_or_sell = 7;
+
   // Who explicitly expressed that they are interested in this post. They can also bid a value.
-  repeated Applicant applicant = 66;
+  // This field is not available for reposts.
+  repeated Applicant applicant = 8;
   message Applicant {
     required int64 user_id = 1;
     optional Currency bid = 2;
+    optional int64 referral_id = 3;
   }
+
+  optional bool allow_repost = 10 [ default = true ]; 
 }
 
 // When a post reaches DEAL status, it will generate an activity, tracking the working stages of a
@@ -176,13 +187,15 @@ message Task {
   required string name = 2;
   optional string description = 3;
   
-  required bool buy_or_sell = 4; // This field might fit into the Post message better???
   required Type type = 5;
   enum Type {
     LOGISTICS = 0;
     BABYSITTING = 1;
     GOODS = 2;
   }
+
+  // How much this post (it's task) worth.
+  optional Currency price = 4;
   
   required Metadata metadata = 6;
   message Metadata {
