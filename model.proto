@@ -86,8 +86,8 @@ message UserPref {
 }
 
 message Feed {
-  Post post;
-  int64 referral_id[];
+  required Post post = 1;
+  repeated int64 referral_id = 2;
 }
 
 // The information of user's inquiry.
@@ -98,9 +98,9 @@ message Post {
   required string owner_id = 2;
   
   // The description of the task.
-  required Task task = 2;
+  required Task task = 3;
 
-  repeated Visibility visibility = 3;
+  repeated Visibility visibility = 4;
   message Visibility {
     required int64 owner_id = 1;
     repeated int64 audience_id = 2;
