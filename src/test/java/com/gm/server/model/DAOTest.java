@@ -30,5 +30,10 @@ public class DAOTest extends ModelTest {
    
    assertEquals(user.getKey(),userInDB.getKey());
   }
+  
+  @Test
+  public void testEntityGroup(){
+    
+  }
 
 }

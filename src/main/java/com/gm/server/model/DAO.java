@@ -57,6 +57,18 @@ public final class DAO {
     object.entity = null;
     return save(object);
   }
+  public Key create(Persistable<?> object,Key parentKey) {
+    object.entity = null;
+    return save(object,parentKey);
+  }
+
+  private Key save(Persistable<?> object, Key parentKey) {
+    if (object.entity == null) {
+      // create new entity
+      object.entity = new Entity(object.getKind(),parentKey);
+    }
+    return populatePropertiesAndSave(object); 
+  }
 
   public Key save(Persistable<?> object) {
     if (object.entity == null) {
@@ -109,6 +121,17 @@ public final class DAO {
     }
   }
 
+  public <T extends Persistable<?>> T querySingle(String property,
+      Object value, Class<T> type, Key parentKey) {
+    try {
+      return query(type).setAncestor(parentKey).filterBy(Filters.eq(property, value)).prepare()
+          .asSingle();
+    } catch (Exception e) {
+      logger.log(Level.INFO, "Reading single error: " + e.getMessage(), e);
+      return null;
+    }
+  }
+  
   public <T extends Persistable<?>> QueryBuilder<T> query(Class<T> type) {
     if (Persistable.getProperties(type) == null) {
       try {
@@ -136,6 +159,10 @@ public final class DAO {
   public int count(Class<? extends Persistable<?>> type) {
     return query(type).prepare().count();
   }
+  
+  public int count(Class<? extends Persistable<?>> type, Key parent) {
+    return query(type).setAncestor(parent).prepare().count();
+  }
 
   public <T extends Persistable<?>> T get(Key key, Class<T> type) {
     try {
@@ -154,6 +181,8 @@ public final class DAO {
     }
     return null;
   }
+  
+  
   public <T extends Persistable<?>> T get(String key, Class<T> type) {
     try {
       Entity entity = datastore.get(KeyFactory.stringToKey(key));
@@ -179,6 +208,10 @@ public final class DAO {
     QueryBuilder(Class<T> type, Query q) {
       this.type = type;
       this.q = q;
+    }
+    public QueryBuilder<T> setAncestor(Key ancestor) {
+      q.setAncestor(ancestor);
+      return this;
     }
 
     public QueryBuilder<T> filterBy(Filter filter) {
