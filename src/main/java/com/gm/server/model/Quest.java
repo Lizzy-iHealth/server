@@ -6,11 +6,11 @@ import com.google.appengine.api.datastore.GeoPt;
 import com.google.appengine.api.datastore.PostalAddress;
 
 @Entity
-public class Task extends Persistable<Task> {
+public class Quest extends Persistable<Quest> {
 
   
   @Property
-  private long owner_id;
+  private long owner_id  = -1;
 
   @Property
   private Date start_time = new Date();
@@ -20,14 +20,17 @@ public class Task extends Persistable<Task> {
   
   @Property
   private String title;
-  
+
   @Property
   private PostalAddress address;
-  
+
   @Property
   private GeoPt geo_point;
   
-  Task(String title){
+  @Property
+  private long prize;
+
+  Quest(String title){
     this.title = title;
   }
 
@@ -63,10 +66,24 @@ public class Task extends Persistable<Task> {
     this.title = title;
   }
 
-  Task(){}
-  
+  public PostalAddress getAddress() {
+    return address;
+  }
+
+  public void setAddress(PostalAddress address) {
+    this.address = address;
+  }
+
+  public GeoPt getGeo_point() {
+    return geo_point;
+  }
+
+  public void setGeo_point(GeoPt geo_point) {
+    this.geo_point = geo_point;
+  }
+
   @Override
-  public Task touch() {
+  public Quest touch() {
     // TODO Auto-generated method stub
     return null;
   }

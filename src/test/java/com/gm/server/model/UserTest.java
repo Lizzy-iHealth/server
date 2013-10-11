@@ -9,17 +9,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.gm.server.ModelTest;
+import com.gm.server.model.Model.Friend.Type;
 import com.google.gson.Gson;
 
-public class UserTest {
+public class UserTest extends ModelTest{
 
-	@Before
-	public void setUp() throws Exception {
-	}
 
-	@After
-	public void tearDown() throws Exception {
-	}
 
 	@Test
 	public void testLogin () {
@@ -56,5 +52,18 @@ public class UserTest {
 		        before.before(date) || before.equals(date));
 		assertTrue("The date in the entity [" + date + "] is after to the request completed",
 		        after.after(date) || after.equals(date));
+	}
+	
+	@Test
+	public void testAddFriend(){
+	  User u1 = new User("1","pwd","s");
+	  User u2 = new User("2","pass","sec");
+	  DAO dao = DAO.get();
+	  dao.save(u1);
+	  dao.save(u2);
+	  u1.addFriend(u2.getUserID(),Type.ADDED);
+	  u2.addFriend(u1.getUserID(), Type.WAIT_MY_CONFIRM);
+	  dao.save(u1);
+	  dao.save(u2);
 	}
 }

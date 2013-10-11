@@ -84,7 +84,9 @@ public class RegisterServletTest extends ModelTest{
       verify(writer).write(key);
       verify(writer).write(",");
       verify(writer).write(secret);
-   
+      assertEquals(1,newUser.getFriendship().getFriendCount());
+      assertEquals(Type.WAIT_MY_CONFIRM,newUser.getFriendship().getFriend(0).getType());
+      
       assertEquals(phone, newUser.getPhone());
       assertEquals(password, newUser.getPassword());
       

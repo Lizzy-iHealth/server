@@ -38,10 +38,10 @@ public class DAOTest extends ModelTest {
     User user = new User("phone","password","secret");
     dao.save(user);
     String title = "Important task";
-    Task task = new Task(title);
+    Quest task = new Quest(title);
     dao.save(task,user.getEntityKey());
     
-    Task taskInDB = dao.get(task.getEntityKey(), Task.class);
+    Quest taskInDB = dao.get(task.getEntityKey(), Quest.class);
     assertEquals(title, taskInDB.getTitle());
     assertEquals(user.getEntityKey(), taskInDB.getEntityKey().getParent());
     
@@ -52,11 +52,11 @@ public class DAOTest extends ModelTest {
     User user = new User("phone","password","secret");
     dao.save(user);
     String title = "Important task";
-    Task task = new Task(title);
+    Quest task = new Quest(title);
     dao.save(task,user.getEntityKey());
     
-    Task taskInDB = dao.get(task.getEntityKey(), Task.class);
-    Task taskByQuery = dao.querySingle("title", title, Task.class, user.getEntityKey());
+    Quest taskInDB = dao.get(task.getEntityKey(), Quest.class);
+    Quest taskByQuery = dao.querySingle("title", title, Quest.class, user.getEntityKey());
     assertEquals(taskInDB.getEntityKey(), taskByQuery.getEntityKey());
     assertEquals(user.getEntityKey(), taskByQuery.getEntityKey().getParent());
     
@@ -67,12 +67,12 @@ public class DAOTest extends ModelTest {
     User user = new User("phone","password","secret");
     dao.save(user);
     String[] titles = {"Important task","nomal task"};
-    Task task[] = {new Task(titles[0]), new Task(titles[1]) };
+    Quest task[] = {new Quest(titles[0]), new Quest(titles[1]) };
     
     dao.save(task[0],user.getEntityKey());
     dao.save(task[1],user.getEntityKey());
     
-    List<Task> taskInDB = dao.query(Task.class).setAncestor(user.getEntityKey()).prepare().asList();
+    List<Quest> taskInDB = dao.query(Quest.class).setAncestor(user.getEntityKey()).prepare().asList();
     assertEquals(2,taskInDB.size());
     assertEquals(user.getEntityKey(), taskInDB.get(0).getEntityKey().getParent());
     assertEquals(user.getEntityKey(), taskInDB.get(1).getEntityKey().getParent());

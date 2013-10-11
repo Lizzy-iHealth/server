@@ -71,10 +71,10 @@ public abstract class Persistable<T extends Persistable<?>> {
     return entityToProperties.get(type);
   }
 
-  @SuppressWarnings("unchecked")
   static <T extends Persistable<?>> T newInstance(Class<T> type) {
     try {
-      return (T) entityToConstructor.get(type).newInstance();
+      return (T) type.getConstructor().newInstance();
+      // return (T) entityToConstructor.get(type).newInstance();
     } catch (Exception e) {
       throw new ModelException(e);
     }

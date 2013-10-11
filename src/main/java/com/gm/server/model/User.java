@@ -49,10 +49,16 @@ public class User extends Persistable<User> {
 	}
 
 	public Friendship.Builder getFriendship() {
+	  if(friendship==null){
+	    friendship= Friendship.newBuilder();
+	  }
     return friendship;
   }
 
   public void setFriendship(Friendship.Builder friendship) {
+    if(friendship==null){
+      friendship = Friendship.newBuilder();
+    }
     this.friendship = friendship;
   }
 
@@ -175,6 +181,7 @@ public class User extends Persistable<User> {
   }
   private int findFriend(long id) {
     // TODO Auto-generated method stub
+    if(friendship==null) return -1;
     for (int i=0; i<friendship.getFriendCount();i++){
       Friend f = friendship.getFriend(i);
       if (f.getId()==id){
