@@ -2,6 +2,9 @@ package com.gm.server.model;
 
 import java.util.Date;
 
+import com.google.appengine.api.datastore.GeoPt;
+import com.google.appengine.api.datastore.PostalAddress;
+
 @Entity
 public class Task extends Persistable<Task> {
 
@@ -17,6 +20,12 @@ public class Task extends Persistable<Task> {
   
   @Property
   private String title;
+  
+  @Property
+  private PostalAddress address;
+  
+  @Property
+  private GeoPt geo_point;
   
   Task(String title){
     this.title = title;
