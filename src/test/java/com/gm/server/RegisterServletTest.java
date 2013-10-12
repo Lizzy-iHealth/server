@@ -20,7 +20,7 @@ import org.junit.Test;
 import com.gm.server.model.PendingUser;
 import com.gm.server.model.Token;
 import com.gm.server.model.User;
-import com.gm.server.model.Model.Friend.Type;
+import com.gm.server.model.Model.Type;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.KeyFactory;

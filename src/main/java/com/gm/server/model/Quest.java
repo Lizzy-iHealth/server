@@ -2,36 +2,75 @@ package com.gm.server.model;
 
 import java.util.Date;
 
+import com.gm.server.model.Model.Applicants;
+import com.gm.server.model.Model.Friendship;
+import com.gm.server.model.Model.PostRecordsMSG;
+import com.gm.server.model.Model.QuestMSG;
 import com.google.appengine.api.datastore.GeoPt;
+import com.google.appengine.api.datastore.Link;
 import com.google.appengine.api.datastore.PostalAddress;
 
 @Entity
 public class Quest extends Persistable<Quest> {
 
-  
+  @Property
+  private long id;
   @Property
   private long owner_id  = -1;
+  
+  @Property
+  private Friendship.Builder members = Friendship.newBuilder();
 
+  @Property
+  private Applicants.Builder applicants = Applicants.newBuilder();
+  
   @Property
   private Date start_time = new Date();
 
   @Property
-  private Date end_time = null;
+  private Date end_time = new Date();
   
   @Property
-  private String title;
+  private String title="";
 
   @Property
-  private PostalAddress address;
+  private PostalAddress address=new PostalAddress("");
 
   @Property
-  private GeoPt geo_point;
+  private GeoPt geo_point=new GeoPt(0,0);
   
   @Property
-  private long prize;
-
+  private long prize=0; // at owner's view: <0 give reward, >0 collect reward
+  
+  @Property
+  private String description="";
+  
+  @Property
+  private boolean allow_sharing = false;
+  @Property
+  private Link attach_link=new Link("");
+  
+  @Property
+  private PostRecordsMSG.Builder posts=PostRecordsMSG.newBuilder();
+  
+  Quest(){}
+  
   Quest(String title){
     this.title = title;
+  }
+
+  public Quest(QuestMSG q) {
+    id = q.getId();
+    owner_id = q.getOwnerId();
+    start_time = new Date(q.getLifspan().getCreateTime());
+    end_time = new Date(q.getLifspan().getDeleteTime());
+    title = q.getTitle();
+    address = new PostalAddress(q.getAddress());
+    geo_point = new GeoPt(q.getGeoPoint().getLatitude(),q.getGeoPoint().getLongitude());
+    prize = q.getReward().getGoldPrice();
+    description = q.getDescription();
+    allow_sharing = q.getAllowSharing();
+    attach_link = new Link(q.getUrl());
   }
 
   public long getOwner_id() {

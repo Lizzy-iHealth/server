@@ -12,7 +12,9 @@ public enum ParamKey {
 	secret, 
 	hmac, 
 	device_id,
-	user_id;
+	user_id,
+	life_span,
+	quest;
 	
 	public String getValue(HttpServletRequest req) {
 		return req.getParameter(name());
@@ -38,7 +40,7 @@ public enum ParamKey {
 	    }
 	    return longs;
 	  }
-	
+	 
 	public String getValue(HttpServletRequest req, String defaultValue) {
 		String value = req.getParameter(name());
 		return value == null ? defaultValue : value;

@@ -5,13 +5,12 @@ import static org.junit.Assert.*;
 
 import java.util.Date;
 
-import org.junit.After;
-import org.junit.Before;
+
 import org.junit.Test;
 
 import com.gm.server.ModelTest;
-import com.gm.server.model.Model.Friend.Type;
-import com.google.gson.Gson;
+import com.gm.server.model.Model.Type;
+
 
 public class UserTest extends ModelTest{
 

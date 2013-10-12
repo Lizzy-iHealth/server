@@ -21,16 +21,23 @@ import org.json.JSONException;
 import com.gm.common.crypto.Hmac;
 import com.gm.common.net.ErrorCode;
 import com.gm.server.model.DAO;
+import com.gm.server.model.Feed;
+import com.gm.server.model.Model.FeedMSG;
 import com.gm.server.model.Model.Friend;
-import com.gm.server.model.Model.Friend.Type;
+import com.gm.server.model.Model.LifeSpan;
+import com.gm.server.model.Model.QuestMSG;
+import com.gm.server.model.Model.QuestMSG.Builder;
+import com.gm.server.model.Model.Type;
 import com.gm.server.model.Model.Friendship;
 import com.gm.server.model.PendingUser;
+import com.gm.server.model.Quest;
 import com.gm.server.model.Token;
 import com.gm.server.model.User;
 import com.gm.server.push.Pusher;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.common.base.Strings;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 public enum API {
   device("/auth/", true) {
@@ -350,9 +357,36 @@ public enum API {
         token = new Token(phone, msg);
       token.token = msg;
       dao.save(token);
-    }
+    }     
+  },
+    
+    post_quest("/quest/",true){
+
+      @Override
+      public void handle(HttpServletRequest req, HttpServletResponse resp)
+          throws ApiException, IOException {
+        
+        // retrieve quest
+        
+        QuestMSG.Builder questMsg = QuestMSG.parseFrom(ParamKey.quest.getValue(req).getBytes()).newBuilder();
+        Key ownerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
+        Quest quest = new Quest(questMsg.build());
+        dao.save(quest, ownerKey);
+        
+        // prepare feed
+        questMsg = QuestMSG.newBuilder().setOwnerId(ownerKey.getId()).setId(quest.getEntityKey().getId());
+        long receiverIds[] = ParamKey.user_id.getLongs(req,-1);
+        LifeSpan lifespan = LifeSpan.parseFrom(ParamKey.life_span.getValue(req).getBytes());
+        generateFeed(receiverIds,lifespan,questMsg,ownerKey.getId());
+        push(receiverIds,"Feed","New Feed Available");
+        
+      }
+
+
+    
   };
 
+  
   public final String url;
   public final boolean requiresHmac;
 
@@ -360,6 +394,37 @@ public enum API {
     url = urlPrefix + name();
     this.requiresHmac = requiresHmac;
   }
+
+
+  protected void push(long[] ids, String data_key, String data_value) throws IOException {
+
+      Map<String, String> data = new HashMap<String, String>();
+      data.put(data_key, data_value);
+      List<String> device_ids = new ArrayList<String>(ids.length);
+      for(long id:ids){
+        String device_id = dao.get(KeyFactory.createKey("User", id), User.class).getDeviceID();
+        device_ids.add(device_id);
+      }
+      try {
+        new Pusher(device_ids.toArray(new String[device_ids.size()])).push(data);
+      } catch (JSONException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    }
+  
+
+
+  protected void generateFeed(long[] receiverIds, LifeSpan lifespan, Builder questMsg,
+      long sourceId) {
+    // TODO Auto-generated method stub
+    for(long id:receiverIds){
+      Feed feed = new Feed(sourceId,questMsg,lifespan.getCreateTime(),lifespan.getDeleteTime());
+      Key receiverKey = KeyFactory.createKey("User", id);
+      dao.save(feed, receiverKey);
+    }
+  }
+
 
   protected void rewardInvitors(long newUserID, Friendship invitors) throws ApiException {
     // TODO Auto-generated method stub

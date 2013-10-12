@@ -2,8 +2,9 @@ package com.gm.server.model;
 
 import java.util.Date;
 
+import com.gm.server.model.Model.Feeds;
 import com.gm.server.model.Model.Friend;
-import com.gm.server.model.Model.Friend.Type;
+import com.gm.server.model.Model.Type;
 import com.gm.server.model.Model.Friendship;
 import com.google.appengine.api.datastore.KeyFactory;
 
@@ -33,6 +34,7 @@ public class User extends Persistable<User> {
   
   @Property
   private Friendship.Builder friendship= Friendship.newBuilder();
+
   
   private int userID = 0;
   

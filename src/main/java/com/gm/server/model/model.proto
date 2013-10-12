@@ -6,22 +6,81 @@ package com.gm.server.model;
 message Friend {
 	required int64 id = 1;
 	required Type type = 2;
-	enum Type {
+
+}
+enum Type {
 		CONFIRMED = 0;
 		ADDED = 1;
 		WAIT_MY_CONFIRM = 2;
-
 		INVITED = 3;
 		WATCHED = 4;
 		BLOCKED = 5;
 		MUTED = 6;
-	}
+		START = 7;
+		DONE = 8;
+		REWARDED=9;
+		END = 10;
 }
 
 message Friendship {
 	repeated Friend friend = 1;
 }
 
-message Post {
-	required int64 post_id =1;
+message PostRecordsMSG{
+	repeated PostRecordMSG post = 1;
 }
+message PostRecordMSG {
+	optional int64 id =1;
+	required int64 owner = 2;
+	repeated int64 audience = 3;
+	optional LifeSpan lifespan =4;
+}
+message LifeSpan{
+	optional  int64 createTime =1;
+	optional int64 deleteTime = 2;
+}
+
+
+message ApplicantMSG {
+    required int64 user_id = 1;
+    optional CurrencyMSG bid = 2;
+    optional int64 referral_id = 3;
+    optional Type type=4;
+}
+
+message Applicants {
+	repeated ApplicantMSG applicant=1;
+}
+message FeedMSG {
+  optional QuestMSG quest=1;
+  optional int32 priority=2;
+  optional int64 referral_id = 3;
+  optional LifeSpan lifespan = 4;
+  }
+
+message Feeds{
+	repeated FeedMSG feed=1;
+}
+
+message CurrencyMSG{
+	optional int64 goldPrice =1;
+}
+
+message QuestMSG{
+	optional int64 id=1;
+	optional int64 owner_id  = 2;
+ 	optional string title = 3;
+ 	optional string address =4;
+ 	optional GeoPtMSG geo_point =5;
+	optional CurrencyMSG reward =6;
+	optional string description =7;
+  	optional string url=8;
+  	optional bool allow_sharing=9 [default=false];
+  	optional LifeSpan lifspan = 10;
+}
+
+message GeoPtMSG{
+	optional float latitude=1;
+	optional float longitude=2;
+	}
+
