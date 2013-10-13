@@ -131,7 +131,15 @@ public final class DAO {
       return null;
     }
   }
-  
+  public <T extends Persistable<?>> T querySingle(Class<T> type, Key parentKey) {
+    try {
+      return query(type).setAncestor(parentKey).prepare()
+          .asSingle();
+    } catch (Exception e) {
+      logger.log(Level.INFO, "Reading single error: " + e.getMessage(), e);
+      return null;
+    }
+  }
   public <T extends Persistable<?>> QueryBuilder<T> query(Class<T> type) {
     if (Persistable.getProperties(type) == null) {
       try {

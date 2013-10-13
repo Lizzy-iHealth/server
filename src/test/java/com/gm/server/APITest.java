@@ -25,6 +25,34 @@ import com.google.appengine.api.datastore.KeyFactory;
 
 public class APITest extends ModelTest {
   @Test
+  public void testPostQuest() throws IOException{
+    User user = new User("a12345","password","secret");
+    User friend = new User("b12345","password","secret");
+    dao.save(user);
+    dao.save(friend);
+    HttpServletRequest req = super.getMockRequestWithUser(user);
+    HttpServletResponse resp  = mock(HttpServletResponse.class);
+    PrintWriter writer = mock (PrintWriter.class);
+    when(resp.getWriter()).thenReturn(writer);
+    API.get_friends.execute(req, resp,false);
+    
+    assertEquals(0,user.getFriends().getFriendCount());
+    
+    // Let user has a friend, then test again:
+    user.addFriend(friend.getUserID(), Friendship.CONFIRMED);
+    friend.addFriend(user.getUserID(), Friendship.CONFIRMED);
+    dao.save(user);
+    dao.save(friend);
+    API.get_friends.execute(req, resp,false);
+    
+    User userInDB = dao.get(user.getKey(), User.class);
+    verify(writer).print(userInDB.getFriends().build().toByteArray());
+    assertEquals(1,userInDB.getFriends().getFriendCount());
+    assertEquals(friend.getUserID(),userInDB.getFriends().getFriend(0).getId());
+    assertEquals(Friendship.CONFIRMED,userInDB.getFriends().getFriend(0).getFriendship());
+  }
+  
+  @Test
   public void testBlockFriends() throws IOException{
     //prepare datastore: user and friend are friends.
     User user = new User("a12345","password","secret");

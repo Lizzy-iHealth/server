@@ -1,5 +1,7 @@
 package com.gm.server.model;
 
+import com.gm.common.model.Rpc.QuestPb;
+import com.gm.common.model.Server.FeedPb;
 import com.gm.common.model.Server.Feeds;
 import com.gm.common.model.Server.Feeds.Builder;
 
@@ -44,5 +46,37 @@ public class Feed extends Persistable<Feed> {
     // TODO Auto-generated method stub
     return null;
   }
+
+
+
+
+  public int findQuest(QuestPb.Builder questMsg) {
+    for (int i = 0; i < feeds.getFeedCount(); ++i) {
+      QuestPb item = feeds.getFeed(i).getQuest();
+      if (questMsg.getId()== item.getId() && questMsg.getOwnerId()==item.getOwnerId()) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+
+
+
+  public void updateQuest(int i, QuestPb.Builder questMsg) {
+    //copy existed referer lists and post records
+    questMsg.addAllRefererId(feeds.getFeed(i).getQuest().getRefererIdList());
+    questMsg.getPostRecordsBuilder().addAllPost(feeds.getFeed(i).getQuest().getPostRecords().getPostList());
+    feeds.getFeedBuilder(i).setQuest(questMsg);
+  }
+
+
+
+
+  public void addQuest(int i,QuestPb.Builder questMsg) {
+    FeedPb.Builder newFeed = FeedPb.newBuilder().setQuest(questMsg);
+    feeds.addFeed(i,newFeed);    
+  }
+  
 
 }

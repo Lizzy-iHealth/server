@@ -38,6 +38,8 @@ import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.common.base.Strings;
 import com.gm.common.model.Rpc.Friendship;
+import com.gm.common.model.Server.FeedPb;
+import com.gm.common.model.Server.Feeds;
 import com.gm.common.model.Server.Friend;
 import com.gm.common.model.Server.Friends;
 
@@ -76,6 +78,7 @@ public enum API {
       }
    //   System.out.print(friendship.toByteArray());
    //   resp.getWriter().print(friend.toByteArray());
+
     }
     
   },
@@ -382,8 +385,8 @@ public enum API {
         // prepare feed
         questMsg = QuestPb.newBuilder().setOwnerId(ownerKey.getId()).setId(quest.getEntityKey().getId());
         long receiverIds[] = ParamKey.user_id.getLongs(req,-1);
-        LifeSpan lifespan = LifeSpan.parseFrom(ParamKey.life_span.getValue(req).getBytes());
-        generateFeed(receiverIds,lifespan,questMsg,ownerKey.getId());
+        questMsg.addRefererId(ownerKey.getId());
+        generateFeed(receiverIds,questMsg);
         
         // push to receivers
         push(receiverIds,"Feed","New Feed Available");
@@ -423,15 +426,23 @@ public enum API {
   
 
 
-  protected void generateFeed(long[] receiverIds, LifeSpan lifespan, QuestPb.Builder questMsg,
-      long sourceId) {
+  protected void generateFeed(long[] receiverIds, QuestPb.Builder questMsg) {
     // TODO Auto-generated method stub
+    
     for(long id:receiverIds){
-      Feed feed = new Feed();
-      Key receiverKey = KeyFactory.createKey("User", id);
-      dao.save(feed, receiverKey);
+      
+      Feed feed = dao.querySingle(Feed.class, KeyFactory.createKey("User", id));
+      int i = feed.findQuest(questMsg);
+      if(i!=-1){
+        feed.updateQuest(i,questMsg);
+      }else{
+        feed.addQuest(0,questMsg);
+      }
     }
   }
+
+
+
 
 
   protected void rewardInvitors(long newUserID, Friends friends) throws ApiException {
