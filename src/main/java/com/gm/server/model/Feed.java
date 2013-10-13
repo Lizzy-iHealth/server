@@ -64,10 +64,26 @@ public class Feed extends Persistable<Feed> {
 
 
   public void updateQuest(int i, QuestPb.Builder questMsg) {
+
+    QuestPb existedQuest = feeds.getFeed(i).getQuest();
+    if(questMsg.getLog().getUpdatedAt()>existedQuest.getLog().getUpdatedAt()){
+      mergeQuest(questMsg,existedQuest);
+      feeds.getFeedBuilder(i).setQuest(questMsg);
+    }else{
+      QuestPb.Builder newQuest = QuestPb.newBuilder(existedQuest);
+      mergeQuest(newQuest,questMsg.build());
+      feeds.getFeedBuilder(i).setQuest(newQuest);
+    }
+  } 
+  
+  private void mergeQuest(QuestPb.Builder newquest,QuestPb oldquest){
     //copy existed referer lists and post records
-    questMsg.addAllRefererId(feeds.getFeed(i).getQuest().getRefererIdList());
-    questMsg.getPostRecordsBuilder().addAllPost(feeds.getFeed(i).getQuest().getPostRecords().getPostList());
-    feeds.getFeedBuilder(i).setQuest(questMsg);
+    if(oldquest.getRefererIdCount()>0){
+      newquest.addAllRefererId(oldquest.getRefererIdList());
+    }
+    if(oldquest.getPostRecords().getPostCount()>0){
+      newquest.getPostRecordsBuilder().addAllPost(oldquest.getPostRecords().getPostList());  
+    }
   }
 
 

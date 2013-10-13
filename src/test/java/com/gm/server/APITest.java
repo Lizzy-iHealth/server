@@ -24,6 +24,7 @@ import com.google.appengine.api.datastore.KeyFactory;
 
 
 public class APITest extends ModelTest {
+
   @Test
   public void testPostQuest() throws IOException{
     User user = new User("a12345","password","secret");

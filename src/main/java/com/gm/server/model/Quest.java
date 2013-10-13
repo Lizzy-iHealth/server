@@ -1,10 +1,13 @@
 package com.gm.server.model;
 
 import java.util.Date;
+import java.util.List;
 
 import com.gm.common.model.Rpc.Currency;
+import com.gm.common.model.Rpc.EntityLog;
 import com.gm.common.model.Rpc.GeoPoint;
 import com.gm.common.model.Rpc.LifeSpan;
+import com.gm.common.model.Rpc.PostRecordPb;
 import com.gm.common.model.Rpc.QuestPb;
 import com.gm.common.model.Rpc.Applicants;
 import com.gm.common.model.Rpc.PostRecordsPb;
@@ -20,10 +23,16 @@ public class Quest extends Persistable<Quest> {
   private Applicants.Builder applicants = Applicants.newBuilder();
   
   @Property
-  private Date start_time = new Date();
+  private Date start_time ; //set by user
 
   @Property
-  private Date end_time ;//= new Date();
+  private Date end_time ;//= new Date();//set by user
+  
+  @Property
+  private Date createAt = new Date(); //set by server
+
+  @Property
+  private Date updateAt=new Date();//= new Date();//set by server
   
   @Property
   private String title="";
@@ -47,8 +56,7 @@ public class Quest extends Persistable<Quest> {
   
   @Property
   private PostRecordsPb.Builder posts=PostRecordsPb.newBuilder();
-
-
+  
   public Applicants.Builder getApplicants() {
     return applicants;
   }
@@ -116,11 +124,45 @@ public class Quest extends Persistable<Quest> {
     description = q.getDescription();
     allow_sharing = q.getAllowSharing();
     attach_link = new Link(q.getUrl());
+    
   }
-  
-  QuestPb.Builder getMSG(){
-    LifeSpan.Builder lifespan = LifeSpan.newBuilder().setCreateTime(start_time.getTime());
+ public QuestPb.Builder getMSG(long id){
+    QuestPb.Builder qMsg = getMSG();
+    PostRecordsPb somePosts= findPostsById(id);
+    if(somePosts!=null){
+      qMsg.setPostRecords(somePosts);
+    }
+    
+    if(id==qMsg.getOwnerId()){
+      qMsg.setApplicants(applicants);
+    }
+    return qMsg;
+  }
+ 
+  private PostRecordsPb findPostsById(long id) {
+    PostRecordsPb.Builder someposts = PostRecordsPb.newBuilder();
+    List<PostRecordPb> allposts = posts.getPostList();
+    boolean found=false;
+    for(PostRecordPb p : allposts){
+      if(p.getOwner()==id){
+        found = true;
+        someposts.addPost(p);
+      }
+    }
+    if(found){
+      return someposts.build();
+    }else{
+      return null;
+    }
+    
+  }
+
+  public QuestPb.Builder getMSG(){
+    LifeSpan.Builder lifespan = LifeSpan.newBuilder();
+    if(start_time!=null)lifespan.setCreateTime(start_time.getTime());
     if(end_time!=null)lifespan.setDeleteTime(end_time.getTime());
+    
+    EntityLog.Builder entitylog = EntityLog.newBuilder().setCreatedAt(createAt.getTime()).setUpdatedAt(updateAt.getTime());
     
     GeoPoint.Builder gmsg=null;
     if(geo_point!=null){
@@ -129,7 +171,7 @@ public class Quest extends Persistable<Quest> {
     Currency reward = Currency.newBuilder().setGold(prize).build();
     QuestPb.Builder qMsg = QuestPb.newBuilder().setLifespan(lifespan)
         .setTitle(title).setReward(reward).setDescription(description)
-        .setAllowSharing(allow_sharing);
+        .setAllowSharing(allow_sharing).setLog(entitylog);
     
     if(entity!=null){
       qMsg.setId(entity.getKey().getId()).setOwnerId(entity.getParent().getId());
@@ -190,7 +232,19 @@ public class Quest extends Persistable<Quest> {
   @Override
   public Quest touch() {
     // TODO Auto-generated method stub
+    updateAt = new Date();
     return null;
+  }
+
+  public void addPost(long id, long[] receiverIds) {
+    // TODO Auto-generated method stub
+    PostRecordPb.Builder postrecord= PostRecordPb.newBuilder();
+    for(int i=0;i<receiverIds.length;i++){
+      postrecord.addAudience(receiverIds[i]);
+    }
+    postrecord.setOwner(id);
+    postrecord.setTimestamp(new Date().getTime());
+    posts.addPost(postrecord);
   }
 
 }

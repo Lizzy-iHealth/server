@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.lang.reflect.Array;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,6 +23,7 @@ import com.gm.common.crypto.Hmac;
 import com.gm.common.model.Rpc;
 import com.gm.common.model.Rpc.Friendship;
 import com.gm.common.model.Rpc.LifeSpan;
+import com.gm.common.model.Rpc.PostRecordPb;
 import com.gm.common.model.Rpc.QuestPb;
 import com.gm.common.model.Rpc.UserPb;
 import com.gm.common.model.Rpc.UserPb.Builder;
@@ -377,16 +379,20 @@ public enum API {
         
         // retrieve quest
         
-        QuestPb.Builder questMsg = QuestPb.parseFrom(ParamKey.quest.getValue(req).getBytes()).newBuilder();
+        QuestPb questMsg = QuestPb.parseFrom(ParamKey.quest.getValue(req).getBytes());
         Key ownerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
-        Quest quest = new Quest(questMsg.build());
+        long receiverIds[]= ParamKey.user_id.getLongs(req,-1);
+
+        // save quest and post record to DB  
+        Quest quest = new Quest(questMsg);
+        quest.addPost(ownerKey.getId(),receiverIds); //add at the end
         dao.save(quest, ownerKey);
         
+        //TODO: redirect to backend
         // prepare feed
-        questMsg = QuestPb.newBuilder().setOwnerId(ownerKey.getId()).setId(quest.getEntityKey().getId());
-        long receiverIds[] = ParamKey.user_id.getLongs(req,-1);
-        questMsg.addRefererId(ownerKey.getId());
-        generateFeed(receiverIds,questMsg);
+        QuestPb.Builder questFeed = quest.getMSG();
+
+        generateFeed(receiverIds,questFeed);
         
         // push to receivers
         push(receiverIds,"Feed","New Feed Available");
