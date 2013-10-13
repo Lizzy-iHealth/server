@@ -20,13 +20,13 @@ import org.junit.Test;
 import com.gm.server.model.PendingUser;
 import com.gm.server.model.Token;
 import com.gm.server.model.User;
-import com.gm.server.model.Model.Type;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
+import com.gm.common.model.Rpc.Friendship;
 import com.gm.common.net.ErrorCode;
 
 public class RegisterServletTest extends ModelTest{
@@ -73,10 +73,10 @@ public class RegisterServletTest extends ModelTest{
       
       User userInDB = dao.get(invitor.getEntityKey(), User.class);
       
-      assertEquals(1,userInDB.getFriendship().getFriendCount());
-      assertEquals(Type.INVITED,userInDB.getFriendship().getFriend(0).getType());
+      assertEquals(1,userInDB.getFriends().getFriendCount());
+      assertEquals(Friendship.INVITED,userInDB.getFriends().getFriend(0).getFriendship());
       
-      long newUserId = userInDB.getFriendship().getFriend(0).getId();
+      long newUserId = userInDB.getFriends().getFriend(0).getId();
       User newUser = dao.get(KeyFactory.createKey("User", newUserId), User.class);
       String secret = newUser.getSecret();
       String key = newUser.getKey();
@@ -84,8 +84,8 @@ public class RegisterServletTest extends ModelTest{
       verify(writer).write(key);
       verify(writer).write(",");
       verify(writer).write(secret);
-      assertEquals(1,newUser.getFriendship().getFriendCount());
-      assertEquals(Type.WAIT_MY_CONFIRM,newUser.getFriendship().getFriend(0).getType());
+      assertEquals(1,newUser.getFriends().getFriendCount());
+      assertEquals(Friendship.WAIT_MY_CONFIRM,newUser.getFriends().getFriend(0).getFriendship());
       
       assertEquals(phone, newUser.getPhone());
       assertEquals(password, newUser.getPassword());

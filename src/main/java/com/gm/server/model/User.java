@@ -2,10 +2,9 @@ package com.gm.server.model;
 
 import java.util.Date;
 
-import com.gm.server.model.Model.Feeds;
-import com.gm.server.model.Model.Friend;
-import com.gm.server.model.Model.Type;
-import com.gm.server.model.Model.Friendship;
+import com.gm.common.model.Rpc.Friendship;
+import com.gm.common.model.Server.Friend;
+import com.gm.common.model.Server.Friends;
 import com.google.appengine.api.datastore.KeyFactory;
 
 @Entity
@@ -27,17 +26,16 @@ public class User extends Persistable<User> {
   private String secret = "";
 
   @Property
-  private Date createTime = new Date();
+  private Date createTime ;
 
   @Property
-  private Date lastLoginTime = new Date();
+  private Date lastLoginTime ;
   
   @Property
-  private Friendship.Builder friendship= Friendship.newBuilder();
+  private Friends.Builder friends;
 
   
-  private int userID = 0;
-  
+ 
   @Property
   private String deviceID = "";
   
@@ -50,18 +48,18 @@ public class User extends Persistable<User> {
 		return phone;
 	}
 
-	public Friendship.Builder getFriendship() {
-	  if(friendship==null){
-	    friendship= Friendship.newBuilder();
+	public Friends.Builder getFriends() {
+	  if(friends==null){
+	    friends= Friends.newBuilder();
 	  }
-    return friendship;
+    return friends;
   }
 
-  public void setFriendship(Friendship.Builder friendship) {
-    if(friendship==null){
-      friendship = Friendship.newBuilder();
+  public void setFriends(Friends.Builder friends) {
+    if(friends==null){
+      friends = Friends.newBuilder();
     }
-    this.friendship = friendship;
+    this.friends = friends;
   }
 
   public void setPhone(String phone) {
@@ -109,9 +107,6 @@ public class User extends Persistable<User> {
     return getEntityKey().getId();
   }
 
-  public void setUserID(int userID) {
-    this.userID = userID;
-  }
 
   public String getDeviceID() {
     return deviceID;
@@ -133,44 +128,48 @@ public class User extends Persistable<User> {
 		this.secret = secret;
 		this.createTime = new Date();
 		this.lastLoginTime = createTime;
+		this.friends = Friends.newBuilder();
 	}
 
 	public User() {
 		// TODO Auto-generated constructor stub
+	  createTime = new Date();
+	  lastLoginTime = new Date();
+	  friends= Friends.newBuilder();
 	}
 	
-  public void addFriend(long id, Type type) {
+  public void addFriend(long id, Friendship type) {
     // TODO Auto-generated method stub
     int i = findFriend(id);
     if(i != -1 ){
-        updateFriendship(i,type);
+        updateFriends(i,type);
     }else{
-        friendship.addFriend(Friend.newBuilder().setType(type).setId(id).build());
+        friends.addFriend(Friend.newBuilder().setFriendship(type).setId(id).build());
       }
   }
-  public void updateFriendship(int index, Type type) {
+  public void updateFriends(int index, Friendship type) {
     // TODO Auto-generated method stub
     
-        Friend f = friendship.getFriend(index);
+        Friend f = friends.getFriend(index);
   
-        if(type==f.getType()){
+        if(type==f.getFriendship()){
             return;
         }
-        if(type==Type.WAIT_MY_CONFIRM||type==Type.ADDED){
-          switch (f.getType()){
+        if(type==Friendship.WAIT_MY_CONFIRM||type==Friendship.ADDED){
+          switch (f.getFriendship()){
             case ADDED:
-              type = Type.CONFIRMED;
+              type = Friendship.CONFIRMED;
               break;
             case WAIT_MY_CONFIRM:
-              type = Type.CONFIRMED;
+              type = Friendship.CONFIRMED;
               break;
             case BLOCKED:
-               if(type == Type.WAIT_MY_CONFIRM){
+               if(type == Friendship.WAIT_MY_CONFIRM){
                   return;
                }
             case INVITED:
-              if(type == Type.WAIT_MY_CONFIRM){
-                  type = Type.CONFIRMED;
+              if(type == Friendship.WAIT_MY_CONFIRM){
+                  type = Friendship.CONFIRMED;
               }
               break;
             default:
@@ -178,14 +177,14 @@ public class User extends Persistable<User> {
          }
         }
       
-        friendship.setFriend(index, f.toBuilder().setType(type).build());
+        friends.setFriend(index, f.toBuilder().setFriendship(type).build());
       
   }
   private int findFriend(long id) {
     // TODO Auto-generated method stub
-    if(friendship==null) return -1;
-    for (int i=0; i<friendship.getFriendCount();i++){
-      Friend f = friendship.getFriend(i);
+    if(friends==null) return -1;
+    for (int i=0; i<friends.getFriendCount();i++){
+      Friend f = friends.getFriend(i);
       if (f.getId()==id){
         return i;
       }
@@ -198,9 +197,9 @@ public class User extends Persistable<User> {
     for(int i=0;i<friendIDs.length;i++){
       int index = findFriend(friendIDs[i]);
       if(index!=-1){
-        updateFriendship(index,Type.ADDED);
+        updateFriends(index,Friendship.ADDED);
       }else{
-        friendship.addFriend(Friend.newBuilder().setType(Type.ADDED).setId(friendIDs[i]).build());
+        friends.addFriend(Friend.newBuilder().setFriendship(Friendship.ADDED).setId(friendIDs[i]).build());
       }
       
     }
@@ -210,21 +209,21 @@ public class User extends Persistable<User> {
     // TODO Auto-generated method stub
     int index = findFriend(l);
     if(index!=-1){
-      friendship.removeFriend(index);
+      friends.removeFriend(index);
     }
   }
   public void muteFriend(long l) {
     // TODO Auto-generated method stub
     int index = findFriend(l);
     if(index!=-1){
-        updateFriendship(index, Type.MUTED);
+        updateFriends(index, Friendship.MUTED);
     }
   }
   public void blockFriend(long l) {
     // TODO Auto-generated method stub
     int index = findFriend(l);
     if(index!=-1){
-      friendship.getFriendBuilder(index).setType(Type.BLOCKED).build();
+      friends.getFriendBuilder(index).setFriendship(Friendship.BLOCKED).build();
     }
   }
  

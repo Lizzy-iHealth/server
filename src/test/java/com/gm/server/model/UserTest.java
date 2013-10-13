@@ -5,11 +5,10 @@ import static org.junit.Assert.*;
 
 import java.util.Date;
 
-
 import org.junit.Test;
 
+import com.gm.common.model.Rpc.Friendship;
 import com.gm.server.ModelTest;
-import com.gm.server.model.Model.Type;
 
 
 public class UserTest extends ModelTest{
@@ -60,8 +59,8 @@ public class UserTest extends ModelTest{
 	  DAO dao = DAO.get();
 	  dao.save(u1);
 	  dao.save(u2);
-	  u1.addFriend(u2.getUserID(),Type.ADDED);
-	  u2.addFriend(u1.getUserID(), Type.WAIT_MY_CONFIRM);
+	  u1.addFriend(u2.getUserID(),Friendship.ADDED);
+	  u2.addFriend(u1.getUserID(), Friendship.WAIT_MY_CONFIRM);
 	  dao.save(u1);
 	  dao.save(u2);
 	}

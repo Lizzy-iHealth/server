@@ -15,8 +15,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.junit.Test;
 
 import com.gm.common.net.ErrorCode;
-import com.gm.server.model.Model.Friend;
-import com.gm.server.model.Model.Type;
+import com.gm.common.model.Rpc.Friendship;
+import com.gm.common.model.Server;
+import com.gm.common.model.Server.Friend;
 import com.gm.server.model.PendingUser;
 import com.gm.server.model.User;
 import com.google.appengine.api.datastore.KeyFactory;
@@ -30,16 +31,16 @@ public class APITest extends ModelTest {
     User friend = new User("b12345","password","secret");
     dao.save(user);
     dao.save(friend);
-    user.addFriend(friend.getUserID(), Type.CONFIRMED);
-    friend.addFriend(user.getUserID(), Type.CONFIRMED);
+    user.addFriend(friend.getUserID(), Friendship.CONFIRMED);
+    friend.addFriend(user.getUserID(), Friendship.CONFIRMED);
     dao.save(user);
     dao.save(friend);
     
     //verify status before test
     User userInDB = dao.get(user.getKey(), User.class);
     User friendInDB = dao.get(friend.getKey(), User.class);
-    assertEquals(1,userInDB.getFriendship().getFriendCount());
-    assertEquals(1,friendInDB.getFriendship().getFriendCount());
+    assertEquals(1,userInDB.getFriends().getFriendCount());
+    assertEquals(1,friendInDB.getFriends().getFriendCount());
     
     //user block friend.
     HttpServletRequest req = super.getMockRequestWithUser(user);
@@ -52,17 +53,17 @@ public class APITest extends ModelTest {
     
      userInDB = dao.get(user.getKey(), User.class);
      friendInDB = dao.get(friend.getKey(), User.class);
-    assertEquals(1,userInDB.getFriendship().getFriendCount());
-    assertEquals(Type.BLOCKED,userInDB.getFriendship().getFriend(0).getType());
-    assertEquals(0,friendInDB.getFriendship().getFriendCount());
+    assertEquals(1,userInDB.getFriends().getFriendCount());
+    assertEquals(Friendship.BLOCKED,userInDB.getFriends().getFriend(0).getFriendship());
+    assertEquals(0,friendInDB.getFriends().getFriendCount());
 
     // block again, nothing should happened:
  
     API.block_friends.execute(req, resp,false);
     userInDB = dao.get(user.getKey(), User.class);
     friendInDB = dao.get(friend.getKey(), User.class);
-    assertEquals(Type.BLOCKED,userInDB.getFriendship().getFriend(0).getType());
-    assertEquals(0,friendInDB.getFriendship().getFriendCount());
+    assertEquals(Friendship.BLOCKED,userInDB.getFriends().getFriend(0).getFriendship());
+    assertEquals(0,friendInDB.getFriends().getFriendCount());
     
     
 
@@ -75,16 +76,16 @@ public class APITest extends ModelTest {
     User friend = new User("b12345","password","secret");
     dao.save(user);
     dao.save(friend);
-    user.addFriend(friend.getUserID(), Type.CONFIRMED);
-    friend.addFriend(user.getUserID(), Type.CONFIRMED);
+    user.addFriend(friend.getUserID(), Friendship.CONFIRMED);
+    friend.addFriend(user.getUserID(), Friendship.CONFIRMED);
     dao.save(user);
     dao.save(friend);
     
     //before:
     User userInDB = dao.get(user.getKey(), User.class);
     User friendInDB = dao.get(friend.getKey(), User.class);
-    assertEquals(1,userInDB.getFriendship().getFriendCount());
-    assertEquals(1,friendInDB.getFriendship().getFriendCount());
+    assertEquals(1,userInDB.getFriends().getFriendCount());
+    assertEquals(1,friendInDB.getFriends().getFriendCount());
     
     //delete
     HttpServletRequest req = super.getMockRequestWithUser(user);
@@ -97,16 +98,16 @@ public class APITest extends ModelTest {
     
      userInDB = dao.get(user.getKey(), User.class);
      friendInDB = dao.get(friend.getKey(), User.class);
-    assertEquals(0,userInDB.getFriendship().getFriendCount());
-    assertEquals(0,friendInDB.getFriendship().getFriendCount());
+    assertEquals(0,userInDB.getFriends().getFriendCount());
+    assertEquals(0,friendInDB.getFriends().getFriendCount());
 
     // delete again, nothing should happened:
  
     API.get_friends.execute(req, resp,false);
     userInDB = dao.get(user.getKey(), User.class);
     friendInDB = dao.get(friend.getKey(), User.class);
-    assertEquals(0,userInDB.getFriendship().getFriendCount());
-    assertEquals(0,friendInDB.getFriendship().getFriendCount());
+    assertEquals(0,userInDB.getFriends().getFriendCount());
+    assertEquals(0,friendInDB.getFriends().getFriendCount());
 
   }
   @Test
@@ -121,20 +122,20 @@ public class APITest extends ModelTest {
     when(resp.getWriter()).thenReturn(writer);
     API.get_friends.execute(req, resp,false);
     
-    assertEquals(0,user.getFriendship().getFriendCount());
+    assertEquals(0,user.getFriends().getFriendCount());
     
     // Let user has a friend, then test again:
-    user.addFriend(friend.getUserID(), Type.CONFIRMED);
-    friend.addFriend(user.getUserID(), Type.CONFIRMED);
+    user.addFriend(friend.getUserID(), Friendship.CONFIRMED);
+    friend.addFriend(user.getUserID(), Friendship.CONFIRMED);
     dao.save(user);
     dao.save(friend);
     API.get_friends.execute(req, resp,false);
     
     User userInDB = dao.get(user.getKey(), User.class);
-    verify(writer).print(userInDB.getFriendship().build().toByteArray());
-    assertEquals(1,userInDB.getFriendship().getFriendCount());
-    assertEquals(friend.getUserID(),userInDB.getFriendship().getFriend(0).getId());
-    assertEquals(Type.CONFIRMED,userInDB.getFriendship().getFriend(0).getType());
+    verify(writer).print(userInDB.getFriends().build().toByteArray());
+    assertEquals(1,userInDB.getFriends().getFriendCount());
+    assertEquals(friend.getUserID(),userInDB.getFriends().getFriend(0).getId());
+    assertEquals(Friendship.CONFIRMED,userInDB.getFriends().getFriend(0).getFriendship());
   }
   @Test
   public void testInviteFriends() throws IOException{
@@ -183,16 +184,16 @@ public class APITest extends ModelTest {
    verify(resp).setStatus(HttpServletResponse.SC_OK);
    
    User ua = dao.get(users[0].getEntityKey(), User.class);
-   List<Friend> uaf = ua.getFriendship().getFriendList();
+   List<Friend> uaf = ua.getFriends().getFriendList();
    assertEquals(uaf.size(),1);
    assertEquals(uaf.get(0).getId(),ids[1]);
-   assertEquals(uaf.get(0).getType(),Type.ADDED);
+   assertEquals(uaf.get(0).getFriendship(),Friendship.ADDED);
    
    User ub = dao.get(users[1].getEntityKey(), User.class);
-   List<Friend> ubf = ub.getFriendship().getFriendList();
+   List<Friend> ubf = ub.getFriends().getFriendList();
    assertEquals(ubf.size(),1);
    assertEquals(ubf.get(0).getId(),ids[0]);
-   assertEquals(ubf.get(0).getType(),Type.WAIT_MY_CONFIRM);
+   assertEquals(ubf.get(0).getFriendship(),Friendship.WAIT_MY_CONFIRM);
    
    //b add a and c
    HttpServletRequest req2 = getMockRequestWithUser(users[1]);
@@ -204,24 +205,24 @@ public class APITest extends ModelTest {
   verify(resp2).setStatus(HttpServletResponse.SC_OK);
   
    ua = dao.get(users[0].getEntityKey(), User.class);
-   uaf = ua.getFriendship().getFriendList();
+   uaf = ua.getFriends().getFriendList();
   assertEquals(uaf.size(),1);
   assertEquals(uaf.get(0).getId(),ids[1]);
-  assertEquals(uaf.get(0).getType(),Type.CONFIRMED);
+  assertEquals(uaf.get(0).getFriendship(),Friendship.CONFIRMED);
   
   ub = dao.get(users[1].getEntityKey(), User.class);
-  ubf = ub.getFriendship().getFriendList();
+  ubf = ub.getFriends().getFriendList();
   assertEquals(ubf.size(),2);
   assertEquals(ubf.get(0).getId(),ids[0]);
   assertEquals(ubf.get(1).getId(),ids[2]);
-  assertEquals(ubf.get(0).getType(),Type.CONFIRMED);
-  assertEquals(ubf.get(1).getType(),Type.ADDED);
+  assertEquals(ubf.get(0).getFriendship(),Friendship.CONFIRMED);
+  assertEquals(ubf.get(1).getFriendship(),Friendship.ADDED);
   
   User uc = dao.get(users[2].getEntityKey(), User.class);
-  List<Friend> ucf = uc.getFriendship().getFriendList();
+  List<Friend> ucf = uc.getFriends().getFriendList();
   assertEquals(ucf.size(),1);
   assertEquals(ucf.get(0).getId(),ids[1]);
-  assertEquals(ucf.get(0).getType(),Type.WAIT_MY_CONFIRM);
+  assertEquals(ucf.get(0).getFriendship(),Friendship.WAIT_MY_CONFIRM);
   
   //repeated add after confirm: a add b again
   HttpServletRequest req3 = getMockRequestWithUser(users[0]);
@@ -234,22 +235,22 @@ public class APITest extends ModelTest {
  verify(resp3).setStatus(HttpServletResponse.SC_OK);
  
   ua = dao.get(users[0].getEntityKey(), User.class);
-  uaf = ua.getFriendship().getFriendList();
+  uaf = ua.getFriends().getFriendList();
  assertEquals(uaf.size(),1);
  assertEquals(uaf.get(0).getId(),ids[1]);
- assertEquals(uaf.get(0).getType(),Type.CONFIRMED);
+ assertEquals(uaf.get(0).getFriendship(),Friendship.CONFIRMED);
  
  ub = dao.get(users[1].getEntityKey(), User.class);
- ubf = ub.getFriendship().getFriendList();
+ ubf = ub.getFriends().getFriendList();
  assertEquals(ubf.size(),2);
  assertEquals(ubf.get(0).getId(),ids[0]);
- assertEquals(ubf.get(0).getType(),Type.CONFIRMED);
+ assertEquals(ubf.get(0).getFriendship(),Friendship.CONFIRMED);
  
  uc = dao.get(users[2].getEntityKey(), User.class);
- ucf = uc.getFriendship().getFriendList();
+ ucf = uc.getFriends().getFriendList();
  assertEquals(ucf.size(),1);
  assertEquals(ucf.get(0).getId(),ids[1]);
- assertEquals(ucf.get(0).getType(),Type.WAIT_MY_CONFIRM);
+ assertEquals(ucf.get(0).getFriendship(),Friendship.WAIT_MY_CONFIRM);
    
  //add wrong user id: a add "5"
  HttpServletRequest req4 = getMockRequestWithUser(users[0]);
@@ -266,10 +267,10 @@ public class APITest extends ModelTest {
 
  verify(writer).print(ErrorCode.auth_user_not_registered);
  ua = dao.get(users[0].getEntityKey(), User.class);
- uaf = ua.getFriendship().getFriendList();
+ uaf = ua.getFriends().getFriendList();
 assertEquals(uaf.size(),1);
 assertEquals(uaf.get(0).getId(),ids[1]);
-assertEquals(uaf.get(0).getType(),Type.CONFIRMED);
+assertEquals(uaf.get(0).getFriendship(),Friendship.CONFIRMED);
 
 //add 3 friends, with a wrong user id in the middle: a add b, "5" and c, b,c will be successfully added.
 HttpServletRequest req5 = getMockRequestWithUser(users[0]);
@@ -285,28 +286,28 @@ verify(resp5).setStatus(HttpServletResponse.SC_BAD_REQUEST);
 
 verify(writer5).print(ErrorCode.auth_user_not_registered);
 ua = dao.get(users[0].getEntityKey(), User.class);
-uaf = ua.getFriendship().getFriendList();
+uaf = ua.getFriends().getFriendList();
 assertEquals(2,uaf.size());
 assertEquals(ids[1],uaf.get(0).getId());
-assertEquals(Type.CONFIRMED,uaf.get(0).getType());
+assertEquals(Friendship.CONFIRMED,uaf.get(0).getFriendship());
 assertEquals(ids[2],uaf.get(1).getId());
-assertEquals(Type.ADDED,uaf.get(1).getType());
+assertEquals(Friendship.ADDED,uaf.get(1).getFriendship());
 
 ub = dao.get(users[1].getEntityKey(), User.class);
-ubf = ub.getFriendship().getFriendList();
+ubf = ub.getFriends().getFriendList();
 assertEquals(ubf.size(),2);
 assertEquals(ubf.get(0).getId(),ids[0]);
-assertEquals(ubf.get(0).getType(),Type.CONFIRMED);
+assertEquals(ubf.get(0).getFriendship(),Friendship.CONFIRMED);
 assertEquals(ubf.get(1).getId(),ids[2]);
-assertEquals(ubf.get(1).getType(),Type.ADDED);
+assertEquals(ubf.get(1).getFriendship(),Friendship.ADDED);
 
 uc = dao.get(users[2].getEntityKey(), User.class);
-ucf = uc.getFriendship().getFriendList();
+ucf = uc.getFriends().getFriendList();
 assertEquals(ucf.size(),2);
 assertEquals(ucf.get(0).getId(),ids[1]);
-assertEquals(ucf.get(0).getType(),Type.WAIT_MY_CONFIRM);
+assertEquals(ucf.get(0).getFriendship(),Friendship.WAIT_MY_CONFIRM);
 assertEquals(ucf.get(1).getId(),ids[0]);
-assertEquals(ucf.get(1).getType(),Type.WAIT_MY_CONFIRM);
+assertEquals(ucf.get(1).getFriendship(),Friendship.WAIT_MY_CONFIRM);
 }
 
 

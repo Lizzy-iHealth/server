@@ -1,40 +1,42 @@
 package com.gm.server.model;
 
-import java.util.Date;
+import com.gm.common.model.Server.Feeds;
+import com.gm.common.model.Server.Feeds.Builder;
 
-import com.gm.server.model.Model.QuestMSG;
-import com.gm.server.model.Model.QuestMSG.Builder;
 
 @Entity
 public class Feed extends Persistable<Feed> {
-
-  @Property
-  private QuestMSG.Builder quest = QuestMSG.newBuilder();
   
   @Property
-  private Date createTime;
-  
-  @Property
-  private Date deleteTime;
-  
-  @Property
-  private int  priority=0;
-  
-  @Property
-  private long sourceId = -1;
+  private Feeds.Builder feeds;
   
   
-  Feed(){}
   
-  
-  public Feed(long sourceId, Builder questMsg, long createTime2,
-      long deleteTime2) {
-    this.sourceId = sourceId;
-    quest = questMsg;
-    createTime = new Date(createTime2);
-    deleteTime = new Date(deleteTime2);
-    
+  public Feed(){
+    feeds = Feeds.newBuilder();
   }
+
+
+
+
+  public Feed(Builder feeds2) {
+    // TODO Auto-generated constructor stub
+    feeds = feeds2;
+  }
+
+
+
+
+  public Feeds.Builder getFeeds() {
+    return feeds;
+  }
+
+
+
+  public void setFeeds(Feeds.Builder feeds) {
+    this.feeds = feeds;
+  }
+
 
 
   @Override

@@ -1,9 +1,9 @@
 package com.gm.server.model;
 import java.util.Date;
 
-import com.gm.server.model.Model.Friend;
-import com.gm.server.model.Model.Friendship;
-import com.gm.server.model.Model.Type;
+import com.gm.common.model.Rpc.Friendship;
+import com.gm.common.model.Server.Friend;
+import com.gm.common.model.Server.Friends;
 import com.google.appengine.api.datastore.KeyFactory;
 
 @Entity
@@ -21,15 +21,15 @@ import com.google.appengine.api.datastore.KeyFactory;
     private Date createTime = new Date();
 
     @Property
-    private Friendship.Builder invitors= Friendship.newBuilder();
+    private Friends.Builder invitors= Friends.newBuilder();
     
     
     
-    public Friendship.Builder getInvitors() {
+    public Friends.Builder getInvitors() {
       return invitors;
     }
 
-    public void setInvitors(Friendship.Builder invitors) {
+    public void setInvitors(Friends.Builder invitors) {
       this.invitors = invitors;
     }
 
@@ -65,7 +65,7 @@ import com.google.appengine.api.datastore.KeyFactory;
       super();
       this.phone = mobileNumber;      
       this.createTime = new Date();
-      invitors.addFriend(Friend.newBuilder().setType(Type.WAIT_MY_CONFIRM).setId(invitor).build());
+      invitors.addFriend(Friend.newBuilder().setFriendship(Friendship.WAIT_MY_CONFIRM).setId(invitor).build());
 
     }
 
@@ -75,7 +75,7 @@ import com.google.appengine.api.datastore.KeyFactory;
       // TODO Auto-generated method stub
       int i = findFriend(id);
       if(i == -1 ){
-          invitors.addFriend(Friend.newBuilder().setType(Type.WAIT_MY_CONFIRM).setId(id).build());
+          invitors.addFriend(Friend.newBuilder().setFriendship(Friendship.WAIT_MY_CONFIRM).setId(id).build());
         }
     }
     

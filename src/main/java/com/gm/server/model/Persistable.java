@@ -135,6 +135,14 @@ public abstract class Persistable<T extends Persistable<?>> {
     return entityToName.get(this.getClass());
   }
   
+  public long getId(){
+    
+    if(entity!=null) return entity.getKey().getId();
+    else throw new ModelException("data not saved");
+  }
+  public Key getParent(){
+    return entity.getParent();
+  }
   public abstract T touch();
   
   public Key save() {

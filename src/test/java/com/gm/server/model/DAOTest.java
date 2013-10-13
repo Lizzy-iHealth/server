@@ -41,7 +41,7 @@ public class DAOTest extends ModelTest {
     Quest task = new Quest(title);
     dao.save(task,user.getEntityKey());
     
-    Quest taskInDB = dao.get(task.getEntityKey(), Quest.class);
+    Quest taskInDB = dao.get(task.getEntityKey(),Quest.class);
     assertEquals(title, taskInDB.getTitle());
     assertEquals(user.getEntityKey(), taskInDB.getEntityKey().getParent());
     

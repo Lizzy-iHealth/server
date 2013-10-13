@@ -7,10 +7,14 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
+
+import static junit.framework.Assert.assertEquals;
 
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.gm.server.model.DAO;
+import com.gm.server.model.Feed;
 import com.gm.server.model.User;
 
 public abstract class ModelTest {
@@ -40,5 +44,4 @@ public abstract class ModelTest {
   public void tearDown() {
     helper.tearDown();
   }
-
 }

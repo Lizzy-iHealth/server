@@ -19,16 +19,16 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.JSONException;
 
 import com.gm.common.crypto.Hmac;
+import com.gm.common.model.Rpc;
+import com.gm.common.model.Rpc.Friendship;
+import com.gm.common.model.Rpc.LifeSpan;
+import com.gm.common.model.Rpc.QuestPb;
+import com.gm.common.model.Rpc.UserPb;
+import com.gm.common.model.Rpc.UserPb.Builder;
+import com.gm.common.model.Server.Friends;
 import com.gm.common.net.ErrorCode;
 import com.gm.server.model.DAO;
 import com.gm.server.model.Feed;
-import com.gm.server.model.Model.FeedMSG;
-import com.gm.server.model.Model.Friend;
-import com.gm.server.model.Model.LifeSpan;
-import com.gm.server.model.Model.QuestMSG;
-import com.gm.server.model.Model.QuestMSG.Builder;
-import com.gm.server.model.Model.Type;
-import com.gm.server.model.Model.Friendship;
 import com.gm.server.model.PendingUser;
 import com.gm.server.model.Quest;
 import com.gm.server.model.Token;
@@ -37,7 +37,9 @@ import com.gm.server.push.Pusher;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.common.base.Strings;
-import com.google.protobuf.InvalidProtocolBufferException;
+import com.gm.common.model.Rpc.Friendship;
+import com.gm.common.model.Server.Friend;
+import com.gm.common.model.Server.Friends;
 
 public enum API {
   device("/auth/", true) {
@@ -64,12 +66,16 @@ public enum API {
     @Override
     public void handle(HttpServletRequest req, HttpServletResponse resp)
         throws ApiException, IOException {
-      // TODO Auto-generated method stub
+
       String key = ParamKey.key.getValue(req);
       User user = dao.get(key, User.class);
-      Friendship friendship = user.getFriendship().build();
+      Friends friends = user.getFriends().build();
+      for (Friend f :friends.getFriendList()){
+      //TODO: setup friend information
+      UserPb.Builder friend = UserPb.newBuilder().setFriendship(f.getFriendship());
+      }
    //   System.out.print(friendship.toByteArray());
-      resp.getWriter().print(friendship.toByteArray());
+   //   resp.getWriter().print(friend.toByteArray());
     }
     
   },
@@ -101,8 +107,8 @@ public enum API {
             error = e;
             continue;
           }
-            user.addFriend(friendIDs[i],Type.ADDED);
-            friend.addFriend(myId,Type.WAIT_MY_CONFIRM);
+            user.addFriend(friendIDs[i],Friendship.ADDED);
+            friend.addFriend(myId,Friendship.WAIT_MY_CONFIRM);
             if(friend.getDeviceID()!=null){
               idsToNotify.add(friend.getDeviceID());
             }
@@ -230,10 +236,10 @@ public enum API {
           //already our user
             if(temp != null){
               
-              temp.addFriend(invitorId, Type.WAIT_MY_CONFIRM);
+              temp.addFriend(invitorId, Friendship.WAIT_MY_CONFIRM);
               dao.save(temp);
               User invitor = dao.get(key, User.class);
-              invitor.addFriend(temp.getEntityKey().getId(), Type.ADDED);
+              invitor.addFriend(temp.getEntityKey().getId(), Friendship.ADDED);
               dao.save(invitor);
               continue;
             } else{
@@ -332,7 +338,7 @@ public enum API {
       PendingUser pu = dao.querySingle("phone", phone, PendingUser.class);
     
       if(pu!=null){
-        user.setFriendship(pu.getInvitors());
+        user.setFriends(pu.getInvitors());
         rewardInvitors(user.getUserID(),pu.getInvitors().build());
         dao.delete(pu);
       }
@@ -368,16 +374,18 @@ public enum API {
         
         // retrieve quest
         
-        QuestMSG.Builder questMsg = QuestMSG.parseFrom(ParamKey.quest.getValue(req).getBytes()).newBuilder();
+        QuestPb.Builder questMsg = QuestPb.parseFrom(ParamKey.quest.getValue(req).getBytes()).newBuilder();
         Key ownerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
         Quest quest = new Quest(questMsg.build());
         dao.save(quest, ownerKey);
         
         // prepare feed
-        questMsg = QuestMSG.newBuilder().setOwnerId(ownerKey.getId()).setId(quest.getEntityKey().getId());
+        questMsg = QuestPb.newBuilder().setOwnerId(ownerKey.getId()).setId(quest.getEntityKey().getId());
         long receiverIds[] = ParamKey.user_id.getLongs(req,-1);
         LifeSpan lifespan = LifeSpan.parseFrom(ParamKey.life_span.getValue(req).getBytes());
         generateFeed(receiverIds,lifespan,questMsg,ownerKey.getId());
+        
+        // push to receivers
         push(receiverIds,"Feed","New Feed Available");
         
       }
@@ -415,21 +423,21 @@ public enum API {
   
 
 
-  protected void generateFeed(long[] receiverIds, LifeSpan lifespan, Builder questMsg,
+  protected void generateFeed(long[] receiverIds, LifeSpan lifespan, QuestPb.Builder questMsg,
       long sourceId) {
     // TODO Auto-generated method stub
     for(long id:receiverIds){
-      Feed feed = new Feed(sourceId,questMsg,lifespan.getCreateTime(),lifespan.getDeleteTime());
+      Feed feed = new Feed();
       Key receiverKey = KeyFactory.createKey("User", id);
       dao.save(feed, receiverKey);
     }
   }
 
 
-  protected void rewardInvitors(long newUserID, Friendship invitors) throws ApiException {
+  protected void rewardInvitors(long newUserID, Friends friends) throws ApiException {
     // TODO Auto-generated method stub
     ApiException error=null;
-    for (Friend invitor:invitors.getFriendList()){
+    for (Friend invitor:friends.getFriendList()){
       Key invKey = KeyFactory.createKey("User", invitor.getId());
       
       User inv = null;
@@ -441,7 +449,7 @@ public enum API {
         error = e;
         continue;
       }
-        inv.addFriend(newUserID, Type.INVITED);
+        inv.addFriend(newUserID, Friendship.INVITED);
         dao.save(inv);
     }
     if(error != null){
