@@ -70,6 +70,57 @@ public class APITest extends ModelTest {
   }
   
   @Test
+  public void testShareQuest() throws IOException{
+    User user = new User("a12345","password","secret");
+    User friend = new User("b12345","password","secret");
+    User c = new User("c","p","s");
+    dao.save(user);
+    dao.save(friend);
+    dao.save(c);
+    
+    user.addFriend(friend.getId(), Friendship.CONFIRMED);
+    friend.addFriend(user.getId(), Friendship.CONFIRMED);
+    friend.addFriend(c.getId(), Friendship.CONFIRMED);
+    c.addFriend(friend.getId(), Friendship.CONFIRMED);
+    dao.save(user);
+    dao.save(friend);
+    dao.save(c);
+    
+    String title = "a quest";
+    Quest quest = new Quest(title);
+    long firstReceivers[] = {friend.getId()};
+    quest.addPost(user.getId(), firstReceivers);
+    dao.save(quest,user.getEntityKey());
+    System.out.println(quest.getId());
+    String audiances[] = {String.valueOf(c.getId())};
+    
+    HttpServletRequest req = super.getMockRequestWithUser(friend);
+    HttpServletResponse resp  = mock(HttpServletResponse.class);
+    ServletOutputStream writer = mock (ServletOutputStream.class);
+    
+    when(resp.getOutputStream()).thenReturn(writer);
+    //String questString = Base64.encodeToString(quest.getMSG().build().toByteArray(),Base64.DEFAULT);
+    when(req.getParameter(ParamKey.id.name())).thenReturn(String.valueOf(quest.getId()));
+    when(req.getParameter(ParamKey.owner_id.name())).thenReturn(String.valueOf(user.getId()));
+    when(req.getParameterValues(ParamKey.user_id.name())).thenReturn(audiances);
+    
+    API.share_quest.execute(req, resp,false);
+
+    Quest questInDb = dao.get(quest.getEntityKey(), Quest.class);
+    System.out.println(questInDb.getDescription()); 
+    assertEquals(title,questInDb.getTitle());
+    assertEquals(2,questInDb.getPosts().getPostCount());
+   
+    Feed feedOfC = dao.querySingle(Feed.class, c.getEntityKey());
+    assertEquals(1,feedOfC.getFeeds().getFeedCount());
+    assertEquals(title,feedOfC.getFeeds().getFeed(0).getQuest().getTitle());
+    assertEquals(friend.getId(),feedOfC.getFeeds().getFeed(0).getQuest().getRefererId(0));
+    assertEquals(user.getId(),feedOfC.getFeeds().getFeed(0).getQuest().getOwnerId());
+    
+
+  }
+  
+  @Test
   public void testBlockFriends() throws IOException{
     //prepare datastore: user and friend are friends.
     User user = new User("a12345","password","secret");

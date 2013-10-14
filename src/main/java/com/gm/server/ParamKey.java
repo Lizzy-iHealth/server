@@ -24,7 +24,7 @@ public enum ParamKey {
 	
 	public long getLong(HttpServletRequest req, long defaultValue){
 	  String value = req.getParameter(name());
-	  return value == null? defaultValue : Long.getLong(value);
+	  return (value == null)? defaultValue : Long.valueOf(value).longValue();
 	}
 	
 	 public long[] getLongs(HttpServletRequest req, long defaultValue){

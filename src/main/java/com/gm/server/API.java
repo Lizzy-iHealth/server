@@ -440,18 +440,18 @@ public enum API {
           long questOwnerId = ParamKey.owner_id.getLong(req, -1);
           Key questOwnerKey = KeyFactory.createKey("User", questOwnerId);
           Key questKey = KeyFactory.createKey(questOwnerKey, "Quest", questId);
-          Key ownerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
+          Key sharerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
           long receiverIds[]= ParamKey.user_id.getLongs(req,-1);
 
           // get quest from datastore and add a post record the quest entity 
           Quest quest = dao.get(questKey, Quest.class);
-          quest.addPost(ownerKey.getId(),receiverIds); //add at the end
+          quest.addPost(sharerKey.getId(),receiverIds); //add at the end
           dao.save(quest);
           
           //TODO: redirect to backend
           // prepare feed
           QuestPb.Builder questFeed = quest.getMSG();
-          questFeed.addRefererId(ownerKey.getId());
+          questFeed.addRefererId(sharerKey.getId());
           generateFeed(receiverIds,questFeed);
           
           // push to receivers
@@ -503,6 +503,7 @@ public enum API {
       }else{
         feed.addQuest(0,questMsg);
       }
+      System.out.println(feed.toString());
       dao.save(feed,receiverKey);
     }
   }
