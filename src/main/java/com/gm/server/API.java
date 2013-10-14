@@ -85,7 +85,7 @@ public enum API {
             users.addUser(friend);
         }
       }
-      resp.getWriter().print(users.build().toByteArray());
+      resp.getOutputStream().write(users.build().toByteArray());
 
     }      
     
@@ -102,8 +102,8 @@ public enum API {
       User user = dao.get(key, User.class);
       Friends friends = user.getFriends().build();
 
-      resp.getWriter().print(friends.toByteArray());
-
+      resp.setContentType("application/x-protobuf");
+      resp.getOutputStream().write(friends.toByteArray());
     }
     
   },
@@ -419,12 +419,40 @@ public enum API {
         
         // push to receivers
         push(receiverIds,"Feed","New Feed Available");
-        
       }
+        
+   },
+      
+      share_quest("/quest/",true){
 
+        @Override
+        public void handle(HttpServletRequest req, HttpServletResponse resp)
+            throws ApiException, IOException {
+          
+          // retrieve quest key
+          
+          long questId = ParamKey.id.getLong(req, -1);
+          long questOwnerId = ParamKey.owner_id.getLong(req, -1);
+          Key questOwnerKey = KeyFactory.createKey("User", questOwnerId);
+          Key questKey = KeyFactory.createKey(questOwnerKey, "Quest", questId);
+          Key ownerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
+          long receiverIds[]= ParamKey.user_id.getLongs(req,-1);
 
-    
-  };
+          // get quest from datastore and add a post record the quest entity 
+          Quest quest = dao.get(questKey, Quest.class);
+          quest.addPost(ownerKey.getId(),receiverIds); //add at the end
+          dao.save(quest);
+          
+          //TODO: redirect to backend
+          // prepare feed
+          QuestPb.Builder questFeed = quest.getMSG();
+          questFeed.addRefererId(ownerKey.getId());
+          generateFeed(receiverIds,questFeed);
+          
+          // push to receivers
+          push(receiverIds,"Feed","New Feed Available");
+        }
+   };
 
   
   public final String url;
@@ -550,7 +578,7 @@ public enum API {
       } catch (ApiException e) {
         resp.setStatus(HttpServletResponse.SC_BAD_REQUEST); // API failed on
                                                             // validation
-        resp.getWriter().print(e.error);
+        resp.getOutputStream().write(e.error);
       } catch (Exception e) {
         resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // Unknown
                                                                       // error
@@ -602,7 +630,7 @@ public enum API {
     } catch (ApiException e) {
       resp.setStatus(HttpServletResponse.SC_BAD_REQUEST); // API failed on
                                                           // validation
-      resp.getWriter().print(e.error);
+      resp.getOutputStream().write(e.error);
     } catch (Exception e) {
       resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // Unknown
                                                                     // error

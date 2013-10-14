@@ -14,6 +14,8 @@ public enum ParamKey {
 	device_id,
 	user_id,
 	life_span,
+	id,
+	owner_id,
 	quest;
 	
 	public String getValue(HttpServletRequest req) {

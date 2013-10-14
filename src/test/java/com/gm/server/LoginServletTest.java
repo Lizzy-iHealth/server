@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Date;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -47,12 +48,14 @@ public class LoginServletTest extends ModelTest{
 	    HttpServletRequest[] requests=new HttpServletRequest[3];
 	    HttpServletResponse[] responses=new HttpServletResponse[3];
 	    PrintWriter writer = mock(PrintWriter.class);
+	    ServletOutputStream streamwriter = mock(ServletOutputStream.class);
 	    Date before = new Date();
 	    
 	    for(int i =0;i<users.length;i++){
 	    		requests[i]=getMockRequestWithUser(users[i]);
 	    		responses[i]= mock(HttpServletResponse.class);
 	    		when(responses[i].getWriter()).thenReturn(writer);
+	    		when(responses[i].getOutputStream()).thenReturn(streamwriter);
 	    		login.doPost(requests[i], responses[i]);
 	    }
 	    

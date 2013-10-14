@@ -84,6 +84,7 @@ public class FeedTest extends ModelTest {
     }
     String newTitle = "new title";
     quests[5].setTitle(newTitle);
+    dao.save(quests[5]);
     feed.updateQuest(5, quests[5].getMSG().addRefererId(user.getId()+1));
     
     assertEquals(newTitle,feed.getFeeds().getFeed(5).getQuest().getTitle());

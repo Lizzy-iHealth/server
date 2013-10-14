@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Date;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -151,6 +152,8 @@ public class RegisterServletTest extends ModelTest{
 	    // Bind Again, test exist(...)
 	    HttpServletResponse response2 = mock(HttpServletResponse.class);
 	    when(response2.getWriter()).thenReturn(writer);
+	    ServletOutputStream streamwriter = mock(ServletOutputStream.class);
+	    when(response2.getOutputStream()).thenReturn(streamwriter);
 	     priorToRequest = new Date();
 
 	    binder.doPost(request, response2);
@@ -158,7 +161,7 @@ public class RegisterServletTest extends ModelTest{
 	     afterRequest = new Date();
 
 	    verify(response2).setStatus(HttpServletResponse.SC_BAD_REQUEST);
-	    verify(writer).print(ErrorCode.auth_phone_registered);
+	    verify(streamwriter).write(ErrorCode.auth_phone_registered);
 	   
 	     query = new Query("User").setFilter(eq("phone", phone));
 	     e = DatastoreServiceFactory.getDatastoreService().prepare(query).asSingleEntity();
@@ -183,6 +186,10 @@ public class RegisterServletTest extends ModelTest{
 	    HttpServletResponse response = mock(HttpServletResponse.class);
 	    PrintWriter writer = mock(PrintWriter.class);
 	    when(response.getWriter()).thenReturn(writer);
+	    
+	     ServletOutputStream streamwriter = mock(ServletOutputStream.class);
+	      when(response.getOutputStream()).thenReturn(streamwriter);
+
 
 
 	    when(request.getParameter("phone")).thenReturn(phone);
@@ -192,7 +199,7 @@ public class RegisterServletTest extends ModelTest{
 	    binder.doPost(request, response);
 
 	    verify(response).setStatus(HttpServletResponse.SC_BAD_REQUEST);
-	    verify(writer).print(ErrorCode.auth_incorrect_token);;
+	    verify(streamwriter).write(ErrorCode.auth_incorrect_token);;
 	}
 	
 	 @Test
@@ -201,8 +208,9 @@ public class RegisterServletTest extends ModelTest{
 	      HttpServletResponse response = mock(HttpServletResponse.class);
 	      PrintWriter writer = mock(PrintWriter.class);
 	      when(response.getWriter()).thenReturn(writer);
-
-
+	      ServletOutputStream streamwriter = mock(ServletOutputStream.class);
+	      when(response.getOutputStream()).thenReturn(streamwriter);
+	      
 	      when(request.getParameter("phone")).thenReturn("wrong phone number");
 	      when(request.getParameter("token")).thenReturn(verifyCode);
 	      when(request.getParameter("password")).thenReturn(password);
@@ -211,7 +219,7 @@ public class RegisterServletTest extends ModelTest{
 	      binder.doPost(request, response);
 
 	      verify(response).setStatus(HttpServletResponse.SC_BAD_REQUEST);
-	      verify(writer).print(ErrorCode.auth_token_not_sent);;
+	      verify(streamwriter).write(ErrorCode.auth_token_not_sent);;
 	  }
 
 }

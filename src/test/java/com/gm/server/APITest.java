@@ -6,9 +6,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.List;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -33,8 +33,8 @@ public class APITest extends ModelTest {
     dao.save(friend);
     HttpServletRequest req = super.getMockRequestWithUser(user);
     HttpServletResponse resp  = mock(HttpServletResponse.class);
-    PrintWriter writer = mock (PrintWriter.class);
-    when(resp.getWriter()).thenReturn(writer);
+    ServletOutputStream writer = mock (ServletOutputStream.class);
+    when(resp.getOutputStream()).thenReturn(writer);
     API.get_friends.execute(req, resp,false);
     
     assertEquals(0,user.getFriends().getFriendCount());
@@ -47,7 +47,7 @@ public class APITest extends ModelTest {
     API.get_friends.execute(req, resp,false);
     
     User userInDB = dao.get(user.getKey(), User.class);
-    verify(writer).print(userInDB.getFriends().build().toByteArray());
+    verify(writer).write(userInDB.getFriends().build().toByteArray());
     assertEquals(1,userInDB.getFriends().getFriendCount());
     assertEquals(friend.getUserID(),userInDB.getFriends().getFriend(0).getId());
     assertEquals(Friendship.CONFIRMED,userInDB.getFriends().getFriend(0).getFriendship());
@@ -74,10 +74,10 @@ public class APITest extends ModelTest {
     //user block friend.
     HttpServletRequest req = super.getMockRequestWithUser(user);
     HttpServletResponse resp  = mock(HttpServletResponse.class);
-    PrintWriter writer = mock (PrintWriter.class);
+    ServletOutputStream writer = mock (ServletOutputStream.class);
     String[] deleteIds = {Long.toString(friend.getUserID())};
     when(req.getParameterValues(ParamKey.user_id.name())).thenReturn(deleteIds);
-    when(resp.getWriter()).thenReturn(writer);
+    when(resp.getOutputStream()).thenReturn(writer);
     API.block_friends.execute(req, resp,false);
     
      userInDB = dao.get(user.getKey(), User.class);
@@ -119,10 +119,10 @@ public class APITest extends ModelTest {
     //delete
     HttpServletRequest req = super.getMockRequestWithUser(user);
     HttpServletResponse resp  = mock(HttpServletResponse.class);
-    PrintWriter writer = mock (PrintWriter.class);
+    ServletOutputStream writer = mock (ServletOutputStream.class);
     String[] deleteIds = {Long.toString(friend.getUserID())};
     when(req.getParameterValues(ParamKey.user_id.name())).thenReturn(deleteIds);
-    when(resp.getWriter()).thenReturn(writer);
+    when(resp.getOutputStream()).thenReturn(writer);
     API.delete_friends.execute(req, resp,false);
     
      userInDB = dao.get(user.getKey(), User.class);
@@ -147,8 +147,8 @@ public class APITest extends ModelTest {
     dao.save(friend);
     HttpServletRequest req = super.getMockRequestWithUser(user);
     HttpServletResponse resp  = mock(HttpServletResponse.class);
-    PrintWriter writer = mock (PrintWriter.class);
-    when(resp.getWriter()).thenReturn(writer);
+    ServletOutputStream writer = mock (ServletOutputStream.class);
+    when(resp.getOutputStream()).thenReturn(writer);
     API.get_friends.execute(req, resp,false);
     
     assertEquals(0,user.getFriends().getFriendCount());
@@ -161,7 +161,7 @@ public class APITest extends ModelTest {
     API.get_friends.execute(req, resp,false);
     
     User userInDB = dao.get(user.getKey(), User.class);
-    verify(writer).print(userInDB.getFriends().build().toByteArray());
+    verify(writer).write(userInDB.getFriends().build().toByteArray());
     assertEquals(1,userInDB.getFriends().getFriendCount());
     assertEquals(friend.getUserID(),userInDB.getFriends().getFriend(0).getId());
     assertEquals(Friendship.CONFIRMED,userInDB.getFriends().getFriend(0).getFriendship());
@@ -286,15 +286,15 @@ public class APITest extends ModelTest {
  HttpServletResponse resp4 = mock(HttpServletResponse.class);
  String[] fl4 = {"5"} ;
  when(req4.getParameterValues(ParamKey.user_id.name())).thenReturn(fl4);
- PrintWriter writer = mock(PrintWriter.class);
- when(resp4.getWriter()).thenReturn(writer);
+ ServletOutputStream writer = mock(ServletOutputStream.class);
+ when(resp4.getOutputStream()).thenReturn(writer);
  
  API.add_friends.execute(req4, resp4,false);
  //af.doPost(req4, resp4);
 
  verify(resp4).setStatus(HttpServletResponse.SC_BAD_REQUEST);
 
- verify(writer).print(ErrorCode.auth_user_not_registered);
+ verify(writer).write(ErrorCode.auth_user_not_registered);
  ua = dao.get(users[0].getEntityKey(), User.class);
  uaf = ua.getFriends().getFriendList();
 assertEquals(uaf.size(),1);
@@ -306,14 +306,14 @@ HttpServletRequest req5 = getMockRequestWithUser(users[0]);
 HttpServletResponse resp5 = mock(HttpServletResponse.class);
 String[] fl5 = {Long.toString(ids[1]),"5",Long.toString(ids[2])} ;
 when(req5.getParameterValues(ParamKey.user_id.name())).thenReturn(fl5);
-PrintWriter writer5 = mock(PrintWriter.class);
-when(resp5.getWriter()).thenReturn(writer5);
+ServletOutputStream writer5 = mock(ServletOutputStream.class);
+when(resp5.getOutputStream()).thenReturn(writer5);
 
 API.add_friends.execute(req5, resp5,false);
 //af.doPost(req5, resp5);
 verify(resp5).setStatus(HttpServletResponse.SC_BAD_REQUEST);
 
-verify(writer5).print(ErrorCode.auth_user_not_registered);
+verify(writer5).write(ErrorCode.auth_user_not_registered);
 ua = dao.get(users[0].getEntityKey(), User.class);
 uaf = ua.getFriends().getFriendList();
 assertEquals(2,uaf.size());
