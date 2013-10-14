@@ -1,6 +1,7 @@
 package com.gm.server;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,15 +16,21 @@ import javax.servlet.http.HttpServletResponse;
 import org.junit.Test;
 
 import com.gm.common.net.ErrorCode;
+import com.gm.common.crypto.Base64;
 import com.gm.common.model.Rpc.Friendship;
+import com.gm.common.model.Rpc.UserPb;
+import com.gm.common.model.Rpc.UsersPb;
 import com.gm.common.model.Server;
 import com.gm.common.model.Rpc.Friend;
+import com.gm.server.model.Feed;
 import com.gm.server.model.PendingUser;
+import com.gm.server.model.Quest;
 import com.gm.server.model.User;
 import com.google.appengine.api.datastore.KeyFactory;
 
 
 public class APITest extends ModelTest {
+  
 
   @Test
   public void testPostQuest() throws IOException{
@@ -31,26 +38,35 @@ public class APITest extends ModelTest {
     User friend = new User("b12345","password","secret");
     dao.save(user);
     dao.save(friend);
+    
+    user.addFriend(friend.getId(), Friendship.CONFIRMED);
+    friend.addFriend(user.getId(), Friendship.CONFIRMED);
+    dao.save(user);
+    dao.save(friend);
+    
+    String title = "a quest";
+    Quest quest = new Quest(title);
+    String audiances[] = {String.valueOf(friend.getId())};
     HttpServletRequest req = super.getMockRequestWithUser(user);
     HttpServletResponse resp  = mock(HttpServletResponse.class);
     ServletOutputStream writer = mock (ServletOutputStream.class);
     when(resp.getOutputStream()).thenReturn(writer);
-    API.get_friends.execute(req, resp,false);
+    String questString = Base64.encodeToString(quest.getMSG().build().toByteArray(),Base64.DEFAULT);
+    when(req.getParameter(ParamKey.quest.name())).thenReturn(questString);
+    when(req.getParameterValues(ParamKey.user_id.name())).thenReturn(audiances);
     
-    assertEquals(0,user.getFriends().getFriendCount());
+    API.post_quest.execute(req, resp,false);
+    Quest q = dao.query(Quest.class).prepare().asSingle();
+    assertNotNull(q);
     
-    // Let user has a friend, then test again:
-    user.addFriend(friend.getUserID(), Friendship.CONFIRMED);
-    friend.addFriend(user.getUserID(), Friendship.CONFIRMED);
-    dao.save(user);
-    dao.save(friend);
-    API.get_friends.execute(req, resp,false);
-    
-    User userInDB = dao.get(user.getKey(), User.class);
-    verify(writer).write(userInDB.getFriends().build().toByteArray());
-    assertEquals(1,userInDB.getFriends().getFriendCount());
-    assertEquals(friend.getUserID(),userInDB.getFriends().getFriend(0).getId());
-    assertEquals(Friendship.CONFIRMED,userInDB.getFriends().getFriend(0).getFriendship());
+    Quest questInDb = dao.querySingle(Quest.class, user.getEntityKey());
+    assertEquals(title,questInDb.getTitle());
+    assertEquals(1,questInDb.getPosts().getPostCount());
+   
+    Feed feedInDb = dao.querySingle(Feed.class, friend.getEntityKey());
+    assertEquals(1,feedInDb.getFeeds().getFeedCount());
+    assertEquals(title,feedInDb.getFeeds().getFeed(0).getQuest().getTitle());
+
   }
   
   @Test
@@ -166,6 +182,80 @@ public class APITest extends ModelTest {
     assertEquals(friend.getUserID(),userInDB.getFriends().getFriend(0).getId());
     assertEquals(Friendship.CONFIRMED,userInDB.getFriends().getFriend(0).getFriendship());
   }
+  
+  @Test
+  public void testGetFriendsDetails() throws IOException{
+    User user = new User("a12345","password","secret");
+    User friend = new User("b12345","password","secret");
+    dao.save(user);
+    dao.save(friend);
+    HttpServletRequest req = super.getMockRequestWithUser(user);
+    HttpServletResponse resp  = mock(HttpServletResponse.class);
+    ServletOutputStream writer = mock (ServletOutputStream.class);
+    String[] friendIds = {String.valueOf(friend.getId())};
+    when(resp.getOutputStream()).thenReturn(writer);
+    
+    // request a user that is not requester's friend, should return nothing for privacy
+    when(req.getParameterValues(ParamKey.user_id.name())).thenReturn(friendIds);
+
+    API.get_friends_details.execute(req, resp,false);
+    UsersPb.Builder users = UsersPb.newBuilder();
+ 
+    assertEquals(0,user.getFriends().getFriendCount());
+    verify(writer).write(users.build().toByteArray());
+    
+    // Let user has a friends, then test again:
+    user.addFriend(friend.getUserID(), Friendship.CONFIRMED);
+    friend.addFriend(user.getUserID(), Friendship.CONFIRMED);
+    dao.save(user);
+    dao.save(friend);
+    API.get_friends_details.execute(req, resp,false);
+    
+    User userInDB = dao.get(user.getKey(), User.class);
+     User friendInDB = dao.get(friend.getEntityKey(), User.class);
+     UserPb.Builder friendMsg = friendInDB.getMSG(user.getId());
+     users.addUser(friendMsg);
+    verify(writer).write(users.build().toByteArray());
+    assertEquals(1,userInDB.getFriends().getFriendCount());
+    
+    // Let user has n more friends, then get new friends' info :
+    
+    int n = 10;
+    User friends[]=new User[n];
+    String newfriendIds[] = new String[n];
+    
+    // data in users is for verification
+    UsersPb.Builder newusers = UsersPb.newBuilder();
+    
+    //prepare data in datastore 
+    for(int i =0; i<n; i++){
+      friends[i] = new User(String.valueOf(i),"p","s");
+      dao.save(friends[i]);
+      
+      newfriendIds[i]=String.valueOf(friends[i].getId());
+      user.addFriend(friends[i].getId(), Friendship.CONFIRMED);
+      friends[i].addFriend(user.getId(), Friendship.CONFIRMED);
+      dao.save(user);
+      dao.save(friends[i]);
+    }
+    
+    for(int i =0; i<n; i++){
+      friendInDB = dao.get(friends[i].getEntityKey(), User.class);
+      friendMsg = friendInDB.getMSG(user.getId());
+      newusers.addUser(friendMsg);
+    }
+    when(req.getParameterValues(ParamKey.user_id.name())).thenReturn(newfriendIds);
+    API.get_friends_details.execute(req, resp,false);
+    
+     userInDB = dao.get(user.getKey(), User.class);
+
+     assertEquals(10, newusers.getUserCount());
+//     System.out.println(newusers.build().toString());
+    verify(writer).write(newusers.build().toByteArray());
+    assertEquals(n+1,userInDB.getFriends().getFriendCount());
+  }
+  
+  
   @Test
   public void testInviteFriends() throws IOException{
     User user = new User("a12345","password","secret");

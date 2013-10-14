@@ -34,6 +34,7 @@ import com.gm.server.model.User;
 import com.gm.server.push.Pusher;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
+import com.gm.common.crypto.Base64;
 import com.google.common.base.Strings;
 import com.gm.common.model.Rpc.Friend;
 import com.gm.common.model.Rpc.Friends;
@@ -85,6 +86,8 @@ public enum API {
             users.addUser(friend);
         }
       }
+
+//      System.out.println(users.build().toString());
       resp.getOutputStream().write(users.build().toByteArray());
 
     }      
@@ -401,8 +404,9 @@ public enum API {
           throws ApiException, IOException {
         
         // retrieve quest
+        String questString = ParamKey.quest.getValue(req);
         
-        QuestPb questMsg = QuestPb.parseFrom(ParamKey.quest.getValue(req).getBytes());
+        QuestPb questMsg = QuestPb.parseFrom(Base64.decode(questString,Base64.DEFAULT));
         Key ownerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
         long receiverIds[]= ParamKey.user_id.getLongs(req,-1);
 
@@ -411,6 +415,7 @@ public enum API {
         quest.addPost(ownerKey.getId(),receiverIds); //add at the end
         dao.save(quest, ownerKey);
         
+        //TODO: filter the receivers with friend lists, only allow friends as receivers
         //TODO: redirect to backend
         // prepare feed
         QuestPb.Builder questFeed = quest.getMSG();
@@ -487,14 +492,18 @@ public enum API {
     // TODO Auto-generated method stub
     
     for(long id:receiverIds){
-      
-      Feed feed = dao.querySingle(Feed.class, KeyFactory.createKey("User", id));
+      Key receiverKey =  KeyFactory.createKey("User", id);
+      Feed feed = dao.querySingle(Feed.class,receiverKey);
+      if(feed==null){
+        feed = new Feed();
+      }
       int i = feed.findQuest(questMsg);
       if(i!=-1){
         feed.updateQuest(i,questMsg);
       }else{
         feed.addQuest(0,questMsg);
       }
+      dao.save(feed,receiverKey);
     }
   }
 

@@ -10,6 +10,7 @@ import com.gm.common.model.Rpc.UserPb;
 import com.gm.common.model.Rpc.Thumbnail;
 import com.gm.common.model.Rpc.Friend;
 import com.gm.common.model.Rpc.Friends;
+import com.gm.common.model.Rpc.UsersPb.Builder;
 import com.google.appengine.api.datastore.GeoPt;
 import com.google.appengine.api.datastore.KeyFactory;
 
@@ -133,6 +134,40 @@ public class User extends Persistable<User> {
   public void setDeviceID(String deviceID) {
     this.deviceID = deviceID;
   }
+  
+  
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public Thumbnail.Builder getThumbnail() {
+    return thumbnail;
+  }
+
+  public void setThumbnail(Thumbnail.Builder thumbnail) {
+    this.thumbnail = thumbnail;
+  }
+
+  public Rating.Builder getRating() {
+    return rating;
+  }
+
+  public void setRating(Rating.Builder rating) {
+    this.rating = rating;
+  }
+
+  public GeoPt getGeo() {
+    return geo;
+  }
+
+  public void setGeo(GeoPt geo) {
+    this.geo = geo;
+  }
 
   @Override
 	public User touch() {
@@ -245,7 +280,7 @@ public class User extends Persistable<User> {
     }
   }
 
-  public UserPb.Builder getMSG() {
+  public UserPb.Builder getMSG(long id) {
     
     EntityLog log = EntityLog.newBuilder().setCreatedAt(createTime.getTime()).setUpdatedAt(lastLoginTime.getTime()).build();
     GeoPoint geopt = GeoPoint.newBuilder().setLatitude(geo.getLatitude()).setLongitude(geo.getLatitude()).build();
@@ -253,20 +288,19 @@ public class User extends Persistable<User> {
     UserPb.Builder msg = UserPb.newBuilder().setId(getId()).setLog(log)
         .setName(name).setPhone(phone).setLocation(geopt).setThumbnail(thumbnail)
         .setRating(rating);
-
+    
+    int i = findFriend(id);
+    if(i!=-1){
+      
+      msg.setFriendship(friends.getFriend(i).getFriendship());
+      
+    }else{
+    //set default value for required fields:
+    
+      msg.setFriendship(Friendship.UNKNOWN);
+    }
     
     return msg;
   }
   
-  public UserPb.Builder getMSG(long id){
-    int i = findFriend(id);
-    UserPb.Builder msg =UserPb.newBuilder();
-    if(i!=-1){
-      msg = getMSG();
-      msg.setFriendship(friends.getFriend(i).getFriendship());
-    }
-    return msg;
-    
-  }
- 
 }
