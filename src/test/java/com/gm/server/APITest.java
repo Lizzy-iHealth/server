@@ -17,7 +17,7 @@ import org.junit.Test;
 import com.gm.common.net.ErrorCode;
 import com.gm.common.model.Rpc.Friendship;
 import com.gm.common.model.Server;
-import com.gm.common.model.Server.Friend;
+import com.gm.common.model.Rpc.Friend;
 import com.gm.server.model.PendingUser;
 import com.gm.server.model.User;
 import com.google.appengine.api.datastore.KeyFactory;

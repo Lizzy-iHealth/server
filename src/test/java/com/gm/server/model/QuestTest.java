@@ -30,7 +30,7 @@ public class QuestTest extends ModelTest {
   }
   
   @Test
-  public void testQuestMSGByID(){
+  public void testQuestMSGByID_AddPost(){
     User user = new User();
     dao.save(user);
     

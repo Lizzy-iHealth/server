@@ -4,10 +4,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.lang.reflect.Array;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -20,14 +20,10 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.JSONException;
 
 import com.gm.common.crypto.Hmac;
-import com.gm.common.model.Rpc;
 import com.gm.common.model.Rpc.Friendship;
-import com.gm.common.model.Rpc.LifeSpan;
-import com.gm.common.model.Rpc.PostRecordPb;
 import com.gm.common.model.Rpc.QuestPb;
 import com.gm.common.model.Rpc.UserPb;
-import com.gm.common.model.Rpc.UserPb.Builder;
-import com.gm.common.model.Server.Friends;
+import com.gm.common.model.Rpc.UsersPb;
 import com.gm.common.net.ErrorCode;
 import com.gm.server.model.DAO;
 import com.gm.server.model.Feed;
@@ -39,11 +35,8 @@ import com.gm.server.push.Pusher;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.common.base.Strings;
-import com.gm.common.model.Rpc.Friendship;
-import com.gm.common.model.Server.FeedPb;
-import com.gm.common.model.Server.Feeds;
-import com.gm.common.model.Server.Friend;
-import com.gm.common.model.Server.Friends;
+import com.gm.common.model.Rpc.Friend;
+import com.gm.common.model.Rpc.Friends;
 
 public enum API {
   device("/auth/", true) {
@@ -65,6 +58,40 @@ public enum API {
     }
   },
   
+  get_friends_details("/social",true){
+
+    @Override
+    public void handle(HttpServletRequest req, HttpServletResponse resp)
+        throws ApiException, IOException {
+      String key = ParamKey.key.getValue(req);
+      User user = dao.get(key, User.class);
+      long qUserIds[] = ParamKey.user_id.getLongs(req,-1);
+          
+      HashSet<Long> friendset = new HashSet<Long>(); //used to verify the relationship with the requested id.
+      
+      UsersPb.Builder users = UsersPb.newBuilder();
+      for (Friend f : user.getFriends().getFriendList()){
+        if(f.getFriendship()==Friendship.CONFIRMED
+            ||f.getFriendship()==Friendship.WAIT_MY_CONFIRM
+            ||f.getFriendship()==Friendship.STARED){
+            friendset.add(Long.valueOf(f.getId()));
+        }
+      }
+      
+      for(long id:qUserIds){
+        if(friendset.contains(id)){
+            User friendUser = dao.get(KeyFactory.createKey("User", id), User.class);
+            UserPb.Builder friend = friendUser.getMSG(user.getId());
+            users.addUser(friend);
+        }
+      }
+      resp.getWriter().print(users.build().toByteArray());
+
+    }      
+    
+    
+  },
+  
   get_friends("/social", true){
 
     @Override
@@ -74,12 +101,8 @@ public enum API {
       String key = ParamKey.key.getValue(req);
       User user = dao.get(key, User.class);
       Friends friends = user.getFriends().build();
-      for (Friend f :friends.getFriendList()){
-      //TODO: setup friend information
-      UserPb.Builder friend = UserPb.newBuilder().setFriendship(f.getFriendship());
-      }
-   //   System.out.print(friendship.toByteArray());
-   //   resp.getWriter().print(friend.toByteArray());
+
+      resp.getWriter().print(friends.toByteArray());
 
     }
     

@@ -2,9 +2,15 @@ package com.gm.server.model;
 
 import java.util.Date;
 
+import com.gm.common.model.Rpc.EntityLog;
 import com.gm.common.model.Rpc.Friendship;
-import com.gm.common.model.Server.Friend;
-import com.gm.common.model.Server.Friends;
+import com.gm.common.model.Rpc.GeoPoint;
+import com.gm.common.model.Rpc.Rating;
+import com.gm.common.model.Rpc.UserPb;
+import com.gm.common.model.Rpc.Thumbnail;
+import com.gm.common.model.Rpc.Friend;
+import com.gm.common.model.Rpc.Friends;
+import com.google.appengine.api.datastore.GeoPt;
 import com.google.appengine.api.datastore.KeyFactory;
 
 @Entity
@@ -38,6 +44,18 @@ public class User extends Persistable<User> {
  
   @Property
   private String deviceID = "";
+
+  @Property
+  private String name="";
+  
+  @Property
+  private Thumbnail.Builder thumbnail = Thumbnail.newBuilder().setSmallUrl("/images/user-256.png").setLargeUrl("/images/user-512.png");
+  
+  @Property
+  private Rating.Builder rating = Rating.newBuilder();
+ 
+  @Property
+  private GeoPt geo = new GeoPt(0,0) ;
   
 	public void login(String secret) {
 		this.secret = secret;
@@ -225,6 +243,30 @@ public class User extends Persistable<User> {
     if(index!=-1){
       friends.getFriendBuilder(index).setFriendship(Friendship.BLOCKED).build();
     }
+  }
+
+  public UserPb.Builder getMSG() {
+    
+    EntityLog log = EntityLog.newBuilder().setCreatedAt(createTime.getTime()).setUpdatedAt(lastLoginTime.getTime()).build();
+    GeoPoint geopt = GeoPoint.newBuilder().setLatitude(geo.getLatitude()).setLongitude(geo.getLatitude()).build();
+    
+    UserPb.Builder msg = UserPb.newBuilder().setId(getId()).setLog(log)
+        .setName(name).setPhone(phone).setLocation(geopt).setThumbnail(thumbnail)
+        .setRating(rating);
+
+    
+    return msg;
+  }
+  
+  public UserPb.Builder getMSG(long id){
+    int i = findFriend(id);
+    UserPb.Builder msg =UserPb.newBuilder();
+    if(i!=-1){
+      msg = getMSG();
+      msg.setFriendship(friends.getFriend(i).getFriendship());
+    }
+    return msg;
+    
   }
  
 }

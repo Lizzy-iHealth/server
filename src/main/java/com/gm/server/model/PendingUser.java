@@ -2,8 +2,8 @@ package com.gm.server.model;
 import java.util.Date;
 
 import com.gm.common.model.Rpc.Friendship;
-import com.gm.common.model.Server.Friend;
-import com.gm.common.model.Server.Friends;
+import com.gm.common.model.Rpc.Friend;
+import com.gm.common.model.Rpc.Friends;
 import com.google.appengine.api.datastore.KeyFactory;
 
 @Entity
