@@ -435,7 +435,7 @@ public class APITest extends ModelTest {
 
  verify(resp4).setStatus(HttpServletResponse.SC_BAD_REQUEST);
 
- verify(writer).write(ErrorCode.auth_user_not_registered);
+ verify(writer).write(Integer.toString(ErrorCode.auth_user_not_registered).getBytes());
  ua = dao.get(users[0].getEntityKey(), User.class);
  uaf = ua.getFriends().getFriendList();
 assertEquals(uaf.size(),1);
@@ -454,7 +454,7 @@ API.add_friends.execute(req5, resp5,false);
 //af.doPost(req5, resp5);
 verify(resp5).setStatus(HttpServletResponse.SC_BAD_REQUEST);
 
-verify(writer5).write(ErrorCode.auth_user_not_registered);
+verify(writer5).write(Integer.toString(ErrorCode.auth_user_not_registered).getBytes());
 ua = dao.get(users[0].getEntityKey(), User.class);
 uaf = ua.getFriends().getFriendList();
 assertEquals(2,uaf.size());

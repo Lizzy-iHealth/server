@@ -14,6 +14,7 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -34,12 +35,27 @@ import com.gm.server.model.User;
 import com.gm.server.push.Pusher;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
+import com.google.appengine.api.taskqueue.Queue;
+import com.google.appengine.api.taskqueue.QueueFactory;
+import com.google.appengine.api.taskqueue.TaskOptions;
+
+import static com.google.appengine.api.taskqueue.TaskOptions.Builder.*;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.gm.common.crypto.Base64;
 import com.google.common.base.Strings;
 import com.gm.common.model.Rpc.Friend;
 import com.gm.common.model.Rpc.Friends;
 
+
 public enum API {
+  
+  //Input Param: "key"        user's key
+  //             "device_id"  device_id get upon request to google
+  //Output      : N/A
   device("/auth/", true) {
 
     @Override
@@ -59,6 +75,9 @@ public enum API {
     }
   },
   
+  //Input Param: "key"        user's key
+  //             "user_id"    user id list whose details are returned
+  //Output Param: byte[] UsersPb :    users' details
   get_friends_details("/social",true){
 
     @Override
@@ -95,6 +114,9 @@ public enum API {
     
   },
   
+  //Input Param: "key"        user's key
+  //             
+  //Output Param: byte[] Friends :    all friends id and type
   get_friends("/social", true){
 
     @Override
@@ -110,6 +132,10 @@ public enum API {
     }
     
   },
+  
+  //Input Param: "key"        user's key
+  //             "user_id"    user id list to be added
+  //Output Param: N/A
   add_friends("/social", true){//true) {
 
     @Override
@@ -163,6 +189,10 @@ public enum API {
     
     }
   },
+  
+  //Input Param: "key"        user's key
+  //             "user_id"    user id list to be deleted
+  //Output Param: N/A
 
  
   delete_friends("/social", true){//true) {
@@ -204,6 +234,10 @@ public enum API {
     
     }
   },
+  
+  //Input Param: "key"        user's key
+  //             "user_id"    user id list to be blocked
+  //Output Param: N/A
 
   block_friends("/social", true){//true) {
 
@@ -244,6 +278,10 @@ public enum API {
     
     }
   },
+  
+  //Input Param: "key"        user's key
+  //             "phone"      phone list to be invited or added
+  //Output Param: N/A
 
   
   invite_friends("/social", true){//true) {
@@ -283,6 +321,9 @@ public enum API {
     }
  
   },
+  
+  //Input Param: "user_id"    user id list to push message
+  //Output      : push notification
         
   push("/util/",false){
 
@@ -310,6 +351,7 @@ public enum API {
     
   }
 ,
+
   
   ping("/", true) {
 
@@ -318,6 +360,13 @@ public enum API {
         throws ApiException, IOException {
     }
   },
+  
+  //Input Param: "password"        user's password
+  //             "phone"           user's phone to regeister
+  //           
+  //Output: String key             index of user
+  //        String  ,
+  //        String secret           for hmac generation
 
   login("/auth/", false) {
     @Override
@@ -344,6 +393,12 @@ public enum API {
     }
   },
 
+  //Input Param: "password"        user's password
+  //             "phone"           user's phone to regeister
+  //              "token"          verify ownership of phone
+  //Output: String key             index of user
+  //        String  ,
+  //        String secret           for hmac generation
   register("/auth/", false) {
     @Override
     public void handle(HttpServletRequest req, HttpServletResponse resp)
@@ -382,6 +437,9 @@ public enum API {
     }
   },
 
+  //Input Param:   "phone"           user's phone to regeister
+  //           
+  //Output:  N/A
   request_token("/auth/", false) {
     @Override
     public void handle(HttpServletRequest req, HttpServletResponse resp)
@@ -396,7 +454,12 @@ public enum API {
       dao.save(token);
     }     
   },
-    
+  
+  //Input Param: "key"        user's index
+  //             "quest"      Base64 encoded QuestPb object
+  //              "user_id"   receiver list
+  //Output: push notification
+  
     post_quest("/quest/",true){
 
       @Override
@@ -423,11 +486,54 @@ public enum API {
         generateFeed(receiverIds,questFeed);
         
         // push to receivers
-        push(receiverIds,"Feed","New Feed Available");
+        
       }
         
    },
-      
+   test_post_quest("/test/",false){
+
+     @Override
+     public void handle(HttpServletRequest req, HttpServletResponse resp)
+         throws ApiException, IOException {
+       
+       // retrieve quest
+       User user = new User("a12345","password","secret");
+       User friend = new User("b12345","password","secret");
+       dao.save(user);
+       dao.save(friend);
+       
+       user.addFriend(friend.getId(), Friendship.CONFIRMED);
+       friend.addFriend(user.getId(), Friendship.CONFIRMED);
+       dao.save(user);
+       dao.save(friend);
+       
+       String title = "a quest";
+       Quest quest = new Quest(title);
+
+       // save quest and post record to DB  
+       long receiverIds[] = {friend.getId()};
+       quest.addPost(user.getId(),receiverIds); //add at the end
+       dao.save(quest, user.getEntityKey());
+       
+       //TODO: filter the receivers with friend lists, only allow friends as receivers
+       //TODO: redirect to backend
+       // prepare feed
+       QuestPb.Builder questFeed = quest.getMSG();
+
+       generateFeed(receiverIds,questFeed);
+       
+       // push to receivers
+       
+     }
+       
+  },
+  
+   
+   //Input Param: "key"        sharer's index
+   //             "owner_id"    quest's onwer's id
+   //             "id"          quest id
+   //              "user_id"   receiver list
+   //Output: push notification
       share_quest("/quest/",true){
 
         @Override
@@ -457,11 +563,47 @@ public enum API {
           // push to receivers
           push(receiverIds,"Feed","New Feed Available");
         }
-   };
+   },
+   
+   generate_feed("/queue/",false){
 
+    @Override
+    public void handle(HttpServletRequest req, HttpServletResponse resp)
+        throws ApiException, IOException {
+      //get receivers id list
+      long receiverIds[] = ParamKey.user_id.getLongs(req, -1);
+      //get quest
+      String questString = ParamKey.quest.getValue(req);
+      QuestPb.Builder questMsg = QuestPb.parseFrom(Base64.decode(questString,Base64.DEFAULT)).toBuilder();
+     
+      for(long id:receiverIds){
+
+        Key receiverKey =  KeyFactory.createKey("User", id);
+        Feed feed = dao.querySingle(Feed.class,receiverKey);
+        if(feed==null){
+          feed = new Feed();
+        }
+        int i = feed.findQuest(questMsg);
+        if(i!=-1){
+          feed.updateQuest(i,questMsg);
+        }else{
+          feed.addQuest(0,questMsg);
+        }
+        System.out.println(feed.toString());
+        dao.save(feed,receiverKey);
+      }
+      push(receiverIds,"Feed","New Feed Available");
+    }
+    
+     
+   };
+   
   
   public final String url;
   public final boolean requiresHmac;
+  
+  private Queue queue = QueueFactory.getDefaultQueue();
+
 
   private API(String urlPrefix, boolean requiresHmac) {
     url = urlPrefix + name();
@@ -490,23 +632,15 @@ public enum API {
 
   protected void generateFeed(long[] receiverIds, QuestPb.Builder questMsg) {
     // TODO Auto-generated method stub
-    
+    TaskOptions task  = withUrl("/queue/generate_feed").method(TaskOptions.Method.POST);
     for(long id:receiverIds){
-      Key receiverKey =  KeyFactory.createKey("User", id);
-      Feed feed = dao.querySingle(Feed.class,receiverKey);
-      if(feed==null){
-        feed = new Feed();
-      }
-      int i = feed.findQuest(questMsg);
-      if(i!=-1){
-        feed.updateQuest(i,questMsg);
-      }else{
-        feed.addQuest(0,questMsg);
-      }
-      System.out.println(feed.toString());
-      dao.save(feed,receiverKey);
+      task.param("user_id", Long.toString(id));
     }
+    task.param("quest",(Base64.encode(questMsg.build().toByteArray(),Base64.DEFAULT)));
+    
+    queue.add(task);
   }
+   
 
 
 
@@ -588,7 +722,7 @@ public enum API {
       } catch (ApiException e) {
         resp.setStatus(HttpServletResponse.SC_BAD_REQUEST); // API failed on
                                                             // validation
-        resp.getOutputStream().write(e.error);
+        resp.getOutputStream().write(Integer.toString(e.error).getBytes());
       } catch (Exception e) {
         resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // Unknown
                                                                       // error

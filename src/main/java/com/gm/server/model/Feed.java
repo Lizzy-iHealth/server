@@ -60,7 +60,15 @@ public class Feed extends Persistable<Feed> {
     return -1;
   }
 
-
+  public int findQuest(QuestPb questMsg) {
+    for (int i = 0; i < feeds.getFeedCount(); ++i) {
+      QuestPb item = feeds.getFeed(i).getQuest();
+      if (questMsg.getId()== item.getId() && questMsg.getOwnerId()==item.getOwnerId()) {
+        return i;
+      }
+    }
+    return -1;
+  }
 
 
   public void updateQuest(int i, QuestPb.Builder questMsg) {
@@ -86,6 +94,7 @@ public class Feed extends Persistable<Feed> {
     }
   }
 
+  
 
 
 
