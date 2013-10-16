@@ -4,6 +4,7 @@ import com.gm.common.model.Rpc.QuestPb;
 import com.gm.common.model.Server.FeedPb;
 import com.gm.common.model.Server.Feeds;
 import com.gm.common.model.Server.Feeds.Builder;
+import com.google.appengine.api.datastore.Key;
 
 
 @Entity
@@ -47,29 +48,16 @@ public class Feed extends Persistable<Feed> {
     return null;
   }
 
-
-
-
-  public int findQuest(QuestPb.Builder questMsg) {
+  
+  public int findQuest(long questId,long ownerId) {
     for (int i = 0; i < feeds.getFeedCount(); ++i) {
       QuestPb item = feeds.getFeed(i).getQuest();
-      if (questMsg.getId()== item.getId() && questMsg.getOwnerId()==item.getOwnerId()) {
+      if (questId== item.getId() && ownerId==item.getOwnerId()) {
         return i;
       }
     }
     return -1;
   }
-
-  public int findQuest(QuestPb questMsg) {
-    for (int i = 0; i < feeds.getFeedCount(); ++i) {
-      QuestPb item = feeds.getFeed(i).getQuest();
-      if (questMsg.getId()== item.getId() && questMsg.getOwnerId()==item.getOwnerId()) {
-        return i;
-      }
-    }
-    return -1;
-  }
-
 
   public void updateQuest(int i, QuestPb.Builder questMsg) {
 
@@ -101,6 +89,14 @@ public class Feed extends Persistable<Feed> {
   public void addQuest(int i,QuestPb.Builder questMsg) {
     FeedPb.Builder newFeed = FeedPb.newBuilder().setQuest(questMsg);
     feeds.addFeed(i,newFeed);    
+  }
+
+
+
+
+  public void deleteQuest(int i) {
+    feeds.removeFeed(i);
+    
   }
   
 

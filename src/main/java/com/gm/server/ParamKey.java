@@ -16,6 +16,7 @@ public enum ParamKey {
 	life_span,
 	id,
 	owner_id,
+	applicant,
 	quest;
 	
 	public String getValue(HttpServletRequest req) {

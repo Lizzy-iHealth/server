@@ -65,4 +65,41 @@ public class QuestTest extends ModelTest {
         <retriveQuest.getPostRecords().getPost(i).getTimestamp());
     }
   }
+  
+  @Test
+  public void testUpdateQuest(){
+    User user = new User();
+    dao.save(user);
+    
+    Quest questNotInDB = new Quest("a quest");
+    QuestPb qmsg = questNotInDB.getMSG().build();
+    Quest questReGen = new Quest(qmsg);
+    dao.save(questReGen,user.getEntityKey());
+    
+    QuestPb retriveQuest = dao.querySingle(Quest.class, user.getEntityKey()).getMSG(user.getId()).build();
+    assertEquals(0,retriveQuest.getApplicants().getApplicantCount());
+    assertEquals(0,retriveQuest.getPostRecords().getPostCount());
+    
+    //mock n posts
+    long receivers[] = {user.getId(), user.getId()+1};
+    int n = 10;
+    for(int i = 0; i<n; i++){
+      questReGen.addPost(user.getId(), receivers);
+      try {
+        Thread.sleep(5);
+      } catch (InterruptedException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    }
+    dao.save(questReGen);
+    
+    retriveQuest = dao.querySingle(Quest.class, user.getEntityKey()).getMSG(user.getId()).build();
+    assertEquals(n,retriveQuest.getPostRecords().getPostCount());
+    
+    for(int i =1; i<n; i++){
+    assertTrue(retriveQuest.getPostRecords().getPost(i-1).getTimestamp()
+        <retriveQuest.getPostRecords().getPost(i).getTimestamp());
+    }
+  }
 }

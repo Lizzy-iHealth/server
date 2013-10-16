@@ -21,6 +21,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.JSONException;
 
 import com.gm.common.crypto.Hmac;
+import com.gm.common.model.Rpc.Applicant;
 import com.gm.common.model.Rpc.Friendship;
 import com.gm.common.model.Rpc.QuestPb;
 import com.gm.common.model.Rpc.UserPb;
@@ -47,6 +48,7 @@ import static org.mockito.Mockito.when;
 
 import com.gm.common.crypto.Base64;
 import com.google.common.base.Strings;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.gm.common.model.Rpc.Friend;
 import com.gm.common.model.Rpc.Friends;
 
@@ -108,6 +110,31 @@ public enum API {
 
 //      System.out.println(users.build().toString());
       resp.getOutputStream().write(users.build().toByteArray());
+
+    }      
+    
+    
+  },
+  
+  //Input Param: "key"        user's key
+  //             "phone"    user phone whose details are returned
+  //Output Param: UserPb :    user' details
+  //Zhiyu's commen: not provide this api, for users' privacy. With this API, strangers can get users' detail info by phone number.
+  //TODO: let the phone's owner approve the information disclosure.
+  get_phone_details("/social",true){
+
+    @Override
+    public void handle(HttpServletRequest req, HttpServletResponse resp)
+        throws ApiException, IOException {
+      String key = ParamKey.key.getValue(req);
+      User user = dao.get(key, User.class);
+      String qPhone = checkNotNull(ParamKey.phone.getValue(req),ErrorCode.auth_invalid_phone);
+      
+      User qUser = checkNotNull(dao.querySingle("phone", qPhone, User.class),ErrorCode.auth_phone_not_registered);
+      UserPb qUserMsg = qUser.getMSG(user.getId()).build();
+
+      System.out.println(qUserMsg.toString());
+      resp.getOutputStream().write(qUserMsg.toByteArray());
 
     }      
     
@@ -466,10 +493,7 @@ public enum API {
       public void handle(HttpServletRequest req, HttpServletResponse resp)
           throws ApiException, IOException {
         
-        // retrieve quest
-        String questString = ParamKey.quest.getValue(req);
-        
-        QuestPb questMsg = QuestPb.parseFrom(Base64.decode(questString,Base64.DEFAULT));
+        QuestPb questMsg = getQuestPb(req);
         Key ownerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
         long receiverIds[]= ParamKey.user_id.getLongs(req,-1);
 
@@ -483,13 +507,91 @@ public enum API {
         // prepare feed
         QuestPb.Builder questFeed = quest.getMSG();
 
-        generateFeed(receiverIds,questFeed);
+        generateFeed(receiverIds,questFeed,"post");
         
         // push to receivers
         
       }
         
    },
+   
+   
+   //Input Param: "key"        user's index
+   //             "quest"      Base64 encoded QuestPb object with questId filled in.
+   //              
+   //Output: N/A
+   //only quest owner can update a quest.
+   //option 1:
+   //updates will only be pushed to applicants. Others will see the update when they request for it.
+   //if all the receivers need to be updated, post a new quest.
+   //
+   //option 2:
+   //all the receivers' related feed will be updated.
+   update_quest("/quest/",true){
+
+       @Override
+       public void handle(HttpServletRequest req, HttpServletResponse resp)
+           throws ApiException, IOException {
+         
+         // retrieve quest
+         QuestPb questMsg = getQuestPb(req);
+         Key ownerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
+         Key questKey = KeyFactory.createKey(ownerKey, "Quest", questMsg.getId());
+         // save quest and post record to DB  
+         Quest quest = checkNotNull(dao.get(questKey,Quest.class), ErrorCode.quest_quest_not_found);
+         quest.updateQuest(questMsg);
+         dao.save(quest, ownerKey);
+         
+         //option 2 implementation:
+         // prepare feed
+         long[] receiverIds = quest.getAllReceivers();
+         QuestPb.Builder questFeed = quest.getMSG();
+
+         generateFeed(receiverIds,questFeed,"update");
+
+       }
+         
+    },
+    
+    
+    //Input Param: "key"        user's index
+    //             "id"         quest id to be deleted
+    //              
+    //Output: N/A
+    //only quest owner can delete a quest.
+    //option 1:
+    //deletion will only be pushed to applicants. Others will see the deletion when they request for it.
+    //
+    //option 2:
+    //all the receivers' related feed will be deleted.
+    delete_quest("/quest/",true){
+
+        @Override
+        public void handle(HttpServletRequest req, HttpServletResponse resp)
+            throws ApiException, IOException {
+          
+          // retrieve quest
+                   
+          Key ownerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
+          long questId = ParamKey.id.getLong(req, -1);
+          Key questKey = KeyFactory.createKey(ownerKey, "Quest", questId);
+          // save quest and post record to DB  
+          Quest quest = checkNotNull(dao.get(questKey,Quest.class), ErrorCode.quest_quest_not_found);
+
+          //option 2 implementation:
+          // prepare feed
+          long[] receiverIds = quest.getAllReceivers();
+          deleteFeed(receiverIds,questId,ownerKey.getId());
+          dao.delete(quest);
+          
+
+        }
+          
+     },
+     
+     
+    
+    
    test_post_quest("/test/",false){
 
      @Override
@@ -520,7 +622,7 @@ public enum API {
        // prepare feed
        QuestPb.Builder questFeed = quest.getMSG();
 
-       generateFeed(receiverIds,questFeed);
+       generateFeed(receiverIds,questFeed,"test");
        
        // push to receivers
        
@@ -542,10 +644,7 @@ public enum API {
           
           // retrieve quest key
           
-          long questId = ParamKey.id.getLong(req, -1);
-          long questOwnerId = ParamKey.owner_id.getLong(req, -1);
-          Key questOwnerKey = KeyFactory.createKey("User", questOwnerId);
-          Key questKey = KeyFactory.createKey(questOwnerKey, "Quest", questId);
+          Key questKey = getQuestKey(req);
           Key sharerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
           long receiverIds[]= ParamKey.user_id.getLongs(req,-1);
 
@@ -558,12 +657,71 @@ public enum API {
           // prepare feed
           QuestPb.Builder questFeed = quest.getMSG();
           questFeed.addRefererId(sharerKey.getId());
-          generateFeed(receiverIds,questFeed);
-          
-          // push to receivers
-          push(receiverIds,"Feed","New Feed Available");
+          generateFeed(receiverIds,questFeed,"share");
+
         }
    },
+   
+   apply_quest("/quest/",true){
+
+     @Override
+     public void handle(HttpServletRequest req, HttpServletResponse resp)
+         throws ApiException, IOException {
+       
+       // retrieve quest key
+       
+       Key questKey = getQuestKey(req);
+       Key applicantKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
+       Applicant applicant ;
+       /*
+       // get quest from datastore and add an application 
+       Quest quest = dao.get(questKey, Quest.class);
+       quest.addPost(sharerKey.getId(),receiverIds); //add at the end
+       dao.save(quest);
+       
+       //TODO: redirect to backend
+       // prepare feed
+       QuestPb.Builder questFeed = quest.getMSG();
+       questFeed.addRefererId(sharerKey.getId());
+       generateFeed(receiverIds,questFeed,"share");
+*/
+     }
+},
+   
+   //Input:       id  :quest id, 
+   //       owner_id  :quest owner's id
+   //       user_id   :whose feeds need deletion
+   //Output: delete related feeds and notify all the receivers
+   delete_feed("/queue/",false){
+
+     @Override
+     public void handle(HttpServletRequest req, HttpServletResponse resp)
+         throws ApiException, IOException {
+       //get receivers id list
+       long receiverIds[] = ParamKey.user_id.getLongs(req, -1);
+       long questId = ParamKey.id.getLong(req, -1);
+
+       for(long id:receiverIds){
+
+         Key receiverKey =  KeyFactory.createKey("User", id);
+         Feed feed = dao.querySingle(Feed.class,receiverKey);
+         if(feed!=null){
+
+           int i = feed.findQuest(questId,id);
+           if(i!=-1){
+             feed.deleteQuest(i);
+
+             System.out.println(feed.toString());
+             dao.save(feed,receiverKey);
+           }
+         }
+       }
+       push(receiverIds,"Feed","delete");
+     }
+     
+      
+    },
+   
    
    generate_feed("/queue/",false){
 
@@ -575,7 +733,7 @@ public enum API {
       //get quest
       String questString = ParamKey.quest.getValue(req);
       QuestPb.Builder questMsg = QuestPb.parseFrom(Base64.decode(questString,Base64.DEFAULT)).toBuilder();
-     
+      String message = req.getParameter("message");
       for(long id:receiverIds){
 
         Key receiverKey =  KeyFactory.createKey("User", id);
@@ -583,7 +741,7 @@ public enum API {
         if(feed==null){
           feed = new Feed();
         }
-        int i = feed.findQuest(questMsg);
+        int i = feed.findQuest(questMsg.getId(),questMsg.getOwnerId());
         if(i!=-1){
           feed.updateQuest(i,questMsg);
         }else{
@@ -592,7 +750,7 @@ public enum API {
         System.out.println(feed.toString());
         dao.save(feed,receiverKey);
       }
-      push(receiverIds,"Feed","New Feed Available");
+      push(receiverIds,"Feed",message);
     }
     
      
@@ -608,6 +766,22 @@ public enum API {
   private API(String urlPrefix, boolean requiresHmac) {
     url = urlPrefix + name();
     this.requiresHmac = requiresHmac;
+  }
+
+
+  protected void deleteFeed(long[] receiverIds, long questId, long ownerId) {
+
+    
+    
+    TaskOptions task  = withUrl("/queue/delete_feed").method(TaskOptions.Method.POST);
+    for(long id:receiverIds){
+      task.param("user_id", Long.toString(id));
+    }
+    task.param("id", Long.toString(questId));
+    task.param(ParamKey.owner_id.name(), Long.toString(ownerId));
+    queue.add(task);
+  
+    
   }
 
 
@@ -630,15 +804,19 @@ public enum API {
   
 
 
-  protected void generateFeed(long[] receiverIds, QuestPb.Builder questMsg) {
+  protected void generateFeed(long[] receiverIds, QuestPb.Builder questMsg, String pushMsg) {
     // TODO Auto-generated method stub
+    
+    /*
     TaskOptions task  = withUrl("/queue/generate_feed").method(TaskOptions.Method.POST);
     for(long id:receiverIds){
       task.param("user_id", Long.toString(id));
     }
     task.param("quest",(Base64.encode(questMsg.build().toByteArray(),Base64.DEFAULT)));
+    task.param("message",pushMsg);
     
     queue.add(task);
+    */
   }
    
 
@@ -786,6 +964,31 @@ public enum API {
 
     }
   }
+
+  private static QuestPb getQuestPb(HttpServletRequest req)
+      throws InvalidProtocolBufferException {
+    String questString = ParamKey.quest.getValue(req);
+     
+     QuestPb questMsg = QuestPb.parseFrom(Base64.decode(questString,Base64.DEFAULT));
+    return questMsg;
+  }
+
+  private static Applicant getApplicant(HttpServletRequest req)
+      throws InvalidProtocolBufferException {
+    String questString = ParamKey.applicant.getValue(req);
+     
+     Applicant app= Applicant.parseFrom(Base64.decode(questString,Base64.DEFAULT));
+    return app;
+  }
+
+  private static Key getQuestKey(HttpServletRequest req) {
+    long questId = ParamKey.id.getLong(req, -1);
+     long questOwnerId = ParamKey.owner_id.getLong(req, -1);
+     Key questOwnerKey = KeyFactory.createKey("User", questOwnerId);
+     Key questKey = KeyFactory.createKey(questOwnerKey, "Quest", questId);
+    return questKey;
+  }
+
 
   private static byte[] readStream(InputStream in) throws IOException {
     byte[] buf = new byte[1024];

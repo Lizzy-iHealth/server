@@ -1,8 +1,10 @@
 package com.gm.server.model;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 
+import com.gm.common.model.Rpc.Applicant;
 import com.gm.common.model.Rpc.Currency;
 import com.gm.common.model.Rpc.EntityLog;
 import com.gm.common.model.Rpc.GeoPoint;
@@ -138,6 +140,19 @@ public class Quest extends Persistable<Quest> {
     }
     return qMsg;
   }
+
+ public void updateQuest(QuestPb q) {
+   start_time.setTime(q.getLifespan().getCreateTime());
+   end_time .setTime(q.getLifespan().getDeleteTime());
+   title = q.getTitle();
+   address = new PostalAddress(q.getAddress());
+   geo_point = new GeoPt(q.getGeoPoint().getLatitude(),q.getGeoPoint().getLongitude());
+   prize = q.getReward().getGold();
+   description = q.getDescription();
+   allow_sharing = q.getAllowSharing();
+   attach_link = new Link(q.getUrl());
+   updateAt = new Date();
+ }
  
   private PostRecordsPb findPostsById(long id) {
     PostRecordsPb.Builder someposts = PostRecordsPb.newBuilder();
@@ -247,5 +262,33 @@ public class Quest extends Persistable<Quest> {
     posts.addPost(postrecord);
   }
 
+  public long[] getAllReceivers() {
+    HashSet <Long> receivers  = new HashSet<Long>();
+    for(PostRecordPb post : posts.getPostList()){
+      for(Long id : post.getAudienceList()){
+        if (!receivers.contains(id)){
+          receivers.add(id);
+        }
+      }
+    }
+    long ids[] = longValuesOfLongs((Long[])receivers.toArray()); 
+    return  ids;
+  }
+
+  private long[] longValuesOfLongs(Long[] array) {
+    long[] la = new long [array.length];
+    for(int i=0; i<array.length;i++){
+      la[i]  = array[i].longValue();
+    }
+
+    return la;
+  }
+
+  public void addApplicant(Applicant applicant) {
+    // TODO Auto-generated method stub
+    // 1 find applicant
+    // if found, update or add a new?
+    // if not found , add at the end
+  }
 }
 

@@ -18,7 +18,7 @@
 
     <properties>
         <appengine.app.version>1</appengine.app.version>
-        <appengine.target.version>1.8.4</appengine.target.version>
+        <appengine.target.version>1.8.5</appengine.target.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -39,13 +39,8 @@
             <artifactId>common</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
-            <version>2.5</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
+        
+                <dependency>
             <groupId>jstl</groupId>
             <artifactId>jstl</artifactId>
             <version>1.2</version>
@@ -55,6 +50,25 @@
 			<artifactId>guava</artifactId>
 			<version>15.0</version>
 		</dependency>
+		
+		        <dependency>
+        	<groupId>com.google.protobuf</groupId>
+        	<artifactId>protobuf-java</artifactId>
+        	<version>2.5.0</version>
+        </dependency>
+        <dependency>
+        	<groupId>org.json</groupId>
+        	<artifactId>json</artifactId>
+        	<version>20090211</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+            <version>2.5</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Test Dependencies -->
         <dependency>
             <groupId>junit</groupId>
@@ -80,16 +94,7 @@
             <version>${appengine.target.version}</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-        	<groupId>com.google.protobuf</groupId>
-        	<artifactId>protobuf-java</artifactId>
-        	<version>2.5.0</version>
-        </dependency>
-        <dependency>
-        	<groupId>org.json</groupId>
-        	<artifactId>json</artifactId>
-        	<version>20090211</version>
-        </dependency>
+
     </dependencies>
 
     <build>
