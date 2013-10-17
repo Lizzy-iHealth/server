@@ -661,31 +661,67 @@ public enum API {
 
         }
    },
-   
+  // applicants can update their own application(identified by their user id) by apply again with new application info
+   //Input:   id: quest id
+   //         owner_id: quest owner's id
+   //         applicant: application information
    apply_quest("/quest/",true){
 
      @Override
      public void handle(HttpServletRequest req, HttpServletResponse resp)
          throws ApiException, IOException {
        
-       // retrieve quest key
+       // get quest key
        
        Key questKey = getQuestKey(req);
        Key applicantKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
-       Applicant applicant ;
-       /*
+       
+       //ensure the applicant's user_id field is the one send the request.
+       Applicant applicant  = getApplicant(req);
+       Applicant newApplicant = applicant.toBuilder().setUserId(applicantKey.getId()).build();
+       
        // get quest from datastore and add an application 
-       Quest quest = dao.get(questKey, Quest.class);
-       quest.addPost(sharerKey.getId(),receiverIds); //add at the end
+       Quest quest = checkNotNull(dao.get(questKey, Quest.class),ErrorCode.quest_quest_not_found);
+       quest.addApplicant(newApplicant); //add at the end
        dao.save(quest);
        
        //TODO: redirect to backend
-       // prepare feed
-       QuestPb.Builder questFeed = quest.getMSG();
-       questFeed.addRefererId(sharerKey.getId());
-       generateFeed(receiverIds,questFeed,"share");
-*/
+       //push message to quest owner and related bidders
+       long[] receivers = {quest.getParent().getId()};
+       push(receivers,"quest","new application");
+
      }
+    
+},
+
+// quest owner can update all applicants, 
+//Input:       id  :quest id, 
+//       user_id   :whose application is updated
+//Output: update related feeds and notify the applicants
+update_application("/quest/",true){
+
+  @Override
+  public void handle(HttpServletRequest req, HttpServletResponse resp)
+      throws ApiException, IOException {
+    
+    // retrieve quest key
+    
+    Key questKey = getQuestKey(req);
+    Key applicantKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
+    Applicant applicant  = getApplicant(req);
+    
+    // get quest from datastore and add an application 
+    Quest quest = dao.get(questKey, Quest.class);
+    quest.addApplicant(applicant); //add at the end
+    dao.save(quest);
+    
+    //TODO: redirect to backend
+    //push message to quest owner and related bidders
+    long[] receivers = {quest.getParent().getId()};
+    push(receivers,"quest","new application");
+
+  }
+ 
 },
    
    //Input:       id  :quest id, 
@@ -807,7 +843,7 @@ public enum API {
   protected void generateFeed(long[] receiverIds, QuestPb.Builder questMsg, String pushMsg) {
     // TODO Auto-generated method stub
     
-    /*
+    
     TaskOptions task  = withUrl("/queue/generate_feed").method(TaskOptions.Method.POST);
     for(long id:receiverIds){
       task.param("user_id", Long.toString(id));
@@ -816,7 +852,7 @@ public enum API {
     task.param("message",pushMsg);
     
     queue.add(task);
-    */
+    
   }
    
 

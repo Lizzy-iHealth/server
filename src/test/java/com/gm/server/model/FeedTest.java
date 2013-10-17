@@ -49,7 +49,7 @@ public class FeedTest extends ModelTest {
     FeedPb.Builder feednull = FeedPb.newBuilder().setQuest(qmsg);
     Feeds.Builder feeds = Feeds.newBuilder().addFeed(feednull);
     Feed feed = new Feed(feeds);
-    assertEquals(0,feed.findQuest(qmsg));
+    assertEquals(0,feed.findQuest(qmsg.getId(), qmsg.getOwnerId()));
   }
   
   @Test
@@ -66,7 +66,7 @@ public class FeedTest extends ModelTest {
     }
     
     for(int i=0;i<quests.length;i++){
-      assertEquals(i,feed.findQuest(quests[i].getMSG()));
+      assertEquals(i,feed.findQuest(quests[i].getMSG().getId(),quests[i].getMSG().getOwnerId()));
     } 
   }
   @Test

@@ -36,6 +36,7 @@ public class APITest extends ModelTest {
   public void testPostQuest() throws IOException{
     User user = new User("a12345","password","secret");
     User friend = new User("b12345","password","secret");
+    friend.setDeviceID("APA91bFWFxgXtR57p3Jj2umYFFV8-U1N9PKKLQydheMybhU_2DxdngHbuYijPRHc1Y2a9dLkhdu9pyLCNd61uRBn9d2i6dggDxjMSkADyAET6rHGCQ9PFQi7HAc_hIsRBA_Z4LAkUddPSH9NxTvIjJZe-ImYHpoNgA");
     dao.save(user);
     dao.save(friend);
     
@@ -62,11 +63,11 @@ public class APITest extends ModelTest {
     Quest questInDb = dao.querySingle(Quest.class, user.getEntityKey());
     assertEquals(title,questInDb.getTitle());
     assertEquals(1,questInDb.getPosts().getPostCount());
-   /*
+   
     Feed feedInDb = dao.querySingle(Feed.class, friend.getEntityKey());
     assertEquals(1,feedInDb.getFeeds().getFeedCount());
     assertEquals(title,feedInDb.getFeeds().getFeed(0).getQuest().getTitle());
-    */
+    
 
   }
   
@@ -75,9 +76,12 @@ public class APITest extends ModelTest {
     User user = new User("a12345","password","secret");
     User friend = new User("b12345","password","secret");
     User c = new User("c","p","s");
-    dao.save(user);
-    dao.save(friend);
-    dao.save(c);
+    User us[] = {user,friend,c};
+    for(User u : us){
+      u.setDeviceID("APA91bFWFxgXtR57p3Jj2umYFFV8-U1N9PKKLQydheMybhU_2DxdngHbuYijPRHc1Y2a9dLkhdu9pyLCNd61uRBn9d2i6dggDxjMSkADyAET6rHGCQ9PFQi7HAc_hIsRBA_Z4LAkUddPSH9NxTvIjJZe-ImYHpoNgA");
+      dao.save(u);
+    }
+
     
     user.addFriend(friend.getId(), Friendship.CONFIRMED);
     friend.addFriend(user.getId(), Friendship.CONFIRMED);
@@ -111,13 +115,13 @@ public class APITest extends ModelTest {
     System.out.println(questInDb.getDescription()); 
     assertEquals(title,questInDb.getTitle());
     assertEquals(2,questInDb.getPosts().getPostCount());
-   /*
+   
     Feed feedOfC = dao.querySingle(Feed.class, c.getEntityKey());
     assertEquals(1,feedOfC.getFeeds().getFeedCount());
     assertEquals(title,feedOfC.getFeeds().getFeed(0).getQuest().getTitle());
     assertEquals(friend.getId(),feedOfC.getFeeds().getFeed(0).getQuest().getRefererId(0));
     assertEquals(user.getId(),feedOfC.getFeeds().getFeed(0).getQuest().getOwnerId());
-    */
+    
     
 
   }

@@ -137,11 +137,29 @@ public class Quest extends Persistable<Quest> {
     
     if(id==qMsg.getOwnerId()){
       qMsg.setApplicants(applicants);
+    }else{
+      
+    //TODO: applicants can get their own application
+      
+      int i = findApplicant(id);
+      if(i!=-1){
+        qMsg.getApplicantsBuilder().addApplicant(applicants.getApplicant(i));
+      }
     }
+    
     return qMsg;
   }
 
- public void updateQuest(QuestPb q) {
+ private int findApplicant(long id) {
+  for(int i =0; i< applicants.getApplicantCount();i++){
+    if(id == applicants.getApplicant(i).getUserId()){
+      return i;
+    }
+  }
+   return -1;
+}
+
+public void updateQuest(QuestPb q) {
    start_time.setTime(q.getLifespan().getCreateTime());
    end_time .setTime(q.getLifespan().getDeleteTime());
    title = q.getTitle();
@@ -286,9 +304,15 @@ public class Quest extends Persistable<Quest> {
 
   public void addApplicant(Applicant applicant) {
     // TODO Auto-generated method stub
-    // 1 find applicant
-    // if found, update or add a new?
+    //  find applicant
+    // if found, update
     // if not found , add at the end
+    int i = findApplicant(applicant.getUserId());
+    if(i!=-1){
+      applicants.setApplicant(i, applicant);
+    }else{
+    applicants.addApplicant(applicant);
+    }
   }
 }
 
