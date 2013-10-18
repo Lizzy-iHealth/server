@@ -283,7 +283,7 @@ public class User extends Persistable<User> {
     }
   }
 
-  public UserPb.Builder getMSG(long id) {
+  public UserPb.Builder getMSG() {
     
     EntityLog log = EntityLog.newBuilder().setCreatedAt(createTime.getTime()).setUpdatedAt(lastLoginTime.getTime()).build();
     GeoPoint geopt = GeoPoint.newBuilder().setLatitude(geo.getLatitude()).setLongitude(geo.getLatitude()).build();
@@ -292,18 +292,23 @@ public class User extends Persistable<User> {
         .setName(name).setPhone(phone).setLocation(geopt).setThumbnail(thumbnail)
         .setRating(rating);
     
+
+    return msg;
+  }
+  
+  public Friendship getFriendship(long id){
     int i = findFriend(id);
     if(i!=-1){
       
-      msg.setFriendship(friends.getFriend(i).getFriendship());
+      return friends.getFriend(i).getFriendship();
       
     }else{
     //set default value for required fields:
     
-      msg.setFriendship(Friendship.UNKNOWN);
+     return Friendship.UNKNOWN;
     }
     
-    return msg;
   }
+  
   
 }

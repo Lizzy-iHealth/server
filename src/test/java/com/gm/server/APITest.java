@@ -17,6 +17,7 @@ import org.junit.Test;
 
 import com.gm.common.net.ErrorCode;
 import com.gm.common.crypto.Base64;
+import com.gm.common.model.Rpc.Applicant;
 import com.gm.common.model.Rpc.Friendship;
 import com.gm.common.model.Rpc.UserPb;
 import com.gm.common.model.Rpc.UsersPb;
@@ -31,12 +32,47 @@ import com.google.appengine.api.datastore.KeyFactory;
 
 public class APITest extends ModelTest {
   
-
   @Test
+  public void testApplyQuest() throws IOException{
+    User user = new User("a12345","password","secret");
+    User friend = new User("b12345","password","secret");
+    dao.save(user);
+    dao.save(friend);
+    
+    user.addFriend(friend.getId(), Friendship.CONFIRMED);
+    friend.addFriend(user.getId(), Friendship.CONFIRMED);
+    dao.save(user);
+    dao.save(friend);
+    
+    String title = "a quest";
+    Quest quest = new Quest(title);
+    dao.save(quest,user.getEntityKey());
+    
+    HttpServletRequest req = super.getMockRequestWithUser(friend);
+    HttpServletResponse resp  = mock(HttpServletResponse.class);
+    ServletOutputStream writer = mock (ServletOutputStream.class);
+    when(resp.getOutputStream()).thenReturn(writer);
+    
+    Applicant app = Applicant.newBuilder().setType(Applicant.Status.WAIT_MY_CONFIRM)
+        .setUserId(friend.getId()).build();
+    String applicantMsg = Base64.encodeToString(app.toByteArray(),Base64.DEFAULT);
+    when(req.getParameter(ParamKey.applicant.name())).thenReturn(applicantMsg);
+    when(req.getParameter(ParamKey.owner_id.name())).thenReturn(String.valueOf(user.getId()));
+    when(req.getParameter(ParamKey.id.name())).thenReturn(String.valueOf(quest.getId()));
+    
+    API.apply_quest.execute(req, resp,false);
+    Quest q = dao.get(quest.getEntityKey(), Quest.class);
+    assertNotNull(q);
+    
+    assertEquals(1,q.getApplicants().getApplicantCount());
+    assertEquals(friend.getId(),q.getApplicants().getApplicant(0).getUserId());
+
+  }
+  
+ // @Test
   public void testPostQuest() throws IOException{
     User user = new User("a12345","password","secret");
     User friend = new User("b12345","password","secret");
-    friend.setDeviceID("APA91bFWFxgXtR57p3Jj2umYFFV8-U1N9PKKLQydheMybhU_2DxdngHbuYijPRHc1Y2a9dLkhdu9pyLCNd61uRBn9d2i6dggDxjMSkADyAET6rHGCQ9PFQi7HAc_hIsRBA_Z4LAkUddPSH9NxTvIjJZe-ImYHpoNgA");
     dao.save(user);
     dao.save(friend);
     
@@ -71,7 +107,7 @@ public class APITest extends ModelTest {
 
   }
   
-  @Test
+ // @Test
   public void testShareQuest() throws IOException{
     User user = new User("a12345","password","secret");
     User friend = new User("b12345","password","secret");
@@ -270,7 +306,8 @@ public class APITest extends ModelTest {
     
     User userInDB = dao.get(user.getKey(), User.class);
      User friendInDB = dao.get(friend.getEntityKey(), User.class);
-     UserPb.Builder friendMsg = friendInDB.getMSG(user.getId());
+     UserPb.Builder friendMsg = friendInDB.getMSG();
+     friendMsg.setFriendship(Friendship.CONFIRMED);
      users.addUser(friendMsg);
     verify(writer).write(users.build().toByteArray());
     assertEquals(1,userInDB.getFriends().getFriendCount());
@@ -298,7 +335,8 @@ public class APITest extends ModelTest {
     
     for(int i =0; i<n; i++){
       friendInDB = dao.get(friends[i].getEntityKey(), User.class);
-      friendMsg = friendInDB.getMSG(user.getId());
+      friendMsg = friendInDB.getMSG();
+      friendMsg.setFriendship(Friendship.CONFIRMED);
       newusers.addUser(friendMsg);
     }
     when(req.getParameterValues(ParamKey.user_id.name())).thenReturn(newfriendIds);
@@ -318,6 +356,7 @@ public class APITest extends ModelTest {
     User friend = new User("b12345","password","secret");
     dao.save(user);
     dao.save(friend);
+   
     HttpServletRequest req = super.getMockRequestWithUser(user);
     HttpServletResponse resp  = mock(HttpServletResponse.class);
     ServletOutputStream writer = mock (ServletOutputStream.class);
@@ -329,21 +368,58 @@ public class APITest extends ModelTest {
     when(req.getParameter(ParamKey.phone.name())).thenReturn(friend.getPhone());
 
     API.get_phone_details.execute(req, resp,false);
-    UserPb returnMsg = friend.getMSG(user.getId()).build();
+    UserPb.Builder returnMsg = friend.getMSG();
+    returnMsg.setFriendship(Friendship.UNKNOWN);
  
     assertEquals(0,user.getFriends().getFriendCount());
-    verify(writer).write(returnMsg.toByteArray());
+    verify(writer).write(returnMsg.build().toByteArray());
     
     // request self info
    
     when(req.getParameter(ParamKey.phone.name())).thenReturn(user.getPhone());
 
     API.get_phone_details.execute(req, resp,false);
-    returnMsg = user.getMSG(user.getId()).build();
+    returnMsg = user.getMSG();
+    returnMsg.setFriendship(Friendship.UNKNOWN);
  
     assertEquals(0,user.getFriends().getFriendCount());
-    verify(writer).write(returnMsg.toByteArray());
+    verify(writer).write(returnMsg.build().toByteArray());
+    
+
+    // request a friend's info
+    //TODO: should ask the user(if not friend) to prove information disclosure for privacy
+    
+    user.addFriend(friend.getId(), Friendship.CONFIRMED);
+    friend.addFriend(user.getId(), Friendship.CONFIRMED);
+    dao.save(user);
+    dao.save(friend);
  
+    when(req.getParameter(ParamKey.phone.name())).thenReturn(friend.getPhone());
+
+    API.get_phone_details.execute(req, resp,false);
+    returnMsg = friend.getMSG();
+    returnMsg.setFriendship(Friendship.CONFIRMED);
+ 
+    assertEquals(1,user.getFriends().getFriendCount());
+    verify(writer).write(returnMsg.build().toByteArray());
+    
+    // request a friend to be confirmed
+    //TODO: should ask the user(if not friend) to prove information disclosure for privacy
+    User newuser = new User("abc","p","s");
+    dao.save(newuser);
+    newuser.addFriend(friend.getId(), Friendship.ADDED);
+    friend.addFriend(newuser.getId(), Friendship.WAIT_MY_CONFIRM);
+    dao.save(newuser);
+    dao.save(friend);
+    req = super.getMockRequestWithUser(friend);
+    when(req.getParameter(ParamKey.phone.name())).thenReturn(newuser.getPhone());
+
+    API.get_phone_details.execute(req, resp,false);
+    returnMsg = newuser.getMSG();
+    returnMsg.setFriendship(Friendship.WAIT_MY_CONFIRM);
+ 
+    assertEquals(2,friend.getFriends().getFriendCount());
+    verify(writer).write(returnMsg.build().toByteArray());
   }
   
   

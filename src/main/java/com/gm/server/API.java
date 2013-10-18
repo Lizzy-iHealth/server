@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -22,6 +23,7 @@ import org.json.JSONException;
 
 import com.gm.common.crypto.Hmac;
 import com.gm.common.model.Rpc.Applicant;
+import com.gm.common.model.Rpc.Applicants;
 import com.gm.common.model.Rpc.Friendship;
 import com.gm.common.model.Rpc.QuestPb;
 import com.gm.common.model.Rpc.UserPb;
@@ -34,8 +36,11 @@ import com.gm.server.model.Quest;
 import com.gm.server.model.Token;
 import com.gm.server.model.User;
 import com.gm.server.push.Pusher;
+import com.google.appengine.api.datastore.GeoPt;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
+import com.google.appengine.api.datastore.Link;
+import com.google.appengine.api.datastore.PostalAddress;
 import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.QueueFactory;
 import com.google.appengine.api.taskqueue.TaskOptions;
@@ -51,6 +56,7 @@ import com.google.common.base.Strings;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.gm.common.model.Rpc.Friend;
 import com.gm.common.model.Rpc.Friends;
+import com.gm.common.model.Server.FeedPb;
 
 
 public enum API {
@@ -88,10 +94,12 @@ public enum API {
       String key = ParamKey.key.getValue(req);
       User user = dao.get(key, User.class);
       long qUserIds[] = ParamKey.user_id.getLongs(req,-1);
-          
+      UsersPb.Builder users = UsersPb.newBuilder();
+      
+      /*
       HashSet<Long> friendset = new HashSet<Long>(); //used to verify the relationship with the requested id.
       
-      UsersPb.Builder users = UsersPb.newBuilder();
+      
       for (Friend f : user.getFriends().getFriendList()){
         if(f.getFriendship()==Friendship.CONFIRMED
             ||f.getFriendship()==Friendship.WAIT_MY_CONFIRM
@@ -99,13 +107,25 @@ public enum API {
             friendset.add(Long.valueOf(f.getId()));
         }
       }
+      */
       
+      ApiException err = null;
       for(long id:qUserIds){
-        if(friendset.contains(id)){
-            User friendUser = dao.get(KeyFactory.createKey("User", id), User.class);
-            UserPb.Builder friend = friendUser.getMSG(user.getId());
+     //   if(friendset.contains(id)){
+          User friendUser;
+          try{
+            friendUser = checkNotNull(dao.get(KeyFactory.createKey("User", id), User.class),ErrorCode.social_user_not_found);
+          }catch(ApiException e){
+            err = e;
+            continue;
+          }
+            UserPb.Builder friend = friendUser.getMSG();
+            friend.setFriendship(user.getFriendship(id));
             users.addUser(friend);
         }
+      
+      if(err!=null){
+        throw err;
       }
 
 //      System.out.println(users.build().toString());
@@ -131,10 +151,12 @@ public enum API {
       String qPhone = checkNotNull(ParamKey.phone.getValue(req),ErrorCode.auth_invalid_phone);
       
       User qUser = checkNotNull(dao.querySingle("phone", qPhone, User.class),ErrorCode.auth_phone_not_registered);
-      UserPb qUserMsg = qUser.getMSG(user.getId()).build();
-
-      System.out.println(qUserMsg.toString());
-      resp.getOutputStream().write(qUserMsg.toByteArray());
+      UserPb.Builder qUserMsg = qUser.getMSG();
+      qUserMsg.setFriendship(user.getFriendship(qUser.getId()));
+      
+      //System.out.println("============");
+      //System.out.println(qUserMsg.build().toString());
+      resp.getOutputStream().write(qUserMsg.build().toByteArray());
 
     }      
     
@@ -184,8 +206,10 @@ public enum API {
         ArrayList<String> idsToNotify = new ArrayList<String>(friendIDs.length); 
         for(int i=0;i<friendIDs.length;i++){
           friendKeys[i]=KeyFactory.createKey("User",friendIDs[i]);
-          User friend;
+          
+          User friend = null;
           try{
+             check(friendKeys[i]!=user.getEntityKey(),ErrorCode.social_add_self_friend);
              friend = checkNotNull(dao.get(friendKeys[i], User.class),ErrorCode.auth_user_not_registered);
           }catch(ApiException e){
             error = e;
@@ -199,6 +223,7 @@ public enum API {
             dao.save(friend);
             
         }
+       
         dao.save(user);
       if (idsToNotify.size() > 0) {
         String[] device_ids = new String[idsToNotify.size()];
@@ -503,7 +528,6 @@ public enum API {
         dao.save(quest, ownerKey);
         
         //TODO: filter the receivers with friend lists, only allow friends as receivers
-        //TODO: redirect to backend
         // prepare feed
         QuestPb.Builder questFeed = quest.getMSG();
 
@@ -518,12 +542,13 @@ public enum API {
    
    //Input Param: "key"        user's index
    //             "quest"      Base64 encoded QuestPb object with questId filled in.
+   //                          those fields will be updated if provided:lifespan,title,address,geopoint,reward,description,allowsharing,url
    //              
    //Output: N/A
    //only quest owner can update a quest.
    //option 1:
-   //updates will only be pushed to applicants. Others will see the update when they request for it.
-   //if all the receivers need to be updated, post a new quest.
+   //updates will be available in data store. Others will get a notification, they will see the update when they request for it.
+   //
    //
    //option 2:
    //all the receivers' related feed will be updated.
@@ -541,13 +566,19 @@ public enum API {
          Quest quest = checkNotNull(dao.get(questKey,Quest.class), ErrorCode.quest_quest_not_found);
          quest.updateQuest(questMsg);
          dao.save(quest, ownerKey);
-         
-         //option 2 implementation:
-         // prepare feed
-         long[] receiverIds = quest.getAllReceivers();
-         QuestPb.Builder questFeed = quest.getMSG();
+       
 
-         generateFeed(receiverIds,questFeed,"update");
+         long[] receiverIds = quest.getAllReceiversIds();
+         if(receiverIds.length>0){
+           //notify user some quest is updated with the quest key.
+           push(receiverIds,"quest",KeyFactory.keyToString(quest.getEntityKey()));
+         
+           //option 2 implementation:
+           //also update related feeds:
+           QuestPb.Builder questFeed = quest.getMSG();
+
+           generateFeed(receiverIds,questFeed,"update");
+         }
 
        }
          
@@ -580,7 +611,7 @@ public enum API {
 
           //option 2 implementation:
           // prepare feed
-          long[] receiverIds = quest.getAllReceivers();
+          long[] receiverIds = quest.getAllReceiversIds();
           deleteFeed(receiverIds,questId,ownerKey.getId());
           dao.delete(quest);
           
@@ -649,10 +680,12 @@ public enum API {
           long receiverIds[]= ParamKey.user_id.getLongs(req,-1);
 
           // get quest from datastore and add a post record the quest entity 
-          Quest quest = dao.get(questKey, Quest.class);
+          Quest quest = checkNotNull(dao.get(questKey, Quest.class),ErrorCode.quest_quest_not_found);
+          check(quest.isAllow_sharing(),ErrorCode.quest_not_allow_sharing);
+                
           quest.addPost(sharerKey.getId(),receiverIds); //add at the end
           dao.save(quest);
-          
+                  
           //TODO: redirect to backend
           // prepare feed
           QuestPb.Builder questFeed = quest.getMSG();
@@ -674,11 +707,11 @@ public enum API {
        // get quest key
        
        Key questKey = getQuestKey(req);
-       Key applicantKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
+       Key applierKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
        
        //ensure the applicant's user_id field is the one send the request.
        Applicant applicant  = getApplicant(req);
-       Applicant newApplicant = applicant.toBuilder().setUserId(applicantKey.getId()).build();
+       Applicant newApplicant = applicant.toBuilder().setUserId(applierKey.getId()).build();
        
        // get quest from datastore and add an application 
        Quest quest = checkNotNull(dao.get(questKey, Quest.class),ErrorCode.quest_quest_not_found);
@@ -686,9 +719,14 @@ public enum API {
        dao.save(quest);
        
        //TODO: redirect to backend
+       //TODO: update related feed?  No, user pull the quest when they get notification
+     
+
        //push message to quest owner and related bidders
        long[] receivers = {quest.getParent().getId()};
        push(receivers,"quest","new application");
+       
+  
 
      }
     
@@ -697,30 +735,42 @@ public enum API {
 // quest owner can update all applicants, 
 //Input:       id  :quest id, 
 //       user_id   :whose application is updated
-//Output: update related feeds and notify the applicants
-update_application("/quest/",true){
+//       applicant  :new applicant message.
+//Output: notify the owner and related applicants
+update_applicants("/quest/",true){
 
   @Override
   public void handle(HttpServletRequest req, HttpServletResponse resp)
       throws ApiException, IOException {
     
-    // retrieve quest key
+    // get input
     
     Key questKey = getQuestKey(req);
-    Key applicantKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
-    Applicant applicant  = getApplicant(req);
+    Key userKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
+    List<Applicant> applicants  = getApplicants(req);
     
-    // get quest from datastore and add an application 
+    // get quest from datastore 
     Quest quest = dao.get(questKey, Quest.class);
-    quest.addApplicant(applicant); //add at the end
-    dao.save(quest);
+    ArrayList<Long> receivers = new ArrayList<Long>(applicants.size()+1);
+    receivers.add(userKey.getId());
+
+      // only update when user is  owner, or the same applicant 
+      for(Applicant app:applicants){
+        if(quest.getParent().getId()==userKey.getId() ||app.getUserId()==userKey.getId()){
+          quest.updateApplicant(app); //add at the end
+          receivers.add(app.getUserId());
+        }
+      }
+      dao.save(quest);
     
-    //TODO: redirect to backend
+    //TODO: redirect to back-end
     //push message to quest owner and related bidders
-    long[] receivers = {quest.getParent().getId()};
-    push(receivers,"quest","new application");
+    
+    push(receivers,"quest",KeyFactory.keyToString(quest.getEntityKey()));
 
   }
+
+
  
 },
    
@@ -805,6 +855,15 @@ update_application("/quest/",true){
   }
 
 
+  protected Applicant getApplicant(HttpServletRequest req) throws InvalidProtocolBufferException {
+    String questString = ParamKey.applicant.getValue(req);
+    
+    Applicant app= Applicant.parseFrom(Base64.decode(questString,Base64.DEFAULT));
+    
+   return app;
+  }
+
+
   protected void deleteFeed(long[] receiverIds, long questId, long ownerId) {
 
     
@@ -821,7 +880,7 @@ update_application("/quest/",true){
   }
 
 
-  protected void push(long[] ids, String data_key, String data_value) throws IOException {
+  protected static void push(long[] ids, String data_key, String data_value) throws IOException {
 
       Map<String, String> data = new HashMap<String, String>();
       data.put(data_key, data_value);
@@ -838,7 +897,21 @@ update_application("/quest/",true){
       }
     }
   
+  private static void push(ArrayList<Long> receivers, String data_key,
+      String data_value) throws IOException {
+    long ids[] = getLongs(receivers.toArray());
+    push(ids,data_key,data_value);
+    
+  }
+  
+  private static long[] getLongs(Object[] array) {
+    long[] la = new long [array.length];
+    for(int i=0; i<array.length;i++){
+      la[i]  = ((Long)array[i]).longValue();
+    }
 
+    return la;
+  }
 
   protected void generateFeed(long[] receiverIds, QuestPb.Builder questMsg, String pushMsg) {
     // TODO Auto-generated method stub
@@ -925,7 +998,7 @@ update_application("/quest/",true){
    * @param resp
    * @throws IOException
    */
-  public void execute(HttpServletRequest req, HttpServletResponse resp,
+  void execute(HttpServletRequest req, HttpServletResponse resp,
       boolean withHmac) throws IOException {
     if (withHmac) {
       execute(req, resp);
@@ -988,7 +1061,8 @@ update_application("/quest/",true){
     } catch (ApiException e) {
       resp.setStatus(HttpServletResponse.SC_BAD_REQUEST); // API failed on
                                                           // validation
-      resp.getOutputStream().write(e.error);
+      info("api error with code = %d", e.error);
+      resp.getOutputStream().write(Integer.toString(e.error).getBytes());
     } catch (Exception e) {
       resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // Unknown
                                                                     // error
@@ -1009,12 +1083,13 @@ update_application("/quest/",true){
     return questMsg;
   }
 
-  private static Applicant getApplicant(HttpServletRequest req)
+  private static List<Applicant> getApplicants(HttpServletRequest req)
       throws InvalidProtocolBufferException {
-    String questString = ParamKey.applicant.getValue(req);
+    String questString = ParamKey.applicants.getValue(req);
      
-     Applicant app= Applicant.parseFrom(Base64.decode(questString,Base64.DEFAULT));
-    return app;
+     Applicants apps= Applicants.parseFrom(Base64.decode(questString,Base64.DEFAULT));
+     
+    return apps.getApplicantList();
   }
 
   private static Key getQuestKey(HttpServletRequest req) {

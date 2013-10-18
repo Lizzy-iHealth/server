@@ -17,6 +17,7 @@ public enum ParamKey {
 	id,
 	owner_id,
 	applicant,
+	applicants, //update applicants in batch
 	quest;
 	
 	public String getValue(HttpServletRequest req) {

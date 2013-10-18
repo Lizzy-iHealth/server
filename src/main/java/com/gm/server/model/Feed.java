@@ -1,5 +1,6 @@
 package com.gm.server.model;
 
+import com.gm.common.model.Rpc.Applicant.Status;
 import com.gm.common.model.Rpc.QuestPb;
 import com.gm.common.model.Server.FeedPb;
 import com.gm.common.model.Server.Feeds;
@@ -98,6 +99,10 @@ public class Feed extends Persistable<Feed> {
     feeds.removeFeed(i);
     
   }
-  
+
+
+
+  //change the feeds' owner's status of the quest in "ith" feed 
+
 
 }

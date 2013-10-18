@@ -150,6 +150,7 @@ public class Quest extends Persistable<Quest> {
     return qMsg;
   }
 
+ //return the index of the applicant in applicants message
  private int findApplicant(long id) {
   for(int i =0; i< applicants.getApplicantCount();i++){
     if(id == applicants.getApplicant(i).getUserId()){
@@ -160,15 +161,35 @@ public class Quest extends Persistable<Quest> {
 }
 
 public void updateQuest(QuestPb q) {
-   start_time.setTime(q.getLifespan().getCreateTime());
-   end_time .setTime(q.getLifespan().getDeleteTime());
+  if(q.hasLifespan()){
+    if(q.getLifespan().hasCreateTime()){
+      start_time.setTime(q.getLifespan().getCreateTime());
+    }
+    if(q.getLifespan().hasDeleteTime()){
+      end_time .setTime(q.getLifespan().getDeleteTime());
+    }
+  }
+  if(q.hasTitle()){
    title = q.getTitle();
-   address = new PostalAddress(q.getAddress());
-   geo_point = new GeoPt(q.getGeoPoint().getLatitude(),q.getGeoPoint().getLongitude());
-   prize = q.getReward().getGold();
-   description = q.getDescription();
+  }
+  if(q.hasAddress()){
+    address = new PostalAddress(q.getAddress());
+  }
+  if(q.hasGeoPoint()){
+    geo_point = new GeoPt(q.getGeoPoint().getLatitude(),q.getGeoPoint().getLongitude());
+  }
+  if(q.hasReward()){
+    prize = q.getReward().getGold();
+  }
+  if(q.hasDescription()){
+    description = q.getDescription();
+  }
+  if(q.hasAllowSharing()){
    allow_sharing = q.getAllowSharing();
+  }
+  if(q.hasUrl()){
    attach_link = new Link(q.getUrl());
+  }
    updateAt = new Date();
  }
  
@@ -280,8 +301,12 @@ public void updateQuest(QuestPb q) {
     posts.addPost(postrecord);
   }
 
-  public long[] getAllReceivers() {
+  
+//can not guarantee the order of receivers.
+  public long[] getAllReceiversIds() {
     HashSet <Long> receivers  = new HashSet<Long>();
+    
+    //get all the audiences
     for(PostRecordPb post : posts.getPostList()){
       for(Long id : post.getAudienceList()){
         if (!receivers.contains(id)){
@@ -289,21 +314,37 @@ public void updateQuest(QuestPb q) {
         }
       }
     }
-    long ids[] = longValuesOfLongs((Long[])receivers.toArray()); 
+    long ids[] = getLongs(receivers.toArray());
+    return  ids;
+  }
+  
+  // can not guarantee the order of applicants.
+  public long[] getAllApplicantsIds() {
+    HashSet <Long> receivers  = new HashSet<Long>();
+  
+    //get all applicants
+    for(Applicant applicant : applicants.getApplicantList()){
+      long id = applicant.getUserId();
+        if (!receivers.contains(id)){
+          receivers.add(id);
+        }
+    }
+    
+    long ids[] = getLongs(receivers.toArray());
+    
     return  ids;
   }
 
-  private long[] longValuesOfLongs(Long[] array) {
+  private long[] getLongs(Object[] array) {
     long[] la = new long [array.length];
     for(int i=0; i<array.length;i++){
-      la[i]  = array[i].longValue();
+      la[i]  = ((Long)array[i]).longValue();
     }
 
     return la;
   }
 
   public void addApplicant(Applicant applicant) {
-    // TODO Auto-generated method stub
     //  find applicant
     // if found, update
     // if not found , add at the end
@@ -313,6 +354,35 @@ public void updateQuest(QuestPb q) {
     }else{
     applicants.addApplicant(applicant);
     }
+  }
+
+  //only update type and bid
+  public void updateApplicant(Applicant app) {
+
+    if(!app.hasUserId()) {
+      System.err.println("empty applicant id");
+      return;
+    }
+    int i = findApplicant(app.getUserId());
+    Applicant.Builder curApp = applicants.getApplicant(i).toBuilder();
+    if(app.hasBid()){
+      curApp.setBid(app.getBid());
+    }
+    if(app.hasType()){
+      Applicant.Status newType = app.getType();
+      
+      
+      if(curApp.hasType()&&curApp.getType()!=newType){
+        Applicant.Status curType = curApp.getType();
+        if((newType==Applicant.Status.ADDED && curType == Applicant.Status.WAIT_MY_CONFIRM )
+            || (newType==Applicant.Status.WAIT_MY_CONFIRM && curType == Applicant.Status.ADDED )){
+            newType = Applicant.Status.CONFIRMED;
+        }
+      }  
+      curApp.setType(newType);
+    }
+    applicants.setApplicant(i, curApp.build());
+    
   }
 }
 
