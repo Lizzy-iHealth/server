@@ -283,18 +283,33 @@ public class User extends Persistable<User> {
     }
   }
 
-  public UserPb.Builder getMSG() {
+  public UserPb.Builder getMSG(long id) {
     
     EntityLog log = EntityLog.newBuilder().setCreatedAt(createTime.getTime()).setUpdatedAt(lastLoginTime.getTime()).build();
     GeoPoint geopt = GeoPoint.newBuilder().setLatitude(geo.getLatitude()).setLongitude(geo.getLatitude()).build();
     
-    UserPb.Builder msg = UserPb.newBuilder().setId(getId()).setLog(log)
-        .setName(name).setPhone(phone).setLocation(geopt).setThumbnail(thumbnail)
-        .setRating(rating);
+    UserPb.Builder msg = UserPb.newBuilder().setId(getId())
+                                            .setLog(log)
+                                            .setRating(rating)
+                                            .setPhone(phone);
     
+    if(id==this.getId()
+        ||getFriendship(id)==Friendship.ADDED
+        ||getFriendship(id)==Friendship.CONFIRMED
+        ||getFriendship(id)==Friendship.STARED
+        ||getFriendship(id)==Friendship.INVITED
+        ||getFriendship(id)==Friendship.MUTED ){
+        msg.setName(name)
+           .setLocation(geopt)
+           .setThumbnail(thumbnail);
+    }else{
+        msg.setName("-")
+           .setThumbnail(Thumbnail.newBuilder().setSmallUrl("/images/user-256.png").setLargeUrl("/images/user-512.png"));
+    }
 
     return msg;
   }
+  
   
   public Friendship getFriendship(long id){
     int i = findFriend(id);
@@ -308,6 +323,15 @@ public class User extends Persistable<User> {
      return Friendship.UNKNOWN;
     }
     
+  }
+
+  public long[] getFriendIds() {
+    long ids[] = new long[friends.getFriendCount()];
+    int i=0;
+    for(Friend f : friends.getFriendList()){
+      ids[i]=f.getId();
+    }
+    return ids;
   }
   
   

@@ -121,14 +121,14 @@
         <url-pattern>/social/get_friends_details</url-pattern>
     </servlet-mapping> 
     
-        <servlet>
-        <servlet-name>get_phone_details</servlet-name>
-        <servlet-class>com.gm.server.GetPhoneDetailsServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>get_phone_details</servlet-name>
-        <url-pattern>/social/get_phone_details</url-pattern>
-    </servlet-mapping> 
+<!--         <servlet> -->
+<!--         <servlet-name>get_phone_details</servlet-name> -->
+<!--         <servlet-class>com.gm.server.GetPhoneDetailsServlet</servlet-class> -->
+<!--     </servlet> -->
+<!--     <servlet-mapping> -->
+<!--         <servlet-name>get_phone_details</servlet-name> -->
+<!--         <url-pattern>/social/get_phone_details</url-pattern> -->
+<!--     </servlet-mapping>  -->
     
     
         <servlet>

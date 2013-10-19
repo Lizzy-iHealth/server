@@ -296,7 +296,7 @@ public class APITest extends ModelTest {
     
     User userInDB = dao.get(user.getKey(), User.class);
     User friendInDB = dao.get(friend.getEntityKey(), User.class);
-    UserPb.Builder friendMsg = friendInDB.getMSG();
+    UserPb.Builder friendMsg = friendInDB.getMSG(userInDB.getId());
     friendMsg.setFriendship(Friendship.UNKNOWN);
     users.addUser(friendMsg);
     assertEquals(0,user.getFriends().getFriendCount());
@@ -311,7 +311,7 @@ public class APITest extends ModelTest {
     
      userInDB = dao.get(user.getKey(), User.class);
      friendInDB = dao.get(friend.getEntityKey(), User.class);
-     friendMsg = friendInDB.getMSG();
+     friendMsg = friendInDB.getMSG(userInDB.getId());
      friendMsg.setFriendship(Friendship.CONFIRMED);
      users.clearUser();
      users.addUser(friendMsg);
@@ -341,7 +341,7 @@ public class APITest extends ModelTest {
     
     for(int i =0; i<n; i++){
       friendInDB = dao.get(friends[i].getEntityKey(), User.class);
-      friendMsg = friendInDB.getMSG();
+      friendMsg = friendInDB.getMSG(user.getId());
       friendMsg.setFriendship(Friendship.CONFIRMED);
       newusers.addUser(friendMsg);
     }
@@ -374,7 +374,7 @@ public class APITest extends ModelTest {
     when(req.getParameter(ParamKey.phone.name())).thenReturn(friend.getPhone());
 
     API.get_phone_details.execute(req, resp,false);
-    UserPb.Builder returnMsg = friend.getMSG();
+    UserPb.Builder returnMsg = friend.getMSG(user.getId());
     returnMsg.setFriendship(Friendship.UNKNOWN);
  
     assertEquals(0,user.getFriends().getFriendCount());
@@ -385,7 +385,7 @@ public class APITest extends ModelTest {
     when(req.getParameter(ParamKey.phone.name())).thenReturn(user.getPhone());
 
     API.get_phone_details.execute(req, resp,false);
-    returnMsg = user.getMSG();
+    returnMsg = user.getMSG(user.getId());
     returnMsg.setFriendship(Friendship.UNKNOWN);
  
     assertEquals(0,user.getFriends().getFriendCount());
@@ -403,7 +403,7 @@ public class APITest extends ModelTest {
     when(req.getParameter(ParamKey.phone.name())).thenReturn(friend.getPhone());
 
     API.get_phone_details.execute(req, resp,false);
-    returnMsg = friend.getMSG();
+    returnMsg = friend.getMSG(user.getId());
     returnMsg.setFriendship(Friendship.CONFIRMED);
  
     assertEquals(1,user.getFriends().getFriendCount());
@@ -421,7 +421,7 @@ public class APITest extends ModelTest {
     when(req.getParameter(ParamKey.phone.name())).thenReturn(newuser.getPhone());
 
     API.get_phone_details.execute(req, resp,false);
-    returnMsg = newuser.getMSG();
+    returnMsg = newuser.getMSG(friend.getId());
     returnMsg.setFriendship(Friendship.WAIT_MY_CONFIRM);
  
     assertEquals(2,friend.getFriends().getFriendCount());

@@ -166,7 +166,7 @@ public class Quest extends Persistable<Quest> {
   }
 
  //return the index of the applicant in applicants message
- private int findApplicant(long id) {
+ public int findApplicant(long id) {
   for(int i =0; i< applicants.getApplicantCount();i++){
     if(id == applicants.getApplicant(i).getUserId()){
       return i;
@@ -369,14 +369,15 @@ public void updateQuest(QuestPb q) {
     int i = findApplicant(applicant.getUserId());
     int appStatus = applicant.getType().getNumber();
     if(i!=-1){
-      appStatus = updateApplicant(i, applicant);
+      updateApplicant(i, applicant);
+      appStatus = applicants.getApplicant(i).getType().getNumber();
     }else{
     applicants.addApplicant(applicant);
     }
       return appStatus;
   }
 
-  private int updateApplicant(int i, Applicant app) {
+  public void updateApplicant(int i, Applicant app) {
     Applicant.Builder curApp = applicants.getApplicant(i).toBuilder();
     if(app.hasBid()&&!isDeal()){
       curApp.setBid(app.getBid());
@@ -395,19 +396,15 @@ public void updateQuest(QuestPb q) {
       curApp.setType(newType);
     }
     applicants.setApplicant(i, curApp.build());
-    return curApp.getType().getNumber();
+  
   }
 
   //only update type and bid
   public int updateApplicant(Applicant app) {
 
-    if(!app.hasUserId()) {
-      System.err.println("empty applicant id");
-      return -1;
-    }
     int i = findApplicant(app.getUserId());
-    return updateApplicant(i,app);
-    
+    updateApplicant( i, app);
+    return i;
   }
 
   public boolean isDraft() {

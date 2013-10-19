@@ -83,8 +83,11 @@ public class RegisterServletTest extends ModelTest{
       String key = newUser.getKey();
       
       verify(writer).write(key);
-      verify(writer).write(",");
+      verify(writer,times(2)).write(",");
       verify(writer).write(secret);
+     
+      verify(writer).write(Long.toString(newUserId));
+      
       assertEquals(1,newUser.getFriends().getFriendCount());
       assertEquals(Friendship.WAIT_MY_CONFIRM,newUser.getFriends().getFriend(0).getFriendship());
       
@@ -132,9 +135,10 @@ public class RegisterServletTest extends ModelTest{
 	    String key = KeyFactory.keyToString(e.getKey());
 	    
 	    verify(writer).write(key);
-	    verify(writer).write(",");
+	    verify(writer,times(2)).write(",");
 	    verify(writer).write(secret);
-	 
+      verify(writer).write(Long.toString(e.getKey().getId()));
+      
 	    assertEquals(phone, e.getProperty("phone"));
 	    assertEquals(password, e.getProperty("password"));
 	    
@@ -161,7 +165,7 @@ public class RegisterServletTest extends ModelTest{
 	     afterRequest = new Date();
 
 	    verify(response2).setStatus(HttpServletResponse.SC_BAD_REQUEST);
-	    verify(streamwriter).write(ErrorCode.auth_phone_registered);
+	    verify(streamwriter).write(Integer.toString(ErrorCode.auth_phone_registered).getBytes());
 	   
 	     query = new Query("User").setFilter(eq("phone", phone));
 	     e = DatastoreServiceFactory.getDatastoreService().prepare(query).asSingleEntity();
@@ -199,7 +203,7 @@ public class RegisterServletTest extends ModelTest{
 	    binder.doPost(request, response);
 
 	    verify(response).setStatus(HttpServletResponse.SC_BAD_REQUEST);
-	    verify(streamwriter).write(ErrorCode.auth_incorrect_token);;
+	    verify(streamwriter).write(Integer.toString(ErrorCode.auth_incorrect_token).getBytes());
 	}
 	
 	 @Test
@@ -219,7 +223,7 @@ public class RegisterServletTest extends ModelTest{
 	      binder.doPost(request, response);
 
 	      verify(response).setStatus(HttpServletResponse.SC_BAD_REQUEST);
-	      verify(streamwriter).write(ErrorCode.auth_token_not_sent);;
+	      verify(streamwriter).write(Integer.toString(ErrorCode.auth_token_not_sent).getBytes());
 	  }
 
 }

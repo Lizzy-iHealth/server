@@ -32,7 +32,7 @@ public enum ParamKey {
 	 public long[] getLongs(HttpServletRequest req, long defaultValue){
 	   String[] values = req.getParameterValues(name());
 	 
-	    
+	    if(values==null){return null;}
 	    long[] longs = new long[values.length];
 	    for(int i = 0; i < values.length;i++){
 	      try {

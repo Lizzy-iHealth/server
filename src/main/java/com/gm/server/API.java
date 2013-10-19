@@ -85,7 +85,7 @@ public enum API {
   },
   
   //Input Param: "key"        user's key
-  //             "user_id"    user id list whose details are returned
+  //             "user_id"    user id list whose details are returned, if null, then return all friends details
   //Output Param: byte[] UsersPb :    users' details
   get_friends_details("/social",true){
 
@@ -96,7 +96,9 @@ public enum API {
       User user = dao.get(key, User.class);
       long qUserIds[] = ParamKey.user_id.getLongs(req,-1);
       UsersPb.Builder users = UsersPb.newBuilder();
-      
+      if(qUserIds==null){
+        qUserIds = user.getFriendIds();
+      }
       /*
       HashSet<Long> friendset = new HashSet<Long>(); //used to verify the relationship with the requested id.
       
@@ -120,7 +122,7 @@ public enum API {
             err = e;
             continue;
           }
-            UserPb.Builder friend = friendUser.getMSG();
+            UserPb.Builder friend = friendUser.getMSG(user.getId());
             friend.setFriendship(user.getFriendship(id));
             users.addUser(friend);
         }
@@ -152,7 +154,7 @@ public enum API {
       String qPhone = checkNotNull(ParamKey.phone.getValue(req),ErrorCode.auth_invalid_phone);
       
       User qUser = checkNotNull(dao.querySingle("phone", qPhone, User.class),ErrorCode.auth_phone_not_registered);
-      UserPb.Builder qUserMsg = qUser.getMSG();
+      UserPb.Builder qUserMsg = qUser.getMSG(user.getId());
       qUserMsg.setFriendship(user.getFriendship(qUser.getId()));
       
       //System.out.println("============");
@@ -906,11 +908,12 @@ update_applicants("/quest/",true){
     
       for(Applicant app:applicants){
         if(quest.getParent().getId()==userKey.getId() ||app.getUserId()==userKey.getId()){
-          int result = quest.updateApplicant(app);
+
+          int index = quest.updateApplicant(app);
           receivers.add(app.getUserId());
           
           // response is the status of the applicant
-          resp.getWriter().write(Integer.toString(result));
+          resp.getWriter().write(Integer.toString(quest.getApplicants().getApplicant(index).getType().getNumber()));
           resp.getWriter().write(",");
         }
       }

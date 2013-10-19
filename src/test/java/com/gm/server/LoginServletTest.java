@@ -7,6 +7,7 @@ import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -73,8 +74,9 @@ public class LoginServletTest extends ModelTest{
 	    	  String secret = userEntity.getSecret();
 	    		String key = userEntity.getKey();
 	        verify(writer).write(key);
-	        verify(writer).write(",");
+	        verify(writer,times(2)).write(",");
 	        verify(writer).write(secret);
+	        verify(writer).write(Long.toString(userEntity.getId()));
 	  	    
 	  	    Date dateSeq[] = {
 	  		  	   userEntity.getCreateTime()
