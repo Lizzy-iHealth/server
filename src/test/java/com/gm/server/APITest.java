@@ -288,12 +288,17 @@ public class APITest extends ModelTest {
     String[] friendIds = {String.valueOf(friend.getId())};
     when(resp.getOutputStream()).thenReturn(writer);
     
-    // request a user that is not requester's friend, should return nothing for privacy
+    // request a user that is not requester's friend, should return basic information
     when(req.getParameterValues(ParamKey.user_id.name())).thenReturn(friendIds);
 
     API.get_friends_details.execute(req, resp,false);
     UsersPb.Builder users = UsersPb.newBuilder();
- 
+    
+    User userInDB = dao.get(user.getKey(), User.class);
+    User friendInDB = dao.get(friend.getEntityKey(), User.class);
+    UserPb.Builder friendMsg = friendInDB.getMSG();
+    friendMsg.setFriendship(Friendship.UNKNOWN);
+    users.addUser(friendMsg);
     assertEquals(0,user.getFriends().getFriendCount());
     verify(writer).write(users.build().toByteArray());
     
@@ -304,10 +309,11 @@ public class APITest extends ModelTest {
     dao.save(friend);
     API.get_friends_details.execute(req, resp,false);
     
-    User userInDB = dao.get(user.getKey(), User.class);
-     User friendInDB = dao.get(friend.getEntityKey(), User.class);
-     UserPb.Builder friendMsg = friendInDB.getMSG();
+     userInDB = dao.get(user.getKey(), User.class);
+     friendInDB = dao.get(friend.getEntityKey(), User.class);
+     friendMsg = friendInDB.getMSG();
      friendMsg.setFriendship(Friendship.CONFIRMED);
+     users.clearUser();
      users.addUser(friendMsg);
     verify(writer).write(users.build().toByteArray());
     assertEquals(1,userInDB.getFriends().getFriendCount());

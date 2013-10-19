@@ -24,6 +24,7 @@ import org.json.JSONException;
 import com.gm.common.crypto.Hmac;
 import com.gm.common.model.Rpc.Applicant;
 import com.gm.common.model.Rpc.Applicants;
+import com.gm.common.model.Rpc.Currency;
 import com.gm.common.model.Rpc.Friendship;
 import com.gm.common.model.Rpc.QuestPb;
 import com.gm.common.model.Rpc.UserPb;
@@ -442,6 +443,8 @@ public enum API {
       resp.getWriter().write(key);
       resp.getWriter().write(",");
       resp.getWriter().write(secret);
+      resp.getWriter().write(",");
+      resp.getWriter().write(Long.toString(user.getId()));
     }
   },
 
@@ -486,6 +489,8 @@ public enum API {
       resp.getWriter().write(key);
       resp.getWriter().write(",");
       resp.getWriter().write(secret);
+      resp.getWriter().write(",");
+      resp.getWriter().write(Long.toString(user.getId()));
     }
   },
 
@@ -509,8 +514,44 @@ public enum API {
   
   //Input Param: "key"        user's index
   //             "quest"      Base64 encoded QuestPb object
+  //         
+  //Output: quest ID.
+  
+    save_quest("/quest/",true){
+
+      @Override
+      public void handle(HttpServletRequest req, HttpServletResponse resp)
+          throws ApiException, IOException {
+        
+        QuestPb questMsg = getQuestPb(req);
+        Key ownerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
+        
+
+        Quest quest = null;
+        // repeated save:
+        if(questMsg.hasId()&&questMsg.hasOwnerId()&&questMsg.getOwnerId()==ownerKey.getId()){
+            Key questKey = KeyFactory.createKey(ownerKey, "Quest", questMsg.getId());
+            quest = checkNotNull(dao.get(questKey, Quest.class),ErrorCode.quest_quest_not_found);
+            check(quest.isDraft(),ErrorCode.quest_not_draft);
+            quest.updateQuest(questMsg);
+        }else{
+        // first time save
+            quest = new Quest(questMsg);
+        }
+        
+        quest.setStatus(QuestPb.Status.DRAFT);
+        dao.save(quest, ownerKey);
+        resp.getWriter().write(Long.toString(quest.getId()));
+        
+      }
+        
+   },
+   
+  //Input Param: "key"        user's index
+  //             "quest"      Base64 encoded QuestPb object
   //              "user_id"   receiver list
-  //Output: push notification
+  //Output:       quest id
+   //             push notification
   
     post_quest("/quest/",true){
 
@@ -521,23 +562,83 @@ public enum API {
         QuestPb questMsg = getQuestPb(req);
         Key ownerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
         long receiverIds[]= ParamKey.user_id.getLongs(req,-1);
-
+        check(receiverIds.length>0,ErrorCode.quest_receiver_not_found);
         // save quest and post record to DB  
         Quest quest = new Quest(questMsg);
         quest.addPost(ownerKey.getId(),receiverIds); //add at the end
-        dao.save(quest, ownerKey);
         
+        //if only one receiver, add him as the pre-confirmed applicant
+        //once he apply for the quest, he will be automatically confirmed, and the quest change to "deal"
+        if(receiverIds.length==1){
+          // add applicants:
+          long id = receiverIds[0];
+            Applicant applicant = Applicant.newBuilder()
+                                  .setUserId(id)
+                                  .setBid(Currency.newBuilder().setGold(quest.getPrize()))
+                                  .setType(Applicant.Status.ASSIGN).build();
+            quest.addApplicant(applicant);
+          }
+        
+        quest.setStatus(QuestPb.Status.PUBLISHED);
+        dao.save(quest, ownerKey);
+        resp.getWriter().write(Long.toString(quest.getId()));
         //TODO: filter the receivers with friend lists, only allow friends as receivers
         // prepare feed
         QuestPb.Builder questFeed = quest.getMSG();
-
-        generateFeed(receiverIds,questFeed,"post");
+        if(receiverIds.length==1){
+          generateFeed(receiverIds,questFeed,"assign");
+        }else{
+          generateFeed(receiverIds,questFeed,"post");
+        }
         
         // push to receivers
         
       }
         
    },
+   
+   //Input Param: "key"        user's index
+   //             "quest"      Base64 encoded QuestPb object
+   //              "user_id"   assignment list
+   //Output: push notification
+   
+     assign_quest("/quest/",true){
+
+       @Override
+       public void handle(HttpServletRequest req, HttpServletResponse resp)
+           throws ApiException, IOException {
+         
+         QuestPb questMsg = getQuestPb(req);
+         Key ownerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
+         long receiverIds[]= ParamKey.user_id.getLongs(req,-1);
+         
+         // save quest and post record to DB  
+         Quest quest = new Quest(questMsg);
+         quest.addPost(ownerKey.getId(),receiverIds); //add at the end
+         
+         // add applicants:
+         for(long id:receiverIds){
+           Applicant applicant = Applicant.newBuilder()
+                                 .setUserId(id)
+                                 .setBid(Currency.newBuilder().setGold(quest.getPrize()))
+                                 .setType(Applicant.Status.ASSIGN).build();
+           quest.addApplicant(applicant);
+         }
+         
+         quest.setStatus(QuestPb.Status.PUBLISHED);
+         dao.save(quest, ownerKey);
+         
+         //TODO: filter the receivers with friend lists, only allow friends as receivers
+         // prepare feed
+         QuestPb.Builder questFeed = quest.getMSG();
+
+         generateFeed(receiverIds,questFeed,"assign");
+         
+         // push to receivers
+         
+       }
+         
+    },
    
    
    //Input Param: "key"        user's index
@@ -584,7 +685,41 @@ public enum API {
          
     },
     
-    
+    //Input Param: "key"        user's index
+    //             "id"         quest id to be deleted
+    //              
+    //Output: N/A
+    //only quest owner can stop posting a quest when reach a deal
+    //option 1:
+    //deal will only be pushed to applicants. Others will see the deal status when they request for it.
+    //
+    //option 2:
+    //all the receivers' related feed will be deleted.
+    stop_posting_quest("/quest/",true){
+
+        @Override
+        public void handle(HttpServletRequest req, HttpServletResponse resp)
+            throws ApiException, IOException {
+          
+          // retrieve quest
+                   
+          Key ownerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
+          long questId = ParamKey.id.getLong(req, -1);
+          Key questKey = KeyFactory.createKey(ownerKey, "Quest", questId);
+          // save quest and post record to DB  
+          Quest quest = checkNotNull(dao.get(questKey,Quest.class), ErrorCode.quest_quest_not_found);
+          quest.setStatus(QuestPb.Status.DEAL);
+          
+          dao.save(quest);
+          //option 2 implementation:
+          // prepare feed
+          long[] receiverIds = quest.getAllReceiversIds();
+          deleteFeed(receiverIds,questId,ownerKey.getId());
+          
+        }
+          
+     },
+     
     //Input Param: "key"        user's index
     //             "id"         quest id to be deleted
     //              
@@ -682,7 +817,7 @@ public enum API {
           // get quest from datastore and add a post record the quest entity 
           Quest quest = checkNotNull(dao.get(questKey, Quest.class),ErrorCode.quest_quest_not_found);
           check(quest.isAllow_sharing(),ErrorCode.quest_not_allow_sharing);
-                
+          check(!quest.isDeal(),ErrorCode.quest_is_deal);     
           quest.addPost(sharerKey.getId(),receiverIds); //add at the end
           dao.save(quest);
                   
@@ -694,10 +829,13 @@ public enum API {
 
         }
    },
+   
   // applicants can update their own application(identified by their user id) by apply again with new application info
    //Input:   id: quest id
    //         owner_id: quest owner's id
    //         applicant: application information
+   //Output:  applicant status
+   //         push "quest:new application" to owner
    apply_quest("/quest/",true){
 
      @Override
@@ -711,28 +849,35 @@ public enum API {
        
        //ensure the applicant's user_id field is the one send the request.
        Applicant applicant  = getApplicant(req);
-       Applicant newApplicant = applicant.toBuilder().setUserId(applierKey.getId()).build();
+       Applicant newApplicant = applicant.toBuilder()
+                                 .setUserId(applierKey.getId())
+                                 .setType(Applicant.Status.WAIT_MY_CONFIRM).build();
        
        // get quest from datastore and add an application 
        Quest quest = checkNotNull(dao.get(questKey, Quest.class),ErrorCode.quest_quest_not_found);
-       quest.addApplicant(newApplicant); //add at the end
+       
+       // check the quest hasn't reach a deal
+       check(!quest.isDeal(),ErrorCode.quest_is_deal);  
+       
+       int status = quest.addApplicant(newApplicant); //add at the end
+       
        dao.save(quest);
        
-       //TODO: redirect to backend
-       //TODO: update related feed?  No, user pull the quest when they get notification
-     
-
-       //push message to quest owner and related bidders
+       //return the status of the applicant.
+      
+      resp.getWriter().write(Integer.toString(status));
+      
+       //push message to quest owner.
        long[] receivers = {quest.getParent().getId()};
        push(receivers,"quest","new application");
-       
-  
-
      }
     
 },
 
 // quest owner can update all applicants, 
+// owner can use this api to : confirm, reject, reward the applicants.
+// owner is suggested to use "assign_quest" API to create a quest and assign it to receivers. 
+// applicants can use this api to accept, reject , change the bid
 //Input:       id  :quest id, 
 //       user_id   :whose application is updated
 //       applicant  :new applicant message.
@@ -751,18 +896,26 @@ update_applicants("/quest/",true){
     
     // get quest from datastore 
     Quest quest = dao.get(questKey, Quest.class);
+    
+    check(!quest.isDeal(),ErrorCode.quest_is_deal);  
+    
     ArrayList<Long> receivers = new ArrayList<Long>(applicants.size()+1);
     receivers.add(userKey.getId());
-
+    
       // only update when user is  owner, or the same applicant 
+    
       for(Applicant app:applicants){
         if(quest.getParent().getId()==userKey.getId() ||app.getUserId()==userKey.getId()){
-          quest.updateApplicant(app); //add at the end
+          int result = quest.updateApplicant(app);
           receivers.add(app.getUserId());
+          
+          // response is the status of the applicant
+          resp.getWriter().write(Integer.toString(result));
+          resp.getWriter().write(",");
         }
       }
       dao.save(quest);
-    
+   
     //TODO: redirect to back-end
     //push message to quest owner and related bidders
     

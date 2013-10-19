@@ -17,9 +17,12 @@ import com.google.appengine.api.datastore.GeoPt;
 import com.google.appengine.api.datastore.Link;
 import com.google.appengine.api.datastore.PostalAddress;
 
+
 @Entity
 public class Quest extends Persistable<Quest> {
 
+  @Property
+  private long status = QuestPb.Status.DRAFT_VALUE; //only accessible to owner
 
   @Property
   private Applicants.Builder applicants = Applicants.newBuilder();
@@ -109,6 +112,16 @@ public class Quest extends Persistable<Quest> {
 
 
   
+  public long getStatus() {
+    return status;
+  }
+
+  public void setStatus(QuestPb.Status status) {
+    this.status = status.getNumber();
+  }
+  public void setStatus(int status) {
+    this.status = status;
+  }
   public Quest(){
   }
   
@@ -126,6 +139,7 @@ public class Quest extends Persistable<Quest> {
     description = q.getDescription();
     allow_sharing = q.getAllowSharing();
     attach_link = new Link(q.getUrl());
+    status = q.getStatus().getNumber();
     
   }
  public QuestPb.Builder getMSG(long id){
@@ -137,6 +151,7 @@ public class Quest extends Persistable<Quest> {
     
     if(id==qMsg.getOwnerId()){
       qMsg.setApplicants(applicants);
+      qMsg.setStatus(QuestPb.Status.valueOf((int)status));
     }else{
       
     //TODO: applicants can get their own application
@@ -189,6 +204,9 @@ public void updateQuest(QuestPb q) {
   }
   if(q.hasUrl()){
    attach_link = new Link(q.getUrl());
+  }
+  if(q.hasStatus()){
+    status = q.getStatus().getNumber();
   }
    updateAt = new Date();
  }
@@ -344,28 +362,23 @@ public void updateQuest(QuestPb q) {
     return la;
   }
 
-  public void addApplicant(Applicant applicant) {
+  public int addApplicant(Applicant applicant) {
     //  find applicant
     // if found, update
     // if not found , add at the end
     int i = findApplicant(applicant.getUserId());
+    int appStatus = applicant.getType().getNumber();
     if(i!=-1){
-      applicants.setApplicant(i, applicant);
+      appStatus = updateApplicant(i, applicant);
     }else{
     applicants.addApplicant(applicant);
     }
+      return appStatus;
   }
 
-  //only update type and bid
-  public void updateApplicant(Applicant app) {
-
-    if(!app.hasUserId()) {
-      System.err.println("empty applicant id");
-      return;
-    }
-    int i = findApplicant(app.getUserId());
+  private int updateApplicant(int i, Applicant app) {
     Applicant.Builder curApp = applicants.getApplicant(i).toBuilder();
-    if(app.hasBid()){
+    if(app.hasBid()&&!isDeal()){
       curApp.setBid(app.getBid());
     }
     if(app.hasType()){
@@ -374,15 +387,37 @@ public void updateQuest(QuestPb q) {
       
       if(curApp.hasType()&&curApp.getType()!=newType){
         Applicant.Status curType = curApp.getType();
-        if((newType==Applicant.Status.ADDED && curType == Applicant.Status.WAIT_MY_CONFIRM )
-            || (newType==Applicant.Status.WAIT_MY_CONFIRM && curType == Applicant.Status.ADDED )){
+        if((newType==Applicant.Status.ASSIGN && curType == Applicant.Status.WAIT_MY_CONFIRM )
+            || (newType==Applicant.Status.WAIT_MY_CONFIRM && curType == Applicant.Status.ASSIGN )){
             newType = Applicant.Status.CONFIRMED;
         }
       }  
       curApp.setType(newType);
     }
     applicants.setApplicant(i, curApp.build());
+    return curApp.getType().getNumber();
+  }
+
+  //only update type and bid
+  public int updateApplicant(Applicant app) {
+
+    if(!app.hasUserId()) {
+      System.err.println("empty applicant id");
+      return -1;
+    }
+    int i = findApplicant(app.getUserId());
+    return updateApplicant(i,app);
     
+  }
+
+  public boolean isDraft() {
+
+    return status==QuestPb.Status.DRAFT_VALUE;
+  }
+  
+  public boolean isDeal() {
+
+    return status==QuestPb.Status.DEAL_VALUE;
   }
 }
 
