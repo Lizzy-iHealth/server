@@ -62,6 +62,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.gm.common.model.Rpc.Friend;
 import com.gm.common.model.Rpc.Friends;
 import com.gm.common.model.Server.FeedPb;
+import com.gm.common.model.Server.Feeds;
 
 
 public enum API {
@@ -808,7 +809,7 @@ reject_application("/quest",true){
 },
 //Input:   key : the key of requester
 //        
-//Output:  QuestsPb message, containing all the quests applied by or assigned to me. 
+//Output:  Quests message, containing all the quests applied by or assigned to me. 
 get_activities("/quest/",true){
 
   @Override
@@ -1016,7 +1017,14 @@ update_applicants("/quest/",true){
     public void handle(HttpServletRequest req, HttpServletResponse resp)
         throws ApiException, IOException {
       // TODO Auto-generated method stub
-      
+      Key userKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
+      Quests.Builder questsMsg = Quests.newBuilder();
+      Feed feed = checkNotNull(dao.querySingle(Feed.class, userKey), ErrorCode.feed_not_found);
+      for(FeedPb f : feed.getFeeds().getFeedList()){
+        QuestPb questMsg = f.getQuest();
+        questsMsg.addQuest(questMsg);
+      }
+      resp.getOutputStream().write(questsMsg.build().toByteArray());
     }
      
    }
