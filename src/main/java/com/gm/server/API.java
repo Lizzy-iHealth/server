@@ -470,6 +470,8 @@ public enum API {
          
          // save quest and post record to DB  
          Quest quest = new Quest(questMsg);
+         dao.save(quest, ownerKey);
+         
          quest.addPost(ownerKey.getId(),receiverIds); //add at the end
          
          // add applicants:
@@ -555,7 +557,7 @@ public enum API {
     //
     //option 2:
     //all the receivers' related feed will be deleted.
-    stop_posting_quest("/quest/",true){
+    deal_quest("/quest/",true){
 
         @Override
         public void handle(HttpServletRequest req, HttpServletResponse resp)
@@ -1005,6 +1007,17 @@ update_applicants("/quest/",true){
     }
     
     
+     
+   }, 
+   
+   get_feeds("/feed/", true){
+
+    @Override
+    public void handle(HttpServletRequest req, HttpServletResponse resp)
+        throws ApiException, IOException {
+      // TODO Auto-generated method stub
+      
+    }
      
    }
    

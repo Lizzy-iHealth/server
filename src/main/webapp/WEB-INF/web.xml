@@ -167,6 +167,25 @@
         <url-pattern>/quest/update_quest</url-pattern>
     </servlet-mapping> 
     
+                <servlet>
+        <servlet-name>assign_quest</servlet-name>
+        <servlet-class>com.gm.server.AssignQuestServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>assign_quest</servlet-name>
+        <url-pattern>/quest/assign_quest</url-pattern>
+    </servlet-mapping> 
+    
+                    <servlet>
+        <servlet-name>deal_quest</servlet-name>
+        <servlet-class>com.gm.server.DealQuestServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>deal_quest</servlet-name>
+        <url-pattern>/quest/deal_quest</url-pattern>
+    </servlet-mapping> 
+
+    
     
         <servlet>
         <servlet-name>get_quests</servlet-name>
@@ -175,6 +194,15 @@
     <servlet-mapping>
         <servlet-name>get_quests</servlet-name>
         <url-pattern>/quest/get_quests</url-pattern>
+    </servlet-mapping> 
+    
+            <servlet>
+        <servlet-name>delete_quests</servlet-name>
+        <servlet-class>com.gm.server.DeleteQuestsServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>delete_quests</servlet-name>
+        <url-pattern>/quest/delete_quests</url-pattern>
     </servlet-mapping> 
     
         <servlet>
@@ -186,7 +214,17 @@
         <url-pattern>/quest/get_activities</url-pattern>
     </servlet-mapping> 
     
+    <!--- Feed Servlet-->
+                    <servlet>
+        <servlet-name>get_feeds</servlet-name>
+        <servlet-class>com.gm.server.GetFeedsServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>get_feeds</servlet-name>
+        <url-pattern>/quest/get_feeds</url-pattern>
+    </servlet-mapping> 
     
+    <!-- Task Queue Handles -->
     
         <servlet>
         <servlet-name>generate_feed</servlet-name>
