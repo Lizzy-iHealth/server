@@ -27,6 +27,7 @@ import com.gm.common.model.Rpc.Applicants;
 import com.gm.common.model.Rpc.Currency;
 import com.gm.common.model.Rpc.Friendship;
 import com.gm.common.model.Rpc.QuestPb;
+import com.gm.common.model.Rpc.Quests;
 import com.gm.common.model.Rpc.UserPb;
 import com.gm.common.model.Rpc.UsersPb;
 import com.gm.common.net.ErrorCode;
@@ -579,6 +580,9 @@ public enum API {
                                   .setBid(Currency.newBuilder().setGold(quest.getPrize()))
                                   .setType(Applicant.Status.ASSIGN).build();
             quest.addApplicant(applicant);
+            User receiver = dao.get(KeyFactory.createKey("User", id), User.class);
+            receiver.addActivity(KeyFactory.keyToString(quest.getEntityKey()));
+            dao.save(receiver);
           }
         
         quest.setStatus(QuestPb.Status.PUBLISHED);
@@ -625,6 +629,10 @@ public enum API {
                                  .setBid(Currency.newBuilder().setGold(quest.getPrize()))
                                  .setType(Applicant.Status.ASSIGN).build();
            quest.addApplicant(applicant);
+           Key applierKey = KeyFactory.createKey("User", id);
+           User applier = dao.get(applierKey, User.class);
+           applier.addActivity(KeyFactory.keyToString(quest.getEntityKey()));
+           dao.save(applier);
          }
          
          quest.setStatus(QuestPb.Status.PUBLISHED);
@@ -862,7 +870,9 @@ public enum API {
        check(!quest.isDeal(),ErrorCode.quest_is_deal);  
        
        int status = quest.addApplicant(newApplicant); //add at the end
-       
+       User applier = dao.get(applierKey, User.class);
+       applier.addActivity(KeyFactory.keyToString(questKey));
+       dao.save(applier);
        dao.save(quest);
        
        //return the status of the applicant.
@@ -875,6 +885,132 @@ public enum API {
      }
     
 },
+
+//Input:        key : requester's key
+//              id  : quest id;
+//         owner_id : quest owner id;
+reject_assignment("/quest",true){
+
+  @Override
+  public void handle(HttpServletRequest req, HttpServletResponse resp)
+      throws ApiException, IOException {
+    
+    // get quest key
+    
+    Key questKey = getQuestKey(req);
+    Key applierKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
+    
+    // get quest from datastore and add an application 
+    Quest quest = checkNotNull(dao.get(questKey, Quest.class),ErrorCode.quest_quest_not_found);
+    
+    
+        int index = quest.findApplicant(applierKey.getId());
+        check(index!=-1,ErrorCode.quest_applicant_not_found);
+        quest.updateApplicantStatus(index, Applicant.Status.REJECTTED);
+        
+    User applier = dao.get(applierKey, User.class);
+    applier.deleteActivity(KeyFactory.keyToString(questKey));
+    dao.save(applier);
+    dao.save(quest);
+   
+    //push message to quest owner.
+    long[] receivers = {quest.getParent().getId()};
+    push(receivers,"quest","reject assignment");
+  }
+  
+},
+//Input: key: quest owner key
+//       id : quest id
+//       user_id: whose application is rejected.
+//Output: notify the applicant that is reject.
+reject_application("/quest",true){
+
+  @Override
+  public void handle(HttpServletRequest req, HttpServletResponse resp)
+      throws ApiException, IOException {
+    
+    Key ownerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
+    
+    // get quest
+    long questId = ParamKey.id.getLong(req, -1);
+    Key questKey = KeyFactory.createKey(ownerKey,"Quest",questId);
+    Quest quest = checkNotNull(dao.get(questKey, Quest.class),ErrorCode.quest_quest_not_found);
+    
+    long toReject = ParamKey.user_id.getLong(req, -1);
+    
+        int index = quest.findApplicant(toReject);
+        check(index!=-1,ErrorCode.quest_applicant_not_found);
+        quest.updateApplicantStatus(index, Applicant.Status.REJECTTED);
+        
+    User applier = checkNotNull(dao.get(KeyFactory.createKey("User", toReject), User.class), ErrorCode.quest_applicant_not_found);
+    applier.deleteActivity(KeyFactory.keyToString(questKey));
+    dao.save(applier);
+    dao.save(quest);
+   
+    //push message to quest owner.
+    long[] receivers = {toReject};
+    push(receivers,"delete_quest",Long.toString(quest.getId()));
+    
+  }
+  
+},
+//Input:   key : the key of requester
+//        
+//Output:  QuestsPb message, containing all the quests applied by or assigned to me. 
+get_activities("/quest/",true){
+
+  @Override
+  public void handle(HttpServletRequest req, HttpServletResponse resp)
+      throws ApiException, IOException {
+    
+    Key userKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
+    User user = dao.get(userKey, User.class);
+    List<String> activityKeys = user.getActivities().getKeyList();
+    Quests.Builder questsMsg = Quests.newBuilder();
+    for(String questKeyStr: activityKeys){
+    
+        Key questKey = KeyFactory.stringToKey(questKeyStr);
+        // get quest from datastore and add an application 
+        Quest quest = checkNotNull(dao.get(questKey, Quest.class),ErrorCode.quest_quest_not_found);
+        QuestPb qMsg = quest.getMSG(user.getId()).build();
+        questsMsg.addQuest(qMsg);
+    }
+    resp.getOutputStream().write(Base64.encode(questsMsg.build().toByteArray(), Base64.DEFAULT));
+   
+  }
+ 
+},
+
+//Input:   key : the key of requester
+//
+//Output:  QuestsPb message, containing all the quests owned by me. 
+  get_quests("/quest/", true) {
+
+    @Override
+    public void handle(HttpServletRequest req, HttpServletResponse resp)
+        throws ApiException, IOException {
+
+      Key userKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
+      
+      // get all the quests owned by the user
+      List<Quest> quests = dao.query(Quest.class).setAncestor(userKey).prepare().asList();
+      
+      // prepare output message
+      Quests.Builder questsMsg = Quests.newBuilder();
+      for (Quest q : quests){
+        QuestPb qMsg = q.getMSG(userKey.getId()).build();
+        questsMsg.addQuest(qMsg);
+      }
+      resp.getOutputStream().write(
+          Base64.encode(questsMsg.build().toByteArray(), Base64.DEFAULT));
+
+    }
+
+  },
+
+
+
+/*
 
 // quest owner can update all applicants, 
 // owner can use this api to : confirm, reject, reward the applicants.
@@ -928,7 +1064,7 @@ update_applicants("/quest/",true){
 
 
  
-},
+}, */
    
    //Input:       id  :quest id, 
    //       owner_id  :quest owner's id

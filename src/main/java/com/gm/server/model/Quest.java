@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import com.gm.common.model.Rpc.Applicant;
+import com.gm.common.model.Rpc.Applicant.Status;
 import com.gm.common.model.Rpc.Currency;
 import com.gm.common.model.Rpc.EntityLog;
 import com.gm.common.model.Rpc.GeoPoint;
@@ -377,7 +378,7 @@ public void updateQuest(QuestPb q) {
       return appStatus;
   }
 
-  public void updateApplicant(int i, Applicant app) {
+  private void updateApplicant(int i, Applicant app) {
     Applicant.Builder curApp = applicants.getApplicant(i).toBuilder();
     if(app.hasBid()&&!isDeal()){
       curApp.setBid(app.getBid());
@@ -399,13 +400,6 @@ public void updateQuest(QuestPb q) {
   
   }
 
-  //only update type and bid
-  public int updateApplicant(Applicant app) {
-
-    int i = findApplicant(app.getUserId());
-    updateApplicant( i, app);
-    return i;
-  }
 
   public boolean isDraft() {
 
@@ -416,5 +410,12 @@ public void updateQuest(QuestPb q) {
 
     return status==QuestPb.Status.DEAL_VALUE;
   }
+
+  public void updateApplicantStatus(int index, Status status) {
+
+    applicants.getApplicantBuilder(index).setType(status);
+    
+  }
+  
 }
 

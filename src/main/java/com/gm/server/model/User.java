@@ -1,17 +1,22 @@
 package com.gm.server.model;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import com.gm.common.model.Rpc.EntityLog;
 import com.gm.common.model.Rpc.Friendship;
 import com.gm.common.model.Rpc.GeoPoint;
+import com.gm.common.model.Rpc.QuestPb;
 import com.gm.common.model.Rpc.Rating;
 import com.gm.common.model.Rpc.UserPb;
 import com.gm.common.model.Rpc.Thumbnail;
 import com.gm.common.model.Rpc.Friend;
 import com.gm.common.model.Rpc.Friends;
 import com.gm.common.model.Rpc.UsersPb.Builder;
+import com.gm.common.model.Server.EntityKeys;
 import com.google.appengine.api.datastore.GeoPt;
+import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 
 @Entity
@@ -41,7 +46,8 @@ public class User extends Persistable<User> {
   @Property
   private Friends.Builder friends;
 
-  
+  @Property
+  private EntityKeys.Builder activities = EntityKeys.newBuilder();
  
   @Property
   private String deviceID = "";
@@ -168,6 +174,16 @@ public class User extends Persistable<User> {
   public void setGeo(GeoPt geo) {
     this.geo = geo;
   }
+  
+  
+
+  public EntityKeys.Builder getActivities() {
+    return activities;
+  }
+
+  public void setActivities(EntityKeys.Builder activities) {
+    this.activities = activities;
+  }
 
   @Override
 	public User touch() {
@@ -260,6 +276,26 @@ public class User extends Persistable<User> {
       
     }
   }
+  
+  //return the index of the added key
+  public int addActivity(String questKey){
+    int i = findActivity(questKey);
+    if(i==-1){
+      activities.addKey(questKey);
+      i=0;
+    }
+    return i;
+  }
+  
+  
+  private int findActivity(String questKey) {
+    for(int i = 0; i< activities.getKeyCount(); i++){
+      if (activities.getKey(i)==questKey){
+        return i;
+      }
+    }
+    return -1;
+  }
 
   public void deleteFriend(long l) {
     // TODO Auto-generated method stub
@@ -332,6 +368,12 @@ public class User extends Persistable<User> {
       ids[i]=f.getId();
     }
     return ids;
+  }
+
+  public void deleteActivity(String key) {
+    List<String> keys = activities.getKeyList();
+    keys.remove(key);
+    
   }
   
   

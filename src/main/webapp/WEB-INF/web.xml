@@ -159,6 +159,26 @@
     </servlet-mapping> 
     
         <servlet>
+        <servlet-name>get_quests</servlet-name>
+        <servlet-class>com.gm.server.GetQuestsServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>get_quests</servlet-name>
+        <url-pattern>/quest/get_quests</url-pattern>
+    </servlet-mapping> 
+    
+        <servlet>
+        <servlet-name>get_activities</servlet-name>
+        <servlet-class>com.gm.server.GetActivitiesServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>get_activities</servlet-name>
+        <url-pattern>/quest/get_activities</url-pattern>
+    </servlet-mapping> 
+    
+    
+    
+        <servlet>
         <servlet-name>generate_feed</servlet-name>
         <servlet-class>com.gm.server.GenerateFeedServlet</servlet-class>
     </servlet>
