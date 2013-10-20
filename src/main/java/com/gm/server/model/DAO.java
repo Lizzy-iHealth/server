@@ -32,7 +32,7 @@ public final class DAO {
 
   private final static DAO instance = new DAO();
 
-  private final DatastoreService datastore = DatastoreServiceFactory
+  public final DatastoreService datastore = DatastoreServiceFactory
       .getDatastoreService();
 
   private Transaction transaction;

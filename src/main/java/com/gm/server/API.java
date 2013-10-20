@@ -43,6 +43,8 @@ import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Link;
 import com.google.appengine.api.datastore.PostalAddress;
+import com.google.appengine.api.datastore.Transaction;
+import com.google.appengine.api.datastore.TransactionOptions;
 import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.QueueFactory;
 import com.google.appengine.api.taskqueue.TaskOptions;
@@ -95,43 +97,8 @@ public enum API {
     public void handle(HttpServletRequest req, HttpServletResponse resp)
         throws ApiException, IOException {
       String key = ParamKey.key.getValue(req);
-      User user = dao.get(key, User.class);
       long qUserIds[] = ParamKey.user_id.getLongs(req,-1);
-      UsersPb.Builder users = UsersPb.newBuilder();
-      if(qUserIds==null){
-        qUserIds = user.getFriendIds();
-      }
-      /*
-      HashSet<Long> friendset = new HashSet<Long>(); //used to verify the relationship with the requested id.
-      
-      
-      for (Friend f : user.getFriends().getFriendList()){
-        if(f.getFriendship()==Friendship.CONFIRMED
-            ||f.getFriendship()==Friendship.WAIT_MY_CONFIRM
-            ||f.getFriendship()==Friendship.STARED){
-            friendset.add(Long.valueOf(f.getId()));
-        }
-      }
-      */
-      
-      ApiException err = null;
-      for(long id:qUserIds){
-     //   if(friendset.contains(id)){
-          User friendUser;
-          try{
-            friendUser = checkNotNull(dao.get(KeyFactory.createKey("User", id), User.class),ErrorCode.social_user_not_found);
-          }catch(ApiException e){
-            err = e;
-            continue;
-          }
-            UserPb.Builder friend = friendUser.getMSG(user.getId());
-            friend.setFriendship(user.getFriendship(id));
-            users.addUser(friend);
-        }
-      
-      if(err!=null){
-        throw err;
-      }
+      UsersPb.Builder users = getFriendsDetails(key, qUserIds);
 
 //      System.out.println(users.build().toString());
       resp.getOutputStream().write(users.build().toByteArray());
@@ -152,12 +119,9 @@ public enum API {
     public void handle(HttpServletRequest req, HttpServletResponse resp)
         throws ApiException, IOException {
       String key = ParamKey.key.getValue(req);
-      User user = dao.get(key, User.class);
-      String qPhone = checkNotNull(ParamKey.phone.getValue(req),ErrorCode.auth_invalid_phone);
       
-      User qUser = checkNotNull(dao.querySingle("phone", qPhone, User.class),ErrorCode.auth_phone_not_registered);
-      UserPb.Builder qUserMsg = qUser.getMSG(user.getId());
-      qUserMsg.setFriendship(user.getFriendship(qUser.getId()));
+      String qPhone = checkNotNull(ParamKey.phone.getValue(req),ErrorCode.auth_invalid_phone);
+      UserPb.Builder qUserMsg = getPhoneDetails(key, qPhone);
       
       //System.out.println("============");
       //System.out.println(qUserMsg.build().toString());
@@ -168,6 +132,7 @@ public enum API {
     
   },
   
+  // Hidden now.
   //Input Param: "key"        user's key
   //             
   //Output Param: byte[] Friends :    all friends id and type
@@ -198,51 +163,7 @@ public enum API {
 
         long[] friendIDs = ParamKey.user_id.getLongs(req,-1);
         String key = ParamKey.key.getValue(req);
-        long myId = getId(key);
-        //KeyFactory.stringToKey(key).getId();
-        User user = dao.get(key, User.class);
-
-        
-        Key friendKeys[] = new Key[friendIDs.length];
-        
-        ApiException error = null;   
-        Map<String, String> notice = new HashMap<String, String>();
-        notice.put("notice", "friend");
-        ArrayList<String> idsToNotify = new ArrayList<String>(friendIDs.length); 
-        for(int i=0;i<friendIDs.length;i++){
-          friendKeys[i]=KeyFactory.createKey("User",friendIDs[i]);
-          
-          User friend = null;
-          try{
-             check(friendKeys[i]!=user.getEntityKey(),ErrorCode.social_add_self_friend);
-             friend = checkNotNull(dao.get(friendKeys[i], User.class),ErrorCode.auth_user_not_registered);
-          }catch(ApiException e){
-            error = e;
-            continue;
-          }
-            user.addFriend(friendIDs[i],Friendship.ADDED);
-            friend.addFriend(myId,Friendship.WAIT_MY_CONFIRM);
-            if(friend.getDeviceID()!=null){
-              idsToNotify.add(friend.getDeviceID());
-            }
-            dao.save(friend);
-            
-        }
-       
-        dao.save(user);
-      if (idsToNotify.size() > 0) {
-        String[] device_ids = new String[idsToNotify.size()];
-        idsToNotify.toArray(device_ids);
-        try {
-          new Pusher(device_ids).push(notice);
-        } catch (JSONException e) {
-          // TODO Auto-generated catch block
-          e.printStackTrace();
-        }
-      }
-        if(error!=null){
-          throw error;
-        }
+        addFriends(key,friendIDs);
     
     }
   },
@@ -260,38 +181,12 @@ public enum API {
 
         long[] friendIDs = ParamKey.user_id.getLongs(req,-1);
         String key = ParamKey.key.getValue(req);
-        long myId = getId(key);
-        //KeyFactory.stringToKey(key).getId();
-        User user = dao.get(key, User.class);
-
-        
-        Key friendKeys[] = new Key[friendIDs.length];
-        
-        ApiException error = null;   
-                
-        for(int i=0;i<friendIDs.length;i++){
-          friendKeys[i] = KeyFactory.createKey("User", friendIDs[i]);
-          User friend;
-          try {
-            friend = checkNotNull(dao.get(friendKeys[i], User.class),
-                ErrorCode.auth_user_not_registered);
-          } catch (ApiException e) {
-            error = e;
-            continue;
-          }
-          user.deleteFriend(friendIDs[i]);
-          friend.deleteFriend(myId);
-          dao.save(friend);
-            
-        }
-        dao.save(user);
-        if(error!=null){
-          throw error;
-        }
+        delete_friends(key, friendIDs);
     
     }
   },
   
+  //hidden
   //Input Param: "key"        user's key
   //             "user_id"    user id list to be blocked
   //Output Param: N/A
@@ -349,39 +244,10 @@ public enum API {
 
         String key = ParamKey.key.getValue(req);
         String[] friendPhones = ParamKey.phone.getValues(req);
-        long invitorId = getId(key);
-        String[] results = new String[friendPhones.length]; // "0" not our user, "1" already our user.
         
-        int i = 0;
-        for(String phone:friendPhones){
-          results[i]="0";
-          PendingUser pu = dao.querySingle("phone", phone, PendingUser.class);
-          //already invited;
-          if(pu!=null){
-            pu.addInvitor(invitorId);
-            dao.save(pu);
-          }else {
-            User temp = dao.querySingle("phone", phone, User.class);
-          //already our user
-            if(temp != null){
-              results[i]="1";
-              temp.addFriend(invitorId, Friendship.WAIT_MY_CONFIRM);
-              dao.save(temp);
-              User invitor = dao.get(key, User.class);
-              invitor.addFriend(temp.getEntityKey().getId(), Friendship.ADDED);
-              dao.save(invitor);
-              continue;
-            } else{
-              // newly invited user
-              pu = new PendingUser(phone,invitorId);
-              dao.create(pu);
-            }
-          }
-          i++;
-        }
-        Joiner joiner = Joiner.on(",").skipNulls();
-        System.out.println(joiner.join(results));
-        resp.getWriter().write(joiner.join(results));
+        String[] results = inviteFriends(key, friendPhones);
+        
+        writeResponse(resp,results);
     }
  
   },
@@ -441,6 +307,11 @@ public enum API {
       String password = stringNotEmpty(ParamKey.password.getValue(req),
           ErrorCode.auth_invalid_password);
 
+      String[] results = login(phone, password);
+      writeResponse(resp, results);
+    }
+
+    private String[] login(String phone, String password) throws ApiException {
       User user = checkNotNull(dao.querySingle("phone", phone, User.class),
           ErrorCode.auth_phone_not_registered);
       check(password.equals(user.getPassword()),
@@ -450,13 +321,10 @@ public enum API {
 
       user.login(secret);
       dao.save(user);
-      String key = user.getKey();
-      resp.getWriter().write(key);
-      resp.getWriter().write(",");
-      resp.getWriter().write(secret);
-      resp.getWriter().write(",");
-      resp.getWriter().write(Long.toString(user.getId()));
+      String results[] = {user.getKey(),secret,Long.toString(user.getId())};
+      return results;
     }
+
   },
 
   //Input Param: "password"        user's password
@@ -484,24 +352,10 @@ public enum API {
 
       check(!User.existsByPhone(phone), ErrorCode.auth_phone_registered);
 
-      String secret = UUID.randomUUID().toString();
-      User user = new User(phone, password, secret);
-      dao.create(user);
-      PendingUser pu = dao.querySingle("phone", phone, PendingUser.class);
-    
-      if(pu!=null){
-        user.setFriends(pu.getInvitors());
-        rewardInvitors(user.getUserID(),pu.getInvitors().build());
-        dao.delete(pu);
-      }
-      dao.save(user);
-
-      String key = user.getKey();
-      resp.getWriter().write(key);
-      resp.getWriter().write(",");
-      resp.getWriter().write(secret);
-      resp.getWriter().write(",");
-      resp.getWriter().write(Long.toString(user.getId()));
+      User user = createUser(phone, password);
+      
+      String results[] = {user.getKey(), user.getSecret(),Long.toString(user.getId())};
+      writeResponse(resp,results);
     }
   },
 
@@ -970,7 +824,7 @@ get_activities("/quest/",true){
         QuestPb qMsg = quest.getMSG(user.getId()).build();
         questsMsg.addQuest(qMsg);
     }
-    resp.getOutputStream().write(Base64.encode(questsMsg.build().toByteArray(), Base64.DEFAULT));
+    resp.getOutputStream().write(questsMsg.build().toByteArray());
    
   }
  
@@ -996,8 +850,7 @@ get_activities("/quest/",true){
         QuestPb qMsg = q.getMSG(userKey.getId()).build();
         questsMsg.addQuest(qMsg);
       }
-      resp.getOutputStream().write(
-          Base64.encode(questsMsg.build().toByteArray(), Base64.DEFAULT));
+      resp.getOutputStream().write(questsMsg.build().toByteArray());
 
     }
 
@@ -1248,7 +1101,10 @@ update_applicants("/quest/",true){
     Key senderKey = KeyFactory.createKey("User", senderId);
     Key receiverKey = KeyFactory.createKey("User", receiverId);
     
-    dao.begin(true);
+    TransactionOptions option = TransactionOptions.Builder.withXG(true);
+    Transaction txn = dao.datastore.beginTransaction(option);    
+    try{
+
     User sender = dao.get(senderKey, User.class);
     User receiver = dao.get(receiverKey, User.class);
 
@@ -1261,12 +1117,17 @@ update_applicants("/quest/",true){
 
     dao.save(sender);
     dao.save(receiver);
-    dao.commit();
+    txn.commit();
+    }finally{
+      if(txn.isActive()){
+        txn.rollback();
+      }
+    }
     
   }
 
 
-  protected void rewardInvitors(long newUserID, Friends friends) throws ApiException {
+  protected static void rewardInvitors(long newUserID, Friends friends) throws ApiException {
     // TODO Auto-generated method stub
     ApiException error=null;
     for (Friend invitor:friends.getFriendList()){
@@ -1289,7 +1150,7 @@ update_applicants("/quest/",true){
     }
   }
 
-  protected long getId(String key) {
+  protected static long getId(String key) {
     // TODO Auto-generated method stub
     return KeyFactory.stringToKey(key).getId();
   }
@@ -1408,6 +1269,191 @@ update_applicants("/quest/",true){
     }
   }
 
+  private static User createUser(String phone, String password) throws ApiException {
+    String secret = UUID.randomUUID().toString();
+    User user = new User(phone, password, secret);
+    dao.create(user);
+    PendingUser pu = dao.querySingle("phone", phone, PendingUser.class);
+  
+    if(pu!=null){
+      user.setFriends(pu.getInvitors());
+      rewardInvitors(user.getUserID(),pu.getInvitors().build());
+      dao.delete(pu);
+    }
+    dao.save(user);
+    return user;
+  }
+
+
+  private static String[] inviteFriends(String key, String[] friendPhones) {
+    long invitorId = getId(key);
+    String[] results = new String[friendPhones.length]; // "0" not our user, "1" already our user.
+    
+    int i = 0;
+    for(String phone:friendPhones){
+      results[i]="0";
+      PendingUser pu = dao.querySingle("phone", phone, PendingUser.class);
+      //already invited;
+      if(pu!=null){
+        pu.addInvitor(invitorId);
+        dao.save(pu);
+      }else {
+        User temp = dao.querySingle("phone", phone, User.class);
+      //already our user
+        if(temp != null){
+          results[i]="1";
+          temp.addFriend(invitorId, Friendship.WAIT_MY_CONFIRM);
+          dao.save(temp);
+          User invitor = dao.get(key, User.class);
+          invitor.addFriend(temp.getEntityKey().getId(), Friendship.ADDED);
+          dao.save(invitor);
+          continue;
+        } else{
+          // newly invited user
+          pu = new PendingUser(phone,invitorId);
+          dao.create(pu);
+        }
+      }
+      i++;
+    }
+    return results;
+  }
+
+
+  private static void delete_friends(String key, long[] friendIDs) throws ApiException {
+    long myId = getId(key);
+    //KeyFactory.stringToKey(key).getId();
+    User user = dao.get(key, User.class);
+
+    
+    Key friendKeys[] = new Key[friendIDs.length];
+    
+    ApiException error = null;   
+            
+    for(int i=0;i<friendIDs.length;i++){
+      friendKeys[i] = KeyFactory.createKey("User", friendIDs[i]);
+      User friend;
+      try {
+        friend = checkNotNull(dao.get(friendKeys[i], User.class),
+            ErrorCode.auth_user_not_registered);
+      } catch (ApiException e) {
+        error = e;
+        continue;
+      }
+      user.deleteFriend(friendIDs[i]);
+      friend.deleteFriend(myId);
+      dao.save(friend);
+        
+    }
+    dao.save(user);
+    if(error!=null){
+      throw error;
+    }
+  }
+
+
+  private static void addFriends(String key, long[] friendIDs) throws IOException,
+      ApiException {
+    long myId = getId(key);
+
+    User user = dao.get(key, User.class);
+
+    
+    Key friendKeys[] = new Key[friendIDs.length];
+    
+    ApiException error = null;   
+    Map<String, String> notice = new HashMap<String, String>();
+    notice.put("notice", "friend");
+    ArrayList<String> idsToNotify = new ArrayList<String>(friendIDs.length); 
+    for(int i=0;i<friendIDs.length;i++){
+      friendKeys[i]=KeyFactory.createKey("User",friendIDs[i]);
+      
+      User friend = null;
+      try{
+         check(friendKeys[i]!=user.getEntityKey(),ErrorCode.social_add_self_friend);
+         friend = checkNotNull(dao.get(friendKeys[i], User.class),ErrorCode.auth_user_not_registered);
+      }catch(ApiException e){
+        error = e;
+        continue;
+      }
+        user.addFriend(friendIDs[i],Friendship.ADDED);
+        friend.addFriend(myId,Friendship.WAIT_MY_CONFIRM);
+        if(friend.getDeviceID()!=null){
+          idsToNotify.add(friend.getDeviceID());
+        }
+        dao.save(friend);
+        
+    }
+    
+    dao.save(user);
+   if (idsToNotify.size() > 0) {
+    String[] device_ids = new String[idsToNotify.size()];
+    idsToNotify.toArray(device_ids);
+    try {
+      new Pusher(device_ids).push(notice);
+    } catch (JSONException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+   }
+    if(error!=null){
+      throw error;
+    }
+  }
+
+
+  private static UserPb.Builder getPhoneDetails(String key, String qPhone)
+      throws ApiException {
+    User user = dao.get(key, User.class);
+    User qUser = checkNotNull(dao.querySingle("phone", qPhone, User.class),ErrorCode.auth_phone_not_registered);
+    UserPb.Builder qUserMsg = qUser.getMSG(user.getId());
+    qUserMsg.setFriendship(user.getFriendship(qUser.getId()));
+    return qUserMsg;
+  }
+
+
+  private static UsersPb.Builder getFriendsDetails(String key, long[] qUserIds)
+      throws ApiException {
+    User user = dao.get(key, User.class);
+    UsersPb.Builder users = UsersPb.newBuilder();
+    if(qUserIds==null){
+      qUserIds = user.getFriendIds();
+    }
+    /*
+    HashSet<Long> friendset = new HashSet<Long>(); //used to verify the relationship with the requested id.
+    
+    
+    for (Friend f : user.getFriends().getFriendList()){
+      if(f.getFriendship()==Friendship.CONFIRMED
+          ||f.getFriendship()==Friendship.WAIT_MY_CONFIRM
+          ||f.getFriendship()==Friendship.STARED){
+          friendset.add(Long.valueOf(f.getId()));
+      }
+    }
+    */
+    
+    ApiException err = null;
+    for(long id:qUserIds){
+   //   if(friendset.contains(id)){
+        User friendUser;
+        try{
+          friendUser = checkNotNull(dao.get(KeyFactory.createKey("User", id), User.class),ErrorCode.social_user_not_found);
+        }catch(ApiException e){
+          err = e;
+          continue;
+        }
+          UserPb.Builder friend = friendUser.getMSG(user.getId());
+          friend.setFriendship(user.getFriendship(id));
+          users.addUser(friend);
+      }
+    
+    if(err!=null){
+      throw err;
+    }
+    return users;
+  }
+
+
   private static Quest saveQuest(QuestPb questMsg, Key ownerKey) throws ApiException {
     Quest quest = null;
     // repeated save:
@@ -1462,6 +1508,13 @@ update_applicants("/quest/",true){
     return out.toByteArray();
   }
 
+
+  private static void writeResponse(HttpServletResponse resp, String[] results)
+      throws IOException {
+    Joiner joiner = Joiner.on(",").skipNulls();
+    System.out.println(joiner.join(results));
+    resp.getWriter().write(joiner.join(results));
+  }
   static final void info(Throwable t, String msg, Object... args) {
     logger.log(Level.INFO, String.format(msg, args), t);
   }
