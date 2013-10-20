@@ -54,6 +54,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.gm.common.crypto.Base64;
+import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.gm.common.model.Rpc.Friend;
@@ -349,8 +350,11 @@ public enum API {
         String key = ParamKey.key.getValue(req);
         String[] friendPhones = ParamKey.phone.getValues(req);
         long invitorId = getId(key);
-          
+        String[] results = new String[friendPhones.length]; // "0" not our user, "1" already our user.
+        
+        int i = 0;
         for(String phone:friendPhones){
+          results[i]="0";
           PendingUser pu = dao.querySingle("phone", phone, PendingUser.class);
           //already invited;
           if(pu!=null){
@@ -360,7 +364,7 @@ public enum API {
             User temp = dao.querySingle("phone", phone, User.class);
           //already our user
             if(temp != null){
-              
+              results[i]="1";
               temp.addFriend(invitorId, Friendship.WAIT_MY_CONFIRM);
               dao.save(temp);
               User invitor = dao.get(key, User.class);
@@ -373,7 +377,11 @@ public enum API {
               dao.create(pu);
             }
           }
+          i++;
         }
+        Joiner joiner = Joiner.on(",").skipNulls();
+        System.out.println(joiner.join(results));
+        resp.getWriter().write(joiner.join(results));
     }
  
   },
@@ -530,20 +538,7 @@ public enum API {
         Key ownerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
         
 
-        Quest quest = null;
-        // repeated save:
-        if(questMsg.hasId()&&questMsg.hasOwnerId()&&questMsg.getOwnerId()==ownerKey.getId()){
-            Key questKey = KeyFactory.createKey(ownerKey, "Quest", questMsg.getId());
-            quest = checkNotNull(dao.get(questKey, Quest.class),ErrorCode.quest_quest_not_found);
-            check(quest.isDraft(),ErrorCode.quest_not_draft);
-            quest.updateQuest(questMsg);
-        }else{
-        // first time save
-            quest = new Quest(questMsg);
-        }
-        
-        quest.setStatus(QuestPb.Status.DRAFT);
-        dao.save(quest, ownerKey);
+        Quest quest = saveQuest(questMsg, ownerKey);
         resp.getWriter().write(Long.toString(quest.getId()));
         
       }
@@ -820,7 +815,7 @@ public enum API {
           
           // retrieve quest key
           
-          Key questKey = getQuestKey(req);
+          Key questKey = getQuestKeyFromReq(req);
           Key sharerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
           long receiverIds[]= ParamKey.user_id.getLongs(req,-1);
 
@@ -854,7 +849,7 @@ public enum API {
        
        // get quest key
        
-       Key questKey = getQuestKey(req);
+       Key questKey = getQuestKeyFromReq(req);
        Key applierKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
        
        //ensure the applicant's user_id field is the one send the request.
@@ -897,7 +892,7 @@ reject_assignment("/quest",true){
     
     // get quest key
     
-    Key questKey = getQuestKey(req);
+    Key questKey = getQuestKeyFromReq(req);
     Key applierKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
     
     // get quest from datastore and add an application 
@@ -1132,7 +1127,34 @@ update_applicants("/quest/",true){
     }
     
      
-   };
+   },
+   
+   //Input : key: sender's key
+   //         id: receivers' id
+   //       long: gold
+   //Output: long: gold balance     
+   
+   send_gold("/reward/",true){
+
+    @Override
+    public void handle(HttpServletRequest req, HttpServletResponse resp)
+        throws ApiException, IOException {
+      
+      Key senderKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
+      Currency amount = Currency.parseFrom(ParamKey.currency.getPb(req));
+      
+      long receiverId = ParamKey.user_id.getLong(req, -1);
+      check(receiverId!=-1,ErrorCode.quest_receiver_not_found);
+      transferGold(senderKey.getId(),receiverId,amount.getGold());
+      
+
+    }
+    
+    
+     
+   }
+   
+   ;
    
   
   public final String url;
@@ -1222,7 +1244,26 @@ update_applicants("/quest/",true){
    
 
 
+  private static void transferGold(long senderId, long receiverId, long amount){
+    Key senderKey = KeyFactory.createKey("User", senderId);
+    Key receiverKey = KeyFactory.createKey("User", receiverId);
+    
+    dao.begin(true);
+    User sender = dao.get(senderKey, User.class);
+    User receiver = dao.get(receiverKey, User.class);
 
+    long beforeSend = sender.getGoldBalance();
+    long beforeReceive = receiver.getGoldBalance();
+    long afterSend = beforeSend - amount;
+    long afterReceive = beforeReceive + amount;
+    sender.setGoldBalance(afterSend);
+    receiver.setGoldBalance(afterReceive);
+
+    dao.save(sender);
+    dao.save(receiver);
+    dao.commit();
+    
+  }
 
 
   protected void rewardInvitors(long newUserID, Friends friends) throws ApiException {
@@ -1367,6 +1408,25 @@ update_applicants("/quest/",true){
     }
   }
 
+  private static Quest saveQuest(QuestPb questMsg, Key ownerKey) throws ApiException {
+    Quest quest = null;
+    // repeated save:
+    if(questMsg.hasId()&&questMsg.hasOwnerId()&&questMsg.getOwnerId()==ownerKey.getId()){
+        Key questKey = KeyFactory.createKey(ownerKey, "Quest", questMsg.getId());
+        quest = checkNotNull(dao.get(questKey, Quest.class),ErrorCode.quest_quest_not_found);
+        check(quest.isDraft(),ErrorCode.quest_not_draft);
+        quest.updateQuest(questMsg);
+    }else{
+    // first time save
+        quest = new Quest(questMsg);
+    }
+    
+    quest.setStatus(QuestPb.Status.DRAFT);
+    dao.save(quest, ownerKey);
+    return quest;
+  }
+
+
   private static QuestPb getQuestPb(HttpServletRequest req)
       throws InvalidProtocolBufferException {
     String questString = ParamKey.quest.getValue(req);
@@ -1384,7 +1444,7 @@ update_applicants("/quest/",true){
     return apps.getApplicantList();
   }
 
-  private static Key getQuestKey(HttpServletRequest req) {
+  private static Key getQuestKeyFromReq(HttpServletRequest req) {
     long questId = ParamKey.id.getLong(req, -1);
      long questOwnerId = ParamKey.owner_id.getLong(req, -1);
      Key questOwnerKey = KeyFactory.createKey("User", questOwnerId);

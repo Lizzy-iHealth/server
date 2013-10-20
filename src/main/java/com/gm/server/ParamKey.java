@@ -1,6 +1,14 @@
 package com.gm.server;
 
+import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
+
+import com.gm.common.crypto.Base64;
+import com.gm.common.model.Rpc.Applicant;
+import com.gm.common.model.Rpc.Applicants;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 
 public enum ParamKey {
@@ -18,7 +26,10 @@ public enum ParamKey {
 	owner_id,
 	applicant,
 	applicants, //update applicants in batch
-	quest;
+	quest, 
+	currency,
+	pb; // other protocol buffer message
+
 	
 	public String getValue(HttpServletRequest req) {
 		return req.getParameter(name());
@@ -50,6 +61,13 @@ public enum ParamKey {
 		return value == null ? defaultValue : value;
 	}
 	
+	 public byte[] getPb(HttpServletRequest req) {
+	    String value = req.getParameter(name());
+	    return Base64.decode(value, Base64.DEFAULT);
+	  }
+	 
+	  
+	  
 	public String[] getValues(HttpServletRequest req) {
 		return req.getParameterValues(name());
 	}

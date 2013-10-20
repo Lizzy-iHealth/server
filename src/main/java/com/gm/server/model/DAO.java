@@ -20,6 +20,7 @@ import com.google.appengine.api.datastore.PropertyProjection;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Query.Filter;
 import com.google.appengine.api.datastore.Transaction;
+import com.google.appengine.api.datastore.TransactionOptions;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
@@ -43,13 +44,31 @@ public final class DAO {
     return instance;
   }
 
+  public synchronized void begin(boolean withXG) {
+    if(!withXG){
+      begin();
+      return;
+          }
+    
+    Preconditions.checkArgument(transaction == null);
+    
+    TransactionOptions options = TransactionOptions.Builder.withXG(true);
+    
+    transaction = datastore.beginTransaction(options);
+  }
+  
   public synchronized void begin() {
     Preconditions.checkArgument(transaction == null);
     transaction = datastore.beginTransaction();
   }
 
-  public synchronized void end() {
+  public synchronized void commit() {
+    try{
     transaction.commit();
+    }finally{
+      if(transaction.isActive());
+      transaction.rollback();
+    }
     transaction = null;
   }
 
@@ -295,6 +314,8 @@ public final class DAO {
     public int count() {
       return count(FetchOptions.Builder.withDefaults());
     }
+    
+    
 
     private T convert(Entity entity, T object) {
       if (entity != null) {

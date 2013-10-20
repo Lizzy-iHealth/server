@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
 
 import javax.servlet.ServletOutputStream;
@@ -437,6 +438,8 @@ public class APITest extends ModelTest {
     HttpServletRequest req = super.getMockRequestWithUser(user);
     HttpServletResponse resp  = mock(HttpServletResponse.class);
     when(req.getParameterValues(ParamKey.phone.name())).thenReturn(friend_phone);
+    PrintWriter writer = mock(PrintWriter.class);
+    when(resp.getWriter()).thenReturn(writer);
     API.invite_friends.execute(req, resp,false);
     
     List<PendingUser> pu = dao.query(PendingUser.class).sortBy("phone",false).prepare().asList();
@@ -445,6 +448,23 @@ public class APITest extends ModelTest {
     assertEquals(pu.get(0).getInvitors().getFriend(0).getId(),user.getEntityKey().getId());
     assertEquals(pu.get(1).getPhone(),friend_phone[1]);
     assertEquals(pu.get(1).getInvitors().getFriend(0).getId(),user.getEntityKey().getId());
+    verify(writer).write("0,0");
+    
+    //invite a person already our user:
+    User f = new User("42345","p","s");
+    String phoneList[]={"42345"};
+    dao.save(f);
+    when(req.getParameterValues(ParamKey.phone.name())).thenReturn(phoneList);
+    API.invite_friends.execute(req, resp,false);
+    
+    pu = dao.query(PendingUser.class).sortBy("phone",false).prepare().asList();
+    assertEquals(2,pu.size());
+    assertEquals(pu.get(0).getPhone(),friend_phone[0]);
+    assertEquals(pu.get(0).getInvitors().getFriend(0).getId(),user.getEntityKey().getId());
+    assertEquals(pu.get(1).getPhone(),friend_phone[1]);
+    assertEquals(pu.get(1).getInvitors().getFriend(0).getId(),user.getEntityKey().getId());
+    verify(writer).write("1");
+    
   }
   
   @Test

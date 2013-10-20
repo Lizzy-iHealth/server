@@ -64,12 +64,23 @@ public class User extends Persistable<User> {
   @Property
   private GeoPt geo = new GeoPt(0,0) ;
   
+  @Property
+  private long goldBalance = 0;
+  
 	public void login(String secret) {
 		this.secret = secret;
 		lastLoginTime = new Date();
 	}
 
-	public String getPhone() {
+	public long getGoldBalance() {
+    return goldBalance;
+  }
+
+  public void setGoldBalance(long goldBalance) {
+    this.goldBalance = goldBalance;
+  }
+
+  public String getPhone() {
 		return phone;
 	}
 
@@ -345,7 +356,6 @@ public class User extends Persistable<User> {
 
     return msg;
   }
-  
   
   public Friendship getFriendship(long id){
     int i = findFriend(id);
