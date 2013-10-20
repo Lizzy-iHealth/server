@@ -417,6 +417,7 @@ public enum API {
         check(receiverIds.length>0,ErrorCode.quest_receiver_not_found);
         // save quest and post record to DB  
         Quest quest = new Quest(questMsg);
+        dao.save(quest, ownerKey);
         quest.addPost(ownerKey.getId(),receiverIds); //add at the end
         
         //if only one receiver, add him as the pre-confirmed applicant

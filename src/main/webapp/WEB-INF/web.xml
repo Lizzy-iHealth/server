@@ -158,6 +158,16 @@
         <url-pattern>/quest/share_quest</url-pattern>
     </servlet-mapping> 
     
+            <servlet>
+        <servlet-name>update_quest</servlet-name>
+        <servlet-class>com.gm.server.UpdateQuestServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>update_quest</servlet-name>
+        <url-pattern>/quest/update_quest</url-pattern>
+    </servlet-mapping> 
+    
+    
         <servlet>
         <servlet-name>get_quests</servlet-name>
         <servlet-class>com.gm.server.GetQuestsServlet</servlet-class>
