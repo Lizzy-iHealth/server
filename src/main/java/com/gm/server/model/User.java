@@ -301,7 +301,7 @@ public class User extends Persistable<User> {
   
   private int findActivity(String questKey) {
     for(int i = 0; i< activities.getKeyCount(); i++){
-      if (activities.getKey(i)==questKey){
+      if (activities.getKey(i).equals(questKey)){
         return i;
       }
     }
@@ -326,7 +326,9 @@ public class User extends Persistable<User> {
     // TODO Auto-generated method stub
     int index = findFriend(l);
     if(index!=-1){
-      friends.getFriendBuilder(index).setFriendship(Friendship.BLOCKED).build();
+      updateFriends(index,Friendship.BLOCKED);
+    }else{
+      friends.addFriend(Friend.newBuilder().setId(l).setFriendship(Friendship.BLOCKED));
     }
   }
 
@@ -382,7 +384,11 @@ public class User extends Persistable<User> {
 
   public void deleteActivity(String key) {
     List<String> keys = activities.getKeyList();
-    keys.remove(key);
+    activities.clearKey();
+    for(String k:keys){
+      if(key.equals(k)) continue;
+      activities.addKey(k);
+    }
     
   }
   

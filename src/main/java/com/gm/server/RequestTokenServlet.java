@@ -11,6 +11,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.gm.common.net.ErrorCode;
+import com.gm.server.model.Token;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
@@ -18,70 +20,41 @@ import com.google.appengine.api.datastore.Query;
 
 
 
-public class RequestTokenServlet extends HttpServlet {
+public class RequestTokenServlet extends APIServlet {
 
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
 	
-	private static final Logger log = Logger.getLogger(RequestTokenServlet.class.getName());
-	private DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+
     @Override
     public void doPost(HttpServletRequest req, HttpServletResponse resp)
                 throws IOException {
-      API.request_token.execute(req, resp);
-/*
-        String mobileNumber = req.getParameter("mobileNumber");
-        
-        boolean succ = storeAndSendVerifyCode(mobileNumber);
-        
-        	if(succ){
-        		resp.setStatus(resp.SC_OK);
-        	}else{
-        		resp.setStatus(resp.SC_SERVICE_UNAVAILABLE);
-        	}
-        	*/
+      this.requiresHmac = false;
+     execute(req, resp);
+
     }
+    
+    //Input Param:   "phone"           user's phone to regeister
+    //           
+    //Output:  N/A
+
+      @Override
+      public void handle(HttpServletRequest req, HttpServletResponse resp)
+          throws ApiException, IOException {
+        String phone = stringNotEmpty(ParamKey.phone.getValue(req),
+            ErrorCode.auth_invalid_phone);
+        String msg = "1234"; // TODO: generate random token and send by sms
+        Token token = dao.querySingle("phone", phone, Token.class);
+        if (token == null)
+          token = new Token(phone, msg);
+        token.token = msg;
+        dao.save(token);
+      }     
 
 
-private boolean storeAndSendVerifyCode(String mobileNumber) {
-		// TODO Auto-generated method stub
-	  String verifyCode = generateVerifyCode();
-	  
-	  //in case of re-send:
-	  //TODO: expiring over time
-		Query query = new Query("mobiCodeRecord").setFilter(eq("mobileNumber", mobileNumber));
-	    Entity exMobiCodeRecord = datastore.prepare(query).asSingleEntity();
-	    if (exMobiCodeRecord != null){
-	    		verifyCode = (String) exMobiCodeRecord.getProperty("verifyCode");
-	    }else{
-            Date date = new Date();
-          
-            Entity mobiCodeRecord = new Entity("mobiCodeRecord");
-            mobiCodeRecord.setProperty("mobileNumber", mobileNumber);
-            mobiCodeRecord.setProperty("verifyCode", verifyCode);
-            mobiCodeRecord.setProperty("generateTime", date);
-          
-            datastore.put(mobiCodeRecord);
-            log.info("new user created");
-	    }
-	    sendMobileVerifyCode(mobileNumber,verifyCode);
-		return true;
-}
 
-
-private void sendMobileVerifyCode(String mobileNumber, String verifyCode) {
-	// TODO Auto-generated method stub
-
-}
-
-
-private String generateVerifyCode() {
-	// TODO Auto-generated method stub
-	return "1234";
-	//return Integer.toString(Calendar.MILLISECOND);
-}
 
 
 }

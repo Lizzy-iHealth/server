@@ -26,6 +26,7 @@ import com.gm.server.model.User;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.Query;
+import com.google.common.base.Joiner;
 
 public class LoginServletTest extends ModelTest{
 
@@ -69,14 +70,12 @@ public class LoginServletTest extends ModelTest{
 	  
 	    verifyUserInDB(rightUser.getPhone(),user,before,after,writer);
 	}
-	    public void verifyUserInDB(String mobileNumber,User mockUser, Date before, Date after,PrintWriter writer){
+	    public void verifyUserInDB(String mobileNumber,User mockUser, Date before, Date after,PrintWriter writer) throws IOException{
 	    	  User userEntity=dao.get(mockUser.getEntityKey(), User.class);
 	    	  String secret = userEntity.getSecret();
 	    		String key = userEntity.getKey();
-	        verify(writer).write(key);
-	        verify(writer,times(2)).write(",");
-	        verify(writer).write(secret);
-	        verify(writer).write(Long.toString(userEntity.getId()));
+	    		String res[]={key,secret,Long.toString(userEntity.getId())};
+	        verify(writer).write(getResponse(res));
 	  	    
 	  	    Date dateSeq[] = {
 	  		  	   userEntity.getCreateTime()
@@ -101,6 +100,6 @@ public class LoginServletTest extends ModelTest{
 	    when(request.getParameter("password")).thenReturn(user.getPassword());
 		return request;
 	}
-	    
+	
 
 }

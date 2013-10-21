@@ -173,7 +173,7 @@ public enum API {
   //             "user_id"    user id list to be deleted
   //Output Param: N/A
 
- 
+ //TODO: add servlet
   delete_friends("/social", true){//true) {
 
     @Override
@@ -191,7 +191,7 @@ public enum API {
   //Input Param: "key"        user's key
   //             "user_id"    user id list to be blocked
   //Output Param: N/A
-
+//TODO:add servlet
   block_friends("/social", true){//true) {
 
     @Override
@@ -256,24 +256,21 @@ public enum API {
   //Input Param: "user_id"    user id list to push message
   //Output      : push notification
         
-  push("/util/",false){
+  push("/queue/",false){
 
     @Override
     public void handle(HttpServletRequest req, HttpServletResponse resp)
         throws ApiException, IOException {
       // TODO Auto-generated method stub
-      long ids[] = ParamKey.user_id.getLongs(req, -1);
-      String data_key = "key";
-      String data_value = "This is a push message";
+      String device_ids[] = ParamKey.device_id.getValues(req);
+      String data_key = req.getParameter("data_key");
+      String data_value = req.getParameter("data_value");
       Map<String, String> data = new HashMap<String, String>();
       data.put(data_key, data_value);
-      List<String> device_ids = new ArrayList<String>(ids.length);
-      for(long id:ids){
-        String device_id = dao.get(KeyFactory.createKey("User", id), User.class).getDeviceID();
-        device_ids.add(device_id);
-      }
+  
+
       try {
-        new Pusher(device_ids.toArray(new String[device_ids.size()])).push(data);
+        new Pusher(device_ids).push(data);
       } catch (JSONException e) {
         // TODO Auto-generated catch block
         e.printStackTrace();
@@ -282,6 +279,7 @@ public enum API {
     
   }
 ,
+
 
   
   ping("/", true) {
@@ -382,7 +380,7 @@ public enum API {
   //             "quest"      Base64 encoded QuestPb object
   //         
   //Output: quest ID.
-  
+  //Hidden
     save_quest("/quest/",true){
 
       @Override
@@ -393,7 +391,7 @@ public enum API {
         Key ownerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
         
 
-        Quest quest = saveQuest(questMsg, ownerKey);
+        Quest quest = saveDraftQuest(questMsg, ownerKey);
         resp.getWriter().write(Long.toString(quest.getId()));
         
       }
@@ -419,36 +417,10 @@ public enum API {
         // save quest and post record to DB  
         Quest quest = new Quest(questMsg);
         dao.save(quest, ownerKey);
-        quest.addPost(ownerKey.getId(),receiverIds); //add at the end
+        postExistedQuest(ownerKey, receiverIds, quest);
         
-        //if only one receiver, add him as the pre-confirmed applicant
-        //once he apply for the quest, he will be automatically confirmed, and the quest change to "deal"
-        if(receiverIds.length==1){
-          // add applicants:
-          long id = receiverIds[0];
-            Applicant applicant = Applicant.newBuilder()
-                                  .setUserId(id)
-                                  .setBid(Currency.newBuilder().setGold(quest.getPrize()))
-                                  .setType(Applicant.Status.ASSIGN).build();
-            quest.addApplicant(applicant);
-            User receiver = dao.get(KeyFactory.createKey("User", id), User.class);
-            receiver.addActivity(KeyFactory.keyToString(quest.getEntityKey()));
-            dao.save(receiver);
-          }
-        
-        quest.setStatus(QuestPb.Status.PUBLISHED);
-        dao.save(quest, ownerKey);
         resp.getWriter().write(Long.toString(quest.getId()));
-        //TODO: filter the receivers with friend lists, only allow friends as receivers
-        // prepare feed
-        QuestPb.Builder questFeed = quest.getMSG();
-        if(receiverIds.length==1){
-          generateFeed(receiverIds,questFeed,"assign");
-        }else{
-          generateFeed(receiverIds,questFeed,"post");
-        }
-        
-        // push to receivers
+      
         
       }
         
@@ -475,27 +447,16 @@ public enum API {
          
          quest.addPost(ownerKey.getId(),receiverIds); //add at the end
          
-         // add applicants:
+         // add applicants and activities
          for(long id:receiverIds){
-           Applicant applicant = Applicant.newBuilder()
-                                 .setUserId(id)
-                                 .setBid(Currency.newBuilder().setGold(quest.getPrize()))
-                                 .setType(Applicant.Status.ASSIGN).build();
-           quest.addApplicant(applicant);
-           Key applierKey = KeyFactory.createKey("User", id);
-           User applier = dao.get(applierKey, User.class);
-           applier.addActivity(KeyFactory.keyToString(quest.getEntityKey()));
-           dao.save(applier);
+           assignQuest(quest, id, true);
+           
          }
          
          quest.setStatus(QuestPb.Status.PUBLISHED);
-         dao.save(quest, ownerKey);
+         dao.save(quest);
          
-         //TODO: filter the receivers with friend lists, only allow friends as receivers
-         // prepare feed
-         QuestPb.Builder questFeed = quest.getMSG();
-
-         generateFeed(receiverIds,questFeed,"assign");
+         push(receiverIds,"activity","assign");
          
          // push to receivers
          
@@ -503,6 +464,38 @@ public enum API {
          
     },
    
+    
+    //Input Param: "key"        user's index
+    //             "id"      quest id
+    //              "user_id"   assignment list
+    //Output: push notification
+    
+      approve_application("/quest/",true){
+
+        @Override
+        public void handle(HttpServletRequest req, HttpServletResponse resp)
+            throws ApiException, IOException {
+          
+         
+          Key ownerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
+          long questId = ParamKey.id.getLong(req, -1);
+          long userIds[] = ParamKey.user_id.getLongs(req, -1);
+          Key questKey = KeyFactory.createKey(ownerKey, "Quest", questId);
+          // retrive quest from data store  
+          Quest quest = dao.get(questKey, Quest.class);
+          for(long userId:userIds){
+            assignQuest(quest,userId,false);
+          }
+          dao.save(quest);
+          
+          
+          push(userIds,"activity","assign");
+          
+          // push to receivers
+          
+        }
+          
+     },
    
    //Input Param: "key"        user's index
    //             "quest"      Base64 encoded QuestPb object with questId filled in.
@@ -606,10 +599,14 @@ public enum API {
           Key questKey = KeyFactory.createKey(ownerKey, "Quest", questId);
           // save quest and post record to DB  
           Quest quest = checkNotNull(dao.get(questKey,Quest.class), ErrorCode.quest_quest_not_found);
+          
+          long[] applierIds = quest.getAllApplicantsIds();
+          deleteActivity(applierIds, quest.getEntityKey());
 
           //option 2 implementation:
           // prepare feed
           long[] receiverIds = quest.getAllReceiversIds();
+          
           deleteFeed(receiverIds,questId,ownerKey.getId());
           dao.delete(quest);
           
@@ -725,6 +722,8 @@ public enum API {
        int status = quest.addApplicant(newApplicant); //add at the end
        User applier = dao.get(applierKey, User.class);
        applier.addActivity(KeyFactory.keyToString(questKey));
+       deleteFeed(applier.getId(),quest.getId(),quest.getParent().getId());
+       //TODO: delete feed
        dao.save(applier);
        dao.save(quest);
        
@@ -787,24 +786,13 @@ reject_application("/quest",true){
     // get quest
     long questId = ParamKey.id.getLong(req, -1);
     Key questKey = KeyFactory.createKey(ownerKey,"Quest",questId);
-    Quest quest = checkNotNull(dao.get(questKey, Quest.class),ErrorCode.quest_quest_not_found);
-    
     long toReject = ParamKey.user_id.getLong(req, -1);
     
-        int index = quest.findApplicant(toReject);
-        check(index!=-1,ErrorCode.quest_applicant_not_found);
-        quest.updateApplicantStatus(index, Applicant.Status.REJECTTED);
-        
-    User applier = checkNotNull(dao.get(KeyFactory.createKey("User", toReject), User.class), ErrorCode.quest_applicant_not_found);
-    applier.deleteActivity(KeyFactory.keyToString(questKey));
-    dao.save(applier);
-    dao.save(quest);
-   
-    //push message to quest owner.
-    long[] receivers = {toReject};
-    push(receivers,"delete_quest",Long.toString(quest.getId()));
+    rejectApplication(questKey, toReject);
     
   }
+
+
   
 },
 //Input:   key : the key of requester
@@ -862,17 +850,17 @@ get_activities("/quest/",true){
 
 
 
-/*
 
+/*
 // quest owner can update all applicants, 
 // owner can use this api to : confirm, reject, reward the applicants.
 // owner is suggested to use "assign_quest" API to create a quest and assign it to receivers. 
 // applicants can use this api to accept, reject , change the bid
 //Input:       id  :quest id, 
-//       user_id   :whose application is updated
-//       applicant  :new applicant message.
+//       user_id   :whose application status is updated
+//       status (int)        :new applicant status.
 //Output: notify the owner and related applicants
-update_applicants("/quest/",true){
+update_applicant_status("/quest/",true){
 
   @Override
   public void handle(HttpServletRequest req, HttpServletResponse resp)
@@ -880,9 +868,10 @@ update_applicants("/quest/",true){
     
     // get input
     
-    Key questKey = getQuestKey(req);
+    Key questKey = getQuestKeyFromReq(req);
     Key userKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
-    List<Applicant> applicants  = getApplicants(req);
+    Applicant.Status status = Applicant.Status.valueOf(Integer.parseInt(ParamKey.status.getValue(req)));
+  
     
     // get quest from datastore 
     Quest quest = dao.get(questKey, Quest.class);
@@ -897,7 +886,8 @@ update_applicants("/quest/",true){
       for(Applicant app:applicants){
         if(quest.getParent().getId()==userKey.getId() ||app.getUserId()==userKey.getId()){
 
-          int index = quest.updateApplicant(app);
+          int index = quest.findApplicant(app.getUserId());
+          if(index!=-1){ quest.updateApplicant(index,app);}
           receivers.add(app.getUserId());
           
           // response is the status of the applicant
@@ -930,21 +920,11 @@ update_applicants("/quest/",true){
        //get receivers id list
        long receiverIds[] = ParamKey.user_id.getLongs(req, -1);
        long questId = ParamKey.id.getLong(req, -1);
+       long owner_id = ParamKey.owner_id.getLong(req , -1);
 
        for(long id:receiverIds){
 
-         Key receiverKey =  KeyFactory.createKey("User", id);
-         Feed feed = dao.querySingle(Feed.class,receiverKey);
-         if(feed!=null){
-
-           int i = feed.findQuest(questId,id);
-           if(i!=-1){
-             feed.deleteQuest(i);
-
-             System.out.println(feed.toString());
-             dao.save(feed,receiverKey);
-           }
-         }
+         deleteFeed(id, questId,owner_id);
        }
        push(receiverIds,"Feed","delete");
      }
@@ -1019,10 +999,12 @@ update_applicants("/quest/",true){
       // TODO Auto-generated method stub
       Key userKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
       Quests.Builder questsMsg = Quests.newBuilder();
-      Feed feed = checkNotNull(dao.querySingle(Feed.class, userKey), ErrorCode.feed_not_found);
+      Feed feed = dao.querySingle(Feed.class, userKey);
+      if(feed!=null){
       for(FeedPb f : feed.getFeeds().getFeedList()){
         QuestPb questMsg = f.getQuest();
         questsMsg.addQuest(questMsg);
+      }
       }
       resp.getOutputStream().write(questsMsg.build().toByteArray());
     }
@@ -1035,12 +1017,34 @@ update_applicants("/quest/",true){
   public final String url;
   public final boolean requiresHmac;
   
-  private Queue queue = QueueFactory.getDefaultQueue();
+  private static Queue queue = QueueFactory.getDefaultQueue();
 
 
   private API(String urlPrefix, boolean requiresHmac) {
     url = urlPrefix + name();
     this.requiresHmac = requiresHmac;
+  }
+
+
+  private static void deleteActivity(long[] applierIds, Key entityKey) throws ApiException {
+    // TODO Auto-generated method stub
+    ApiException error=null;
+    for(long id: applierIds){
+      User applier = null;
+      try {
+        applier = checkNotNull(dao.get(KeyFactory.createKey("User", id), User.class), ErrorCode.quest_receiver_not_found);
+      } catch (ApiException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+        error = e;
+        continue;
+      }
+      
+      applier.deleteActivity(KeyFactory.keyToString(entityKey));
+      dao.save(applier);
+    }
+    
+    if(error!=null) throw error;
   }
 
 
@@ -1068,30 +1072,18 @@ update_applicants("/quest/",true){
     
   }
 
-
+  
   protected static void push(long[] ids, String data_key, String data_value) throws IOException {
-
-      Map<String, String> data = new HashMap<String, String>();
-      data.put(data_key, data_value);
-      List<String> device_ids = new ArrayList<String>(ids.length);
+      TaskOptions task = withUrl("queue/push").method(TaskOptions.Method.POST);
+      task.param("data_key", data_key).param("data_value", data_value);
+      
       for(long id:ids){
         String device_id = dao.get(KeyFactory.createKey("User", id), User.class).getDeviceID();
-        device_ids.add(device_id);
+        task.param("device_id", device_id);
       }
-      try {
-        new Pusher(device_ids.toArray(new String[device_ids.size()])).push(data);
-      } catch (JSONException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-      }
+      queue.add(task);
     }
   
-  private static void push(ArrayList<Long> receivers, String data_key,
-      String data_value) throws IOException {
-    long ids[] = getLongs(receivers.toArray());
-    push(ids,data_key,data_value);
-    
-  }
   
   private static long[] getLongs(Object[] array) {
     long[] la = new long [array.length];
@@ -1102,7 +1094,7 @@ update_applicants("/quest/",true){
     return la;
   }
 
-  protected void generateFeed(long[] receiverIds, QuestPb.Builder questMsg, String pushMsg) {
+  protected static void generateFeed(long[] receiverIds, QuestPb.Builder questMsg, String pushMsg) {
     // TODO Auto-generated method stub
     
     
@@ -1148,7 +1140,23 @@ update_applicants("/quest/",true){
     
   }
 
-
+  private static void rejectApplication(Key questKey, long toReject)
+      throws ApiException, IOException {
+    Quest quest = checkNotNull(dao.get(questKey, Quest.class),ErrorCode.quest_quest_not_found);
+        int index = quest.findApplicant(toReject);
+        check(index!=-1,ErrorCode.quest_applicant_not_found);
+        quest.updateApplicantStatus(index, Applicant.Status.REJECTTED);
+        
+    User applier = checkNotNull(dao.get(KeyFactory.createKey("User", toReject), User.class), ErrorCode.quest_applicant_not_found);
+    //applier.deleteActivity(KeyFactory.keyToString(questKey));
+    dao.save(applier);
+    dao.save(quest);
+   
+    //push message to quest owner.
+    long[] receivers = {toReject};
+    push(receivers,"delete_quest",Long.toString(quest.getId()));
+  }
+  
   protected static void rewardInvitors(long newUserID, Friends friends) throws ApiException {
     // TODO Auto-generated method stub
     ApiException error=null;
@@ -1290,6 +1298,71 @@ update_applicants("/quest/",true){
 
     }
   }
+
+  private static void postExistedQuest(Key ownerKey, long[] receiverIds, Quest quest) {
+    quest.addPost(ownerKey.getId(),receiverIds); //add at the end
+    
+    //if only one receiver, add him as the pre-confirmed applicant
+    //once he apply for the quest, he will be automatically confirmed, and the quest change to "deal"
+    if(receiverIds.length==1){
+      // add applicants:
+      long id = receiverIds[0];
+        Applicant applicant = Applicant.newBuilder()
+                              .setUserId(id)
+                              .setBid(Currency.newBuilder().setGold(quest.getPrize()))
+                              .setType(Applicant.Status.ASSIGN).build();
+        quest.addApplicant(applicant);
+        User receiver = dao.get(KeyFactory.createKey("User", id), User.class);
+        receiver.addActivity(KeyFactory.keyToString(quest.getEntityKey()));
+        dao.save(receiver);
+      }
+    
+    quest.setStatus(QuestPb.Status.PUBLISHED);
+    dao.save(quest);
+  
+    //TODO: filter the receivers with friend lists, only allow friends as receivers
+    // prepare feed
+    QuestPb.Builder questFeed = quest.getMSG();
+    if(receiverIds.length==1){
+      generateFeed(receiverIds,questFeed,"assign");
+    }else{
+      generateFeed(receiverIds,questFeed,"post");
+    }
+  }
+
+
+  private static User assignQuest(Quest quest, long id, boolean creation) throws ApiException {
+    Applicant applicant = Applicant.newBuilder()
+                           .setUserId(id)
+                           .setBid(Currency.newBuilder().setGold(quest.getPrize()))
+                           .setType(Applicant.Status.ASSIGN).build();
+     quest.addApplicant(applicant);
+     Key applierKey = KeyFactory.createKey("User", id);
+     User applier = checkNotNull(dao.get(applierKey, User.class),ErrorCode.quest_receiver_not_found);
+     applier.addActivity(KeyFactory.keyToString(quest.getEntityKey()));
+     dao.save(applier);
+     if(!creation){
+       deleteFeed(id,quest.getId(),quest.getParent().getId());
+     }
+    return applier;
+  }
+
+
+  private static void deleteFeed(long feedOwnerId, long questId, long questOwnerId ) {
+    Key receiverKey =  KeyFactory.createKey("User", feedOwnerId);
+     Feed feed = dao.querySingle(Feed.class,receiverKey);
+     if(feed!=null){
+
+       int i = feed.findQuest(questId,questOwnerId);
+       if(i!=-1){
+         feed.deleteQuest(i);
+
+      //   System.out.println(feed.toString());
+         dao.save(feed,receiverKey);
+       }
+     }
+  }
+
 
   private static User createUser(String phone, String password) throws ApiException {
     String secret = UUID.randomUUID().toString();
@@ -1476,7 +1549,7 @@ update_applicants("/quest/",true){
   }
 
 
-  private static Quest saveQuest(QuestPb questMsg, Key ownerKey) throws ApiException {
+  private static Quest saveDraftQuest(QuestPb questMsg, Key ownerKey) throws ApiException {
     Quest quest = null;
     // repeated save:
     if(questMsg.hasId()&&questMsg.hasOwnerId()&&questMsg.getOwnerId()==ownerKey.getId()){

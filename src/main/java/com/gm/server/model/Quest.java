@@ -56,6 +56,9 @@ public class Quest extends Persistable<Quest> {
   private String description="";
   
   @Property
+  private boolean autoConfirm = true;
+  
+  @Property
   private boolean allow_sharing = false;
   @Property
   private Link attach_link;//=new Link("");
@@ -123,6 +126,16 @@ public class Quest extends Persistable<Quest> {
   public void setStatus(int status) {
     this.status = status;
   }
+  
+  
+  public boolean isAutoConfirm() {
+    return autoConfirm;
+  }
+
+  public void setAutoConfirm(boolean autoConfirm) {
+    this.autoConfirm = autoConfirm;
+  }
+
   public Quest(){
   }
   
@@ -141,9 +154,20 @@ public class Quest extends Persistable<Quest> {
     allow_sharing = q.getAllowSharing();
     attach_link = new Link(q.getUrl());
     status = q.getStatus().getNumber();
+    if(q.hasAutoConfirm()) autoConfirm = q.getAutoConfirm();
     
   }
- public QuestPb.Builder getMSG(long id){
+ public Quest(String title, String description, int prize, boolean autoConfirm,int status) {
+    this.title = title;
+    this.description = description;
+    start_time = new Date();
+    allow_sharing = false;
+    this.prize = prize;
+    this.autoConfirm = autoConfirm;
+    this.status = status;
+  }
+
+public QuestPb.Builder getMSG(long id){
     QuestPb.Builder qMsg = getMSG();
     PostRecordsPb somePosts= findPostsById(id);
     if(somePosts!=null){
@@ -231,6 +255,7 @@ public void updateQuest(QuestPb q) {
   }
 
   public QuestPb.Builder getMSG(){
+    
     LifeSpan.Builder lifespan = LifeSpan.newBuilder();
     if(start_time!=null)lifespan.setCreateTime(start_time.getTime());
     if(end_time!=null)lifespan.setDeleteTime(end_time.getTime());
@@ -242,12 +267,17 @@ public void updateQuest(QuestPb q) {
        gmsg= GeoPoint.newBuilder().setLatitude(geo_point.getLatitude()).setLongitude(geo_point.getLongitude());
     }
     Currency reward = Currency.newBuilder().setGold(prize).build();
-    QuestPb.Builder qMsg = QuestPb.newBuilder().setLifespan(lifespan)
-        .setTitle(title).setReward(reward).setDescription(description)
-        .setAllowSharing(allow_sharing).setLog(entitylog);
+    QuestPb.Builder qMsg = QuestPb.newBuilder()
+                                  .setLifespan(lifespan)
+                                  .setTitle(title)
+                                  .setReward(reward)
+                                  .setDescription(description)
+                                  .setAllowSharing(allow_sharing)
+                                  .setLog(entitylog);
     
     if(entity!=null){
-      qMsg.setId(entity.getKey().getId()).setOwnerId(entity.getParent().getId());
+      qMsg.setId(entity.getKey().getId())
+          .setOwnerId(entity.getParent().getId());
     }
     if(address!=null){
       qMsg.setAddress(address.getAddress());
@@ -258,6 +288,7 @@ public void updateQuest(QuestPb q) {
     if(attach_link!=null){
       qMsg.setUrl(attach_link.getValue());
     }
+      qMsg.setAutoConfirm(autoConfirm);
 
     return qMsg;
   }
@@ -378,7 +409,7 @@ public void updateQuest(QuestPb q) {
       return appStatus;
   }
 
-  private void updateApplicant(int i, Applicant app) {
+  public void updateApplicant(int i, Applicant app) {
     Applicant.Builder curApp = applicants.getApplicant(i).toBuilder();
     if(app.hasBid()&&!isDeal()){
       curApp.setBid(app.getBid());
@@ -413,7 +444,8 @@ public void updateQuest(QuestPb q) {
 
   public void updateApplicantStatus(int index, Status status) {
 
-    applicants.getApplicantBuilder(index).setType(status);
+    Applicant.Builder newApp = applicants.getApplicantBuilder(index).setType(status);
+    updateApplicant(index,newApp.build());
     
   }
   

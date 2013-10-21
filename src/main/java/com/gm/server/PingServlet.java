@@ -6,7 +6,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-public class PingServlet extends HttpServlet {
+public class PingServlet extends APIServlet {
   /**
    * 
    */
@@ -14,7 +14,14 @@ public class PingServlet extends HttpServlet {
 
   public void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws IOException {
-    API.ping.execute(req, resp);
+    execute(req, resp);
+  }
+
+  @Override
+  public void handle(HttpServletRequest req, HttpServletResponse resp)
+      throws ApiException, IOException {
+    // TODO Auto-generated method stub
+    
   }
 }
 

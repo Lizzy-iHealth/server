@@ -3,6 +3,8 @@ package com.gm.server;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
+
 import javax.servlet.http.HttpServletRequest;
 
 import org.junit.After;
@@ -13,6 +15,7 @@ import static junit.framework.Assert.assertEquals;
 
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
+import com.google.common.base.Joiner;
 import com.gm.server.model.DAO;
 import com.gm.server.model.Feed;
 import com.gm.server.model.User;
@@ -44,4 +47,12 @@ public abstract class ModelTest {
   public void tearDown() {
     helper.tearDown();
   }
+  
+  public static String getResponse(String[] results)
+      throws IOException {
+    Joiner joiner = Joiner.on(",").skipNulls();
+    System.out.println(joiner.join(results));
+    return joiner.join(results);
+  }
+
 }

@@ -4,6 +4,7 @@ import static com.gm.server.Filters.eq;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.UUID;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -14,61 +15,48 @@ import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Query;
+import com.gm.common.net.ErrorCode;
 import com.gm.server.model.*;
 
 
-public class LoginServlet extends HttpServlet {
+public class LoginServlet extends APIServlet {
 
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	private DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
-    private enum Status{
-    		OK, MIS_MATCH, NOT_FOUND
-    }
-    private final DAO dao = DAO.get();
+
+
 	@Override
     public void doPost(HttpServletRequest req, HttpServletResponse resp)
                 throws IOException {
-	  API.login.execute(req, resp);
-/*
-        String mobileNumber = req.getParameter("mobileNumber");
-   
-        String password = req.getParameter("password");
-        String secret = req.getParameter("secret");
-        String key = req.getParameter("key");
-        Status result = verifyAndLogin(mobileNumber,password,secret,key);
-        switch (result){
-        		case OK:
- 	            resp.setStatus(HttpServletResponse.SC_OK);
-	            break;
-        		case MIS_MATCH:
-        			resp.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
-        			break;
-        		case NOT_FOUND:
-        			resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        }
-        	*/
+	  this.requiresHmac = false;
+	  execute(req, resp);
+
     }
+	
+//Input Param: "password"        user's password
+  //             "phone"           user's phone to regeister
+  //           
+  //Output: String key             index of user
+  //        String  ,
+  //        String secret           for hmac generation
+
+
+    public void handle(HttpServletRequest req, HttpServletResponse resp)
+        throws ApiException, IOException {
+      String phone = stringNotEmpty(ParamKey.phone.getValue(req),
+          ErrorCode.auth_invalid_phone);
+      String password = stringNotEmpty(ParamKey.password.getValue(req),
+          ErrorCode.auth_invalid_password);
+
+      String[] results = login(phone, password);
+      writeResponse(resp, results);
+    }
+
+
 	
 
 
-	private Status verifyAndLogin(String mobileNumber, String password, String secret, String key) {
-		// TODO Auto-generated method stub
-		User user = dao.get(KeyFactory.stringToKey(key),User.class);
-		
-		 if(user!=null){
-			 if(password.equals(user.getPassword())){
-				 user.login(secret);
-				 dao.save(user);
-				 return Status.OK;
-			 }else{
-				 return Status.MIS_MATCH;
-			 }
-		 }else{
-			 return Status.NOT_FOUND;
-		 }
-	}
 
 }

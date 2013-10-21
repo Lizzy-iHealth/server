@@ -81,12 +81,9 @@ public class RegisterServletTest extends ModelTest{
       User newUser = dao.get(KeyFactory.createKey("User", newUserId), User.class);
       String secret = newUser.getSecret();
       String key = newUser.getKey();
-      
-      verify(writer).write(key);
-      verify(writer,times(2)).write(",");
-      verify(writer).write(secret);
-     
-      verify(writer).write(Long.toString(newUserId));
+      String res[]={key,secret,Long.toString(newUserId)};
+      verify(writer).write(getResponse(res));
+
       
       assertEquals(1,newUser.getFriends().getFriendCount());
       assertEquals(Friendship.WAIT_MY_CONFIRM,newUser.getFriends().getFriend(0).getFriendship());
@@ -133,11 +130,9 @@ public class RegisterServletTest extends ModelTest{
 	    Entity e = DatastoreServiceFactory.getDatastoreService().prepare(query).asSingleEntity();
 	    String secret = (String)e.getProperty("secret");
 	    String key = KeyFactory.keyToString(e.getKey());
-	    
-	    verify(writer).write(key);
-	    verify(writer,times(2)).write(",");
-	    verify(writer).write(secret);
-      verify(writer).write(Long.toString(e.getKey().getId()));
+      String res[]={key,secret,Long.toString(e.getKey().getId())};
+      verify(writer).write(getResponse(res));
+
       
 	    assertEquals(phone, e.getProperty("phone"));
 	    assertEquals(password, e.getProperty("password"));

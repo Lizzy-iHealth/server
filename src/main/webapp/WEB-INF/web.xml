@@ -92,16 +92,7 @@
         <servlet-name>ping</servlet-name>
         <url-pattern>/ping</url-pattern>
     </servlet-mapping>
-    
-   <servlet>
-        <servlet-name>push</servlet-name>
-        <servlet-class>com.gm.server.PushServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>push</servlet-name>
-        <url-pattern>/util/push</url-pattern>
-    </servlet-mapping>
-    
+
         
     <servlet>
         <servlet-name>get_friends</servlet-name>
@@ -214,6 +205,45 @@
         <url-pattern>/quest/get_activities</url-pattern>
     </servlet-mapping> 
     
+    
+                <servlet>
+        <servlet-name>apply_quest</servlet-name>
+        <servlet-class>com.gm.server.ApplyQuestServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>apply_quest</servlet-name>
+        <url-pattern>/quest/apply_quest</url-pattern>
+    </servlet-mapping> 
+    
+                <servlet>
+        <servlet-name>reject_assignment</servlet-name>
+        <servlet-class>com.gm.server.RejectAssignmentServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>reject_assignment</servlet-name>
+        <url-pattern>/quest/reject_assignment</url-pattern>
+    </servlet-mapping> 
+    
+                    <servlet>
+        <servlet-name>reject_application</servlet-name>
+        <servlet-class>com.gm.server.RejectApplicationServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>reject_application</servlet-name>
+        <url-pattern>/quest/reject_application</url-pattern>
+    </servlet-mapping> 
+    
+                        <servlet>
+        <servlet-name>approve_application</servlet-name>
+        <servlet-class>com.gm.server.ApproveApplicationServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>approve_application</servlet-name>
+        <url-pattern>/quest/approve_application</url-pattern>
+    </servlet-mapping> 
+    
+    
+    
     <!--- Feed Servlet-->
                     <servlet>
         <servlet-name>get_feeds</servlet-name>
@@ -221,8 +251,19 @@
     </servlet>
     <servlet-mapping>
         <servlet-name>get_feeds</servlet-name>
-        <url-pattern>/quest/get_feeds</url-pattern>
+        <url-pattern>/feed/get_feeds</url-pattern>
     </servlet-mapping> 
+    
+    <!-- Reward Servlet -->
+                        <servlet>
+        <servlet-name>send_gold</servlet-name>
+        <servlet-class>com.gm.server.SendGoldServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>send_gold</servlet-name>
+        <url-pattern>/reward/send_gold</url-pattern>
+    </servlet-mapping> 
+    
     
     <!-- Task Queue Handles -->
     
@@ -234,6 +275,37 @@
         <servlet-name>generate_feed</servlet-name>
         <url-pattern>/queue/generate_feed</url-pattern>
     </servlet-mapping> 
+    
+            <servlet>
+        <servlet-name>delete_feed</servlet-name>
+        <servlet-class>com.gm.server.DeleteFeedServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>delete_feed</servlet-name>
+        <url-pattern>/queue/delete_feed</url-pattern>
+    </servlet-mapping> 
+    
+                    <servlet>
+        <servlet-name>push</servlet-name>
+        <servlet-class>com.gm.server.PushServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>push</servlet-name>
+        <url-pattern>/queue/push</url-pattern>
+    </servlet-mapping> 
+    
+    
+    <!-- Admin Servlet -->
+            <servlet>
+        <servlet-name>init</servlet-name>
+        <servlet-class>com.gm.server.InitServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>init</servlet-name>
+        <url-pattern>/admin/init</url-pattern>
+    </servlet-mapping> 
+
+    
     
     <welcome-file-list>
         <welcome-file>TestPush.jsp</welcome-file>

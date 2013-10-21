@@ -64,4 +64,17 @@ public class UserTest extends ModelTest{
 	  dao.save(u1);
 	  dao.save(u2);
 	}
+	
+	 @Test
+	  public void testBlockFriend(){
+	    User u1 = new User("1","pwd","s");
+	    User u2 = new User("2","pass","sec");
+	    DAO dao = DAO.get();
+	    dao.save(u1);
+	    dao.save(u2);
+	    u2.addFriend(u1.getId(), Friendship.ADDED);
+	    u1.blockFriend(u2.getId());
+	    dao.save(u1);
+	    assertEquals(Friendship.BLOCKED,u1.getFriendship(u2.getId()));
+	  }
 }
