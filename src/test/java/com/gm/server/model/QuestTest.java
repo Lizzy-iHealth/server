@@ -198,7 +198,7 @@ public class QuestTest extends ModelTest {
 
     
     Quest retriveQuest = dao.get(quest.getEntityKey(),Quest.class);
-    long aIds[] = retriveQuest.getAllApplicantsIds();
+    long aIds[] = retriveQuest.getAllApplicantsIdsSet();
     long rIds[] = retriveQuest.getAllReceiversIds();
     assertEquals(receivers.length, rIds.length);
     assertEquals(m,aIds.length);

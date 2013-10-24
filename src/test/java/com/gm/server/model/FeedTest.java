@@ -70,7 +70,7 @@ public class FeedTest extends ModelTest {
     } 
   }
   @Test
-  public void testUpdateQuestAt(){
+  public void testUpdateQuest(){
     User user = new User();
     dao.save(user);
     
@@ -91,5 +91,27 @@ public class FeedTest extends ModelTest {
     assertEquals(2,feed.getFeeds().getFeed(5).getQuest().getRefererIdCount());
     assertEquals(user.getId(),feed.getFeeds().getFeed(5).getQuest().getRefererId(1));
     assertEquals(user.getId()+1,feed.getFeeds().getFeed(5).getQuest().getRefererId(0));
+  }
+  
+  @Test
+  public void testRemoveFeed(){
+    User user = new User();
+    dao.save(user);
+    
+    Quest quest = new Quest();
+    dao.save(quest,user.getEntityKey());
+    
+    QuestPb.Builder qmsg = quest.getMSG();
+    FeedPb.Builder feednull = FeedPb.newBuilder().setQuest(qmsg);
+    Feeds.Builder feeds = Feeds.newBuilder().addFeed(feednull);
+    Feed feed = new Feed(feeds);
+    assertEquals(0,feed.findQuest(qmsg.getId(), qmsg.getOwnerId()));
+    dao.save(feed);
+    Feed f = dao.get(feed.getEntityKey(), Feed.class);
+    feed.deleteQuest(0);
+    dao.save(f);
+    f = dao.get(feed.getEntityKey(), Feed.class);
+    assertEquals(-1,feed.findQuest(qmsg.getId(), qmsg.getOwnerId()));
+    
   }
 }

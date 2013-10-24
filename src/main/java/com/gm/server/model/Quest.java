@@ -354,6 +354,12 @@ public void updateQuest(QuestPb q) {
   
 //can not guarantee the order of receivers.
   public long[] getAllReceiversIds() {
+    HashSet <Long> receivers  = getAllReceiversIdsSet();
+    long ids[] = getLongs(receivers.toArray());
+    return  ids;
+  }
+  
+  public HashSet<Long> getAllReceiversIdsSet() {
     HashSet <Long> receivers  = new HashSet<Long>();
     
     //get all the audiences
@@ -364,12 +370,10 @@ public void updateQuest(QuestPb q) {
         }
       }
     }
-    long ids[] = getLongs(receivers.toArray());
-    return  ids;
+    return receivers;
   }
-  
   // can not guarantee the order of applicants.
-  public long[] getAllApplicantsIds() {
+  public HashSet<Long> getAllApplicantsIdsSet() {
     HashSet <Long> receivers  = new HashSet<Long>();
   
     //get all applicants
@@ -380,9 +384,15 @@ public void updateQuest(QuestPb q) {
         }
     }
     
+    return receivers;
+  }
+  
+  // can not guarantee the order of applicants.
+  public long[] getAllApplicantsIds() {
+    HashSet <Long> receivers  = getAllApplicantsIdsSet();
     long ids[] = getLongs(receivers.toArray());
-    
     return  ids;
+    
   }
 
   private long[] getLongs(Object[] array) {

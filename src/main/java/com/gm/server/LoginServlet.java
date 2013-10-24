@@ -54,9 +54,4 @@ public class LoginServlet extends APIServlet {
       writeResponse(resp, results);
     }
 
-
-	
-
-
-
 }
