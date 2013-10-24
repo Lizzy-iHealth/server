@@ -4,10 +4,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.gm.common.model.Rpc.CheckinsPb;
 import com.gm.common.model.Rpc.EntityLog;
 import com.gm.common.model.Rpc.Friendship;
 import com.gm.common.model.Rpc.GeoPoint;
 import com.gm.common.model.Rpc.QuestPb;
+import com.gm.common.model.Rpc.Quests;
 import com.gm.common.model.Rpc.Rating;
 import com.gm.common.model.Rpc.UserPb;
 import com.gm.common.model.Rpc.Thumbnail;
@@ -67,7 +69,40 @@ public class User extends Persistable<User> {
   @Property
   private long goldBalance = 0;
   
-	public void login(String secret) {
+  @Property
+  private int experience = 0;
+  
+  @Property
+  private com.gm.common.model.Rpc.Quests.Builder favouriteQuests = null;
+  
+  @Property
+  private CheckinsPb.Builder mostCheckin = null;
+  
+	public int getExperience() {
+    return experience;
+  }
+
+  public void setExperience(int experience) {
+    this.experience = experience;
+  }
+
+  public Quests.Builder getFavouriteQuests() {
+    return favouriteQuests;
+  }
+
+  public void setFavouriteQuests(Quests.Builder favouriteQuests) {
+    this.favouriteQuests = favouriteQuests;
+  }
+
+  public CheckinsPb.Builder getMostCheckin() {
+    return mostCheckin;
+  }
+
+  public void setMostCheckin(CheckinsPb.Builder mostCheckin) {
+    this.mostCheckin = mostCheckin;
+  }
+
+  public void login(String secret) {
 		this.secret = secret;
 		lastLoginTime = new Date();
 	}
@@ -209,6 +244,8 @@ public class User extends Persistable<User> {
 		this.createTime = new Date();
 		this.lastLoginTime = createTime;
 		this.friends = Friends.newBuilder();
+    this.favouriteQuests = Quests.newBuilder();
+    this.mostCheckin = CheckinsPb.newBuilder();
 		
 		//TODO:for test only
 		this.deviceID = "APA91bFWFxgXtR57p3Jj2umYFFV8-U1N9PKKLQydheMybhU_2DxdngHbuYijPRHc1Y2a9dLkhdu9pyLCNd61uRBn9d2i6dggDxjMSkADyAET6rHGCQ9PFQi7HAc_hIsRBA_Z4LAkUddPSH9NxTvIjJZe-ImYHpoNgA";
@@ -219,6 +256,9 @@ public class User extends Persistable<User> {
 	  createTime = new Date();
 	  lastLoginTime = new Date();
 	  friends= Friends.newBuilder();
+	  this.favouriteQuests = Quests.newBuilder();
+	  this.mostCheckin = CheckinsPb.newBuilder();
+	  
 	}
 	
   public void addFriend(long id, Friendship type) {
@@ -227,17 +267,23 @@ public class User extends Persistable<User> {
     if(i != -1 ){
         updateFriends(i,type);
     }else{
-        friends.addFriend(Friend.newBuilder().setFriendship(type).setId(id).build());
+      Friend.Builder newFriend = Friend.newBuilder().setFriendship(type).setId(id);
+    
+        if(type == Friendship.CONFIRMED){
+          newFriend.setScore(0);
+        }
+        friends.addFriend(newFriend.build());
       }
   }
   public void updateFriends(int index, Friendship type) {
     // TODO Auto-generated method stub
     
-        Friend f = friends.getFriend(index);
+        Friend.Builder f = friends.getFriendBuilder(index);
   
         if(type==f.getFriendship()){
             return;
         }
+       
         if(type==Friendship.WAIT_MY_CONFIRM||type==Friendship.ADDED){
           switch (f.getFriendship()){
             case ADDED:
@@ -259,8 +305,12 @@ public class User extends Persistable<User> {
             return;
          }
         }
+        
+        if(type==Friendship.CONFIRMED){
+          f.setScore(0);
+        }
       
-        friends.setFriend(index, f.toBuilder().setFriendship(type).build());
+        friends.setFriend(index, f.setFriendship(type).build());
       
   }
   private int findFriend(long id) {

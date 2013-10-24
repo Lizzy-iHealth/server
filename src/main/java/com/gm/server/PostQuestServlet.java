@@ -38,7 +38,7 @@ public class PostQuestServlet extends APIServlet {
        QuestPb questMsg = getQuestPb(req);
        Key ownerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
        long receiverIds[]= ParamKey.user_id.getLongs(req,-1);
-       check(receiverIds.length>0,ErrorCode.quest_receiver_not_found);
+       checkNotNull(receiverIds,ErrorCode.quest_receiver_not_found);
        // save quest and post record to DB  
        Quest quest = new Quest(questMsg);
        dao.save(quest, ownerKey);

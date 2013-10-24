@@ -10,6 +10,7 @@ import com.gm.common.model.Rpc.QuestPb;
 import com.gm.server.ModelTest;
 
 import java.lang.Thread;
+import java.util.HashSet;
 
 import com.gm.common.model.Rpc.Applicant;
 public class QuestTest extends ModelTest {
@@ -198,10 +199,10 @@ public class QuestTest extends ModelTest {
 
     
     Quest retriveQuest = dao.get(quest.getEntityKey(),Quest.class);
-    long aIds[] = retriveQuest.getAllApplicantsIdsSet();
+    HashSet<Long> aIds = retriveQuest.getAllApplicantsIdsSet();
     long rIds[] = retriveQuest.getAllReceiversIds();
     assertEquals(receivers.length, rIds.length);
-    assertEquals(m,aIds.length);
+    assertEquals(m,aIds.size());
     
     // can not garentee the order of applicants.
 

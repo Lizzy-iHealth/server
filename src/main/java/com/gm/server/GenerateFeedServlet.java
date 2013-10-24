@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.gm.common.crypto.Base64;
 import com.gm.common.model.Rpc.QuestPb;
+import com.gm.common.net.ErrorCode;
 import com.gm.server.model.Feed;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
@@ -31,6 +32,7 @@ public class GenerateFeedServlet extends APIServlet {
     String questString = ParamKey.quest.getValue(req);
     QuestPb.Builder questMsg = QuestPb.parseFrom(Base64.decode(questString,Base64.DEFAULT)).toBuilder();
     String message = req.getParameter("message");
+    checkNotNull(receiverIds,ErrorCode.quest_receiver_not_found);
     for(long id:receiverIds){
 
       Key receiverKey =  KeyFactory.createKey("User", id);
