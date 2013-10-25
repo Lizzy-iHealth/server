@@ -27,6 +27,7 @@ public class GenerateFeedServlet extends APIServlet {
   public void handle(HttpServletRequest req, HttpServletResponse resp)
       throws ApiException, IOException {
     //get receivers id list
+
     long receiverIds[] = ParamKey.user_id.getLongs(req, -1);
     //get quest
     String questString = ParamKey.quest.getValue(req);

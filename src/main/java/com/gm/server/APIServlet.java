@@ -550,10 +550,13 @@ public abstract class APIServlet extends HttpServlet{
   protected static String[] inviteFriends(String key, String[] friendPhones) {
     long invitorId = getId(key);
     String[] results = new String[friendPhones.length]; // "0" not our user, "1" already our user.
-    
+    User invitor = dao.get(key, User.class);
     int i = 0;
     for(String phone:friendPhones){
       results[i]="0";
+      if(phone.equals(invitor.getId())){ // add oneself, response 0, do nothing
+        continue;
+      }
       PendingUser pu = dao.querySingle("phone", phone, PendingUser.class);
       //already invited;
       if(pu!=null){
@@ -566,7 +569,7 @@ public abstract class APIServlet extends HttpServlet{
           results[i]="1";
           temp.addFriend(invitorId, Friendship.WAIT_MY_CONFIRM);
           dao.save(temp);
-          User invitor = dao.get(key, User.class);
+     
           invitor.addFriend(temp.getEntityKey().getId(), Friendship.ADDED);
           dao.save(invitor);
           continue;
