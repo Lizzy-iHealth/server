@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.gm.common.model.Rpc.Applicant;
 import com.gm.common.model.Rpc.Applicant.Status;
+import com.gm.common.model.Rpc.Config;
 import com.gm.common.model.Rpc.Currency;
 import com.gm.common.model.Rpc.EntityLog;
 import com.gm.common.model.Rpc.GeoPoint;
@@ -54,18 +55,24 @@ public class Quest extends Persistable<Quest> {
   
   @Property
   private String description="";
-  
-  @Property
-  private boolean autoConfirm = true;
-  
-  @Property
-  private boolean allow_sharing = false;
+ 
   @Property
   private Link attach_link;//=new Link("");
   
   @Property
   private PostRecordsPb.Builder posts=PostRecordsPb.newBuilder();
   
+  @Property
+  private Config.Builder config = Config.newBuilder();
+  
+  public Config.Builder getConfig() {
+    return config;
+  }
+
+  public void setConfig(Config.Builder config) {
+    this.config = config;
+  }
+
   public Applicants.Builder getApplicants() {
     return applicants;
   }
@@ -91,11 +98,11 @@ public class Quest extends Persistable<Quest> {
   }
 
   public boolean isAllow_sharing() {
-    return allow_sharing;
+    return config.getAllowSharing();
   }
 
   public void setAllow_sharing(boolean allow_sharing) {
-    this.allow_sharing = allow_sharing;
+    config.setAllowSharing(allow_sharing);
   }
 
   public Link getAttach_link() {
@@ -129,11 +136,11 @@ public class Quest extends Persistable<Quest> {
   
   
   public boolean isAutoConfirm() {
-    return autoConfirm;
+    return config.getAutoConfirmAll();
   }
 
   public void setAutoConfirm(boolean autoConfirm) {
-    this.autoConfirm = autoConfirm;
+    config.setAutoConfirmAll(autoConfirm);
   }
 
   public Quest(){
@@ -151,19 +158,18 @@ public class Quest extends Persistable<Quest> {
     geo_point = new GeoPt(q.getGeoPoint().getLatitude(),q.getGeoPoint().getLongitude());
     prize = q.getReward().getGold();
     description = q.getDescription();
-    allow_sharing = q.getAllowSharing();
+    config = q.getConfig().toBuilder();
     attach_link = new Link(q.getUrl());
     status = q.getStatus().getNumber();
-    if(q.hasAutoConfirm()) autoConfirm = q.getAutoConfirm();
     
   }
  public Quest(String title, String description, int prize, boolean autoConfirm,int status) {
     this.title = title;
     this.description = description;
     start_time = new Date();
-    allow_sharing = false;
+    config.setAllowSharing(false).setAutoAccepth(false).setAutoClaim(false).setAutoConfirmAll(autoConfirm)
+          .setAutoConfirmFirstApplicant(autoConfirm).setAutoReward(false).setFavourite(false);
     this.prize = prize;
-    this.autoConfirm = autoConfirm;
     this.status = status;
   }
 
@@ -224,8 +230,8 @@ public void updateQuest(QuestPb q) {
   if(q.hasDescription()){
     description = q.getDescription();
   }
-  if(q.hasAllowSharing()){
-   allow_sharing = q.getAllowSharing();
+  if(q.hasConfig()){
+   config = q.getConfig().toBuilder();
   }
   if(q.hasUrl()){
    attach_link = new Link(q.getUrl());
@@ -272,7 +278,7 @@ public void updateQuest(QuestPb q) {
                                   .setTitle(title)
                                   .setReward(reward)
                                   .setDescription(description)
-                                  .setAllowSharing(allow_sharing)
+                                  .setConfig(config)
                                   .setLog(entitylog);
     
     if(entity!=null){
@@ -288,7 +294,6 @@ public void updateQuest(QuestPb q) {
     if(attach_link!=null){
       qMsg.setUrl(attach_link.getValue());
     }
-      qMsg.setAutoConfirm(autoConfirm);
 
     return qMsg;
   }
