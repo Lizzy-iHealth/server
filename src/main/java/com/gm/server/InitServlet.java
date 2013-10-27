@@ -28,6 +28,13 @@ public class InitServlet extends APIServlet {
   @Override
   public void handle(HttpServletRequest req, HttpServletResponse resp)
       throws ApiException, IOException {
+    
+    User bank = dao.querySingle("phone", "8", User.class);
+    if(bank == null){
+      bank= createUser("8","1234");
+      bank.setName("Bank");
+      dao.save(bank);
+    } 
     User taskAdmin = dao.querySingle("phone", "999", User.class);
     if(taskAdmin == null){
       taskAdmin= createUser("999","1234");

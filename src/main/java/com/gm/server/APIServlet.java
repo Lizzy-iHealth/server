@@ -24,11 +24,15 @@ import org.json.JSONException;
 
 import com.gm.common.crypto.Hmac;
 import com.gm.common.model.Rpc.Applicant;
+import com.gm.common.model.Rpc.Applicant.Status;
 import com.gm.common.model.Rpc.Applicants;
 import com.gm.common.model.Rpc.Currency;
 import com.gm.common.model.Rpc.Friendship;
 import com.gm.common.model.Rpc.QuestPb;
 import com.gm.common.model.Rpc.Quests;
+import com.gm.common.model.Rpc.TransactionPb;
+import com.gm.common.model.Rpc.TransactionsPb;
+import com.gm.common.model.Rpc.TransactionsPb.Builder;
 import com.gm.common.model.Rpc.UserPb;
 import com.gm.common.model.Rpc.UsersPb;
 import com.gm.common.net.ErrorCode;
@@ -38,8 +42,10 @@ import com.gm.server.model.Office;
 import com.gm.server.model.PendingUser;
 import com.gm.server.model.Quest;
 import com.gm.server.model.Token;
+import com.gm.server.model.TransactionRecord;
 import com.gm.server.model.User;
 import com.gm.server.push.Pusher;
+import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.GeoPt;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
@@ -80,6 +86,7 @@ public abstract class APIServlet extends HttpServlet{
   private static Queue queue = QueueFactory.getDefaultQueue();
   
   protected static Office questAdmin  = new Office("999");
+  protected static Office bank = new Office("8");
 
   protected int applyQuest(Key questKey, Key applierKey, Applicant applicant)
       throws ApiException, IOException {
@@ -223,34 +230,60 @@ public abstract class APIServlet extends HttpServlet{
    
 
 
-  protected static void transferGold(long senderId, long receiverId, long amount){
+  protected static void transferGold(long senderId, long receiverId, long amount) throws ApiException{
     Key senderKey = KeyFactory.createKey("User", senderId);
     Key receiverKey = KeyFactory.createKey("User", receiverId);
-    
     TransactionOptions option = TransactionOptions.Builder.withXG(true);
-    Transaction txn = dao.datastore.beginTransaction(option);    
+  /*  Transaction txn = dao.datastore.beginTransaction(option);    
     try{
-
+*/
     User sender = dao.get(senderKey, User.class);
     User receiver = dao.get(receiverKey, User.class);
 
     long beforeSend = sender.getGoldBalance();
     long beforeReceive = receiver.getGoldBalance();
     long afterSend = beforeSend - amount;
+    check(!(afterSend<0),ErrorCode.currency_less_than_zero);
     long afterReceive = beforeReceive + amount;
     sender.setGoldBalance(afterSend);
     receiver.setGoldBalance(afterReceive);
-
+    saveRecord(sender,receiver,amount);
     dao.save(sender);
     dao.save(receiver);
-    txn.commit();
+ /*   txn.commit();
     }finally{
       if(txn.isActive()){
         txn.rollback();
       }
-    }
+    }*/
     
   }
+
+  protected static TransactionsPb getTransactionHistory(long id){
+    TransactionsPb.Builder records = TransactionsPb.newBuilder();
+    Key ownerKey = KeyFactory.createKey("User", id );
+    int maxNo = 20;
+      
+    //get up to 20 the latest transaction records.
+    FetchOptions option = FetchOptions.Builder.withLimit(maxNo);
+    List<TransactionRecord> recordList = dao.query(TransactionRecord.class)
+                                            .setAncestor(ownerKey)
+                                            .sortBy("time", true).prepare().asList(option);
+    
+    for(TransactionRecord record : recordList){
+      records.addRecord(record.getRecordPb());
+    }
+    
+    return records.build();
+  }
+  
+  private static void saveRecord(User sender, User receiver, long amount) {
+    TransactionRecord record = new TransactionRecord(sender.getId(),receiver.getId(),Currency.newBuilder().setGold(amount));
+    dao.create(record,sender.getEntityKey());
+    dao.create(record,receiver.getEntityKey());
+    
+  }
+
 
   protected static void rejectApplication(Key questKey, long toReject)
       throws ApiException, IOException {
@@ -277,12 +310,18 @@ public abstract class APIServlet extends HttpServlet{
 
     int index = quest.findApplicant(applierKey.getId());
     check(index != -1, ErrorCode.quest_applicant_not_found);
-    quest.updateApplicantStatus(index, Applicant.Status.REJECTTED);
-    int status = quest.getApplicants().getApplicant(index).getType().getNumber();
+    
+
+    if(quest.isAutoReward()&&quest.getApplicants().getApplicant(index).getType()==Applicant.Status.ASSIGN){
+      returnGold(quest,quest.getPrize());
+    }
+    int status = quest.updateApplicantStatus(index, Applicant.Status.REJECTTED).getNumber();
+
+    dao.save(quest);
+
     User applier = dao.get(applierKey, User.class);
     applier.deleteActivity(KeyFactory.keyToString(questKey));
     dao.save(applier);
-    dao.save(quest);
    
     // push message to quest owner.
     long[] receivers = { quest.getParent().getId() };
@@ -290,6 +329,11 @@ public abstract class APIServlet extends HttpServlet{
     return status;
   }
   
+  private void returnGold(Quest quest, long prize) throws ApiException {
+    transferGold(bank.getAdminKey().getId(), quest.getParent().getId(), prize);
+    
+  }
+
   protected static void rewardInvitors(long newUserID, Friends friends) throws ApiException {
     // TODO Auto-generated method stub
     ApiException error=null;
@@ -339,6 +383,76 @@ public abstract class APIServlet extends HttpServlet{
       }
     }
   
+  protected Status updateApplicantStatus(Key questKey, Key userKey, Applicant app)
+      throws ApiException, IOException {
+    checkNotNull(app, ErrorCode.quest_applicant_not_found);
+     
+     // get quest from datastore 
+     Quest quest = dao.get(questKey, Quest.class);
+     checkNotNull(quest,ErrorCode.quest_quest_not_found);
+     check(!quest.isDeal(),ErrorCode.quest_is_deal);  
+     
+     
+       // only update when user is  owner, or the same applicant 
+     long ownerId = quest.getParent().getId();
+     long applicantId = app.getUserId();
+     long userId = userKey.getId();
+     check((userId==ownerId ||userId==applicantId),
+               ErrorCode.quest_access_denied);
+
+     int index = quest.findApplicant(app.getUserId());
+     Applicant.Status status  = app.getType();
+     if(index!=-1){ 
+         status =   quest.updateApplicantStatus(index,app.getType());
+     }
+     
+     dao.save(quest);
+     
+     
+     //claimed + autoReward + transferBalance = rewarded
+     if(status== Applicant.Status.CLAIMED && quest.isAutoReward()){
+       
+       rewardApplicant(quest,applicantId);
+   
+       status = Applicant.Status.REWARDED;
+       status = quest.updateApplicantStatus(index,Applicant.Status.REWARDED );
+     }
+     dao.save(quest);
+     if(status == Applicant.Status.DONE){
+       increaseFriendshipScore(ownerId,applicantId);
+     }
+     long receivers[] = new long [1];
+     if(userId==ownerId){
+       receivers[0] = applicantId;
+       push(receivers,"activity",KeyFactory.keyToString(quest.getEntityKey()));
+     }else{
+       receivers[0] = ownerId;
+       push(receivers,"quest",KeyFactory.keyToString(quest.getEntityKey()));
+     }
+    return status;
+  }
+  
+  
+  private void increaseFriendshipScore(long ownerId, long applicantId) {
+    // TODO Auto-generated method stub
+    User owner = dao.get(KeyFactory.createKey("User", ownerId), User.class);
+    User applicant = dao.get(KeyFactory.createKey("User", applicantId), User.class);
+    owner.increaseFriendshipScore(applicantId);
+    applicant.increaseFriendshipScore(ownerId);
+    dao.save(owner);
+    dao.save(applicant);
+  }
+
+  private void rewardApplicant(Quest quest, long applicantId) throws ApiException {
+    // TODO Auto-generated method stub
+    long gold = quest.getPrize();
+    long from = quest.getParent().getId();
+    if(quest.isAutoReward()){
+      from = bank.getAdminKey().getId();
+    }
+    transferGold(from, applicantId, gold);
+    
+  }
 
   protected static long getId(String key) {
     // TODO Auto-generated method stub
@@ -499,7 +613,10 @@ public abstract class APIServlet extends HttpServlet{
      return assignQuest(quest,  applier,deleteFeed);
   }
 
-  protected static User assignQuest(Quest quest,User applier,boolean deleteFeed) {
+  protected static User assignQuest(Quest quest,User applier,boolean deleteFeed) throws ApiException {
+    if(quest.isAutoReward()){
+      transferGold(quest.getParent().getId(),bank.getAdminKey().getId(),quest.getPrize());
+    }
     Applicant applicant = Applicant.newBuilder()
          .setUserId(applier.getId())
          .setBid(Currency.newBuilder().setGold(quest.getPrize()))

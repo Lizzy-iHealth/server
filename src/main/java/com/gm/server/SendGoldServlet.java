@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.gm.common.model.Rpc.Currency;
 import com.gm.common.net.ErrorCode;
+import com.gm.server.model.User;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 
@@ -22,8 +23,8 @@ public class SendGoldServlet extends APIServlet {
   }
   //Input : key: sender's key
   //         id: receivers' id
-  //       long: gold
-  //Output: long: gold balance     
+  //       currency: gold
+  //Output: currency: containing gold balance     
 
    @Override
    public void handle(HttpServletRequest req, HttpServletResponse resp)
@@ -35,7 +36,8 @@ public class SendGoldServlet extends APIServlet {
      long receiverId = ParamKey.user_id.getLong(req, -1);
      check(receiverId!=-1,ErrorCode.quest_receiver_not_found);
      transferGold(senderKey.getId(),receiverId,amount.getGold());
+     amount = amount.toBuilder().setGold(dao.get(senderKey, User.class).getGoldBalance()).build();
+     resp.getOutputStream().write(amount.toByteArray());
      
-
    }
 }

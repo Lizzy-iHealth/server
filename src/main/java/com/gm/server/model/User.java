@@ -70,7 +70,7 @@ public class User extends Persistable<User> {
   private long goldBalance = 0;
   
   @Property
-  private int experience = 0;
+  private long experience = 0;
   
   @Property
   private com.gm.common.model.Rpc.Quests.Builder favouriteQuests = null;
@@ -78,11 +78,11 @@ public class User extends Persistable<User> {
   @Property
   private CheckinsPb.Builder mostCheckin = null;
   
-	public int getExperience() {
+	public long getExperience() {
     return experience;
   }
 
-  public void setExperience(int experience) {
+  public void setExperience(long experience) {
     this.experience = experience;
   }
 
@@ -390,7 +390,9 @@ public class User extends Persistable<User> {
     UserPb.Builder msg = UserPb.newBuilder().setId(getId())
                                             .setLog(log)
                                             .setRating(rating)
-                                            .setPhone(phone);
+                                            .setPhone(phone)
+                                            .setExperience(experience)
+                                            .setFriendScore(this.getFriendshipScore(id));
     
     if(id==this.getId()
         ||getFriendship(id)==Friendship.ADDED
@@ -441,6 +443,27 @@ public class User extends Persistable<User> {
     }
     
   }
-  
+
+  public void increaseFriendshipScore(long friendId) {
+    // TODO Auto-generated method stub
+    int i = this.findFriend(friendId);
+    if(i != -1){
+      Friend.Builder f = friends.getFriendBuilder(i);
+      long s = f.getScore();
+      f.setScore(s+1);
+      friends.setFriend(i, f);
+    }
+  }
+  public long getFriendshipScore(long friendId) {
+
+    long s = 0;
+    int i = this.findFriend(friendId);
+    if(i != -1){
+      Friend.Builder f = friends.getFriendBuilder(i);
+      s = f.getScore();
+
+    }
+    return s;
+  }
   
 }

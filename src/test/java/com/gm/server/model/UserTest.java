@@ -63,6 +63,8 @@ public class UserTest extends ModelTest{
 	  u2.addFriend(u1.getUserID(), Friendship.WAIT_MY_CONFIRM);
 	  dao.save(u1);
 	  dao.save(u2);
+	  assertEquals(0,u1.getFriendshipScore(u2.getId()));
+	  assertEquals(0,u2.getFriendshipScore(u1.getId()));
 	}
 	
 	 @Test

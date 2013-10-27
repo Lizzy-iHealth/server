@@ -121,7 +121,7 @@ public class Quest extends Persistable<Quest> {
     this.posts = posts;
   }
 
-
+  
   
   public long getStatus() {
     return status;
@@ -138,7 +138,14 @@ public class Quest extends Persistable<Quest> {
   public boolean isAutoConfirm() {
     return config.getAutoConfirmAll();
   }
-
+  
+  public boolean isAutoClaim(){
+    return config.getAutoClaim();
+  }
+  
+  public boolean isAutoReward(){
+    return config.getAutoReward();
+  }
   public void setAutoConfirm(boolean autoConfirm) {
     config.setAutoConfirmAll(autoConfirm);
   }
@@ -432,18 +439,42 @@ public void updateQuest(QuestPb q) {
     if(app.hasType()){
       Applicant.Status newType = app.getType();
       
-      
+      // Assign + Wait_My_Confirm = Confirmed
       if(curApp.hasType()&&curApp.getType()!=newType){
         Applicant.Status curType = curApp.getType();
         if((newType==Applicant.Status.ASSIGN && curType == Applicant.Status.WAIT_MY_CONFIRM )
             || (newType==Applicant.Status.WAIT_MY_CONFIRM && curType == Applicant.Status.ASSIGN )){
             newType = Applicant.Status.CONFIRMED;
         }
-      }  
+        
+      
+      //confirmed + autoAccept = pass
+      if(newType==Applicant.Status.CONFIRMED && this.isAutoConfirm()){
+        newType = Applicant.Status.PASS;
+      }
+      
+      //pass + autoClaim = claimed
+      if(newType == Applicant.Status.PASS && this.isAutoClaim()){
+        newType = Applicant.Status.CLAIMED;
+      }
+      
+
+      
+      if(newType == Applicant.Status.DONE){
+        downWithApplicant(i);
+      }
+      }
       curApp.setType(newType);
     }
     applicants.setApplicant(i, curApp.build());
   
+  }
+
+
+  private void downWithApplicant(int i) {
+    // TODO Auto-generated method stub
+    
+    
   }
 
 
@@ -457,11 +488,11 @@ public void updateQuest(QuestPb q) {
     return status==QuestPb.Status.DEAL_VALUE;
   }
 
-  public void updateApplicantStatus(int index, Status status) {
+  public Applicant.Status updateApplicantStatus(int index, Status status) {
 
     Applicant.Builder newApp = applicants.getApplicantBuilder(index).setType(status);
     updateApplicant(index,newApp.build());
-    
+    return applicants.getApplicantBuilder(index).getType();
   }
   
 }

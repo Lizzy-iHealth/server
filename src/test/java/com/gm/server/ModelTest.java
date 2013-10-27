@@ -16,6 +16,8 @@ import static junit.framework.Assert.assertEquals;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.common.base.Joiner;
+import com.gm.common.crypto.Base64;
+import com.gm.common.model.Rpc.Currency;
 import com.gm.server.model.DAO;
 import com.gm.server.model.Feed;
 import com.gm.server.model.User;
@@ -37,7 +39,16 @@ public abstract class ModelTest {
       when(request.getParameter(ParamKey.device_id.name())).thenReturn("APA91bFWFxgXtR57p3Jj2umYFFV8-U1N9PKKLQydheMybhU_2DxdngHbuYijPRHc1Y2a9dLkhdu9pyLCNd61uRBn9d2i6dggDxjMSkADyAET6rHGCQ9PFQi7HAc_hIsRBA_Z4LAkUddPSH9NxTvIjJZe-ImYHpoNgA");
     return request;
   }
+  protected HttpServletRequest mockCurrency(HttpServletRequest req,long amount) {
+    String currency = Base64.encodeToString(Currency.newBuilder().setGold(amount).build().toByteArray(),Base64.DEFAULT);
+    when(req.getParameter(ParamKey.currency.name())).thenReturn(currency);
+    return req;
+  }
 
+  protected HttpServletRequest mockUserId( HttpServletRequest req,User B) {
+    when(req.getParameter(ParamKey.user_id.name())).thenReturn(Long.toString(B.getId()));
+    return req;
+  }
   @Before
   public void setUp() {
     helper.setUp();
