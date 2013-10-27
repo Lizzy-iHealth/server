@@ -37,7 +37,7 @@ public class DeviceServletTest extends ModelTest{
     String  deviceID= new String("My Device ID");
     when(req.getParameter("device_id")).thenReturn(deviceID);
    
-    API.device.execute(req, resp,false);
+   new DeviceServlet().execute(req, resp,false);
     
     User user = dao.get(userInDB.getEntityKey(), User.class);
     

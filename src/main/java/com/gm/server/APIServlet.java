@@ -336,7 +336,7 @@ public abstract class APIServlet extends HttpServlet{
 
   protected static void rewardInvitors(long newUserID, Friends friends) throws ApiException {
     // TODO Auto-generated method stub
-    ApiException error=null;
+
     for (Friend invitor:friends.getFriendList()){
       Key invKey = KeyFactory.createKey("User", invitor.getId());
       
@@ -346,15 +346,12 @@ public abstract class APIServlet extends HttpServlet{
       } catch (ApiException e) {
         // TODO Auto-generated catch block
         e.printStackTrace();
-        error = e;
         continue;
       }
         inv.addFriend(newUserID, Friendship.INVITED);
         dao.save(inv);
     }
-    if(error != null){
-      throw error;
-    }
+
   }
   
   protected void updateQuestByMsg(QuestPb questMsg, Key ownerKey, Key questKey)
@@ -899,11 +896,12 @@ public abstract class APIServlet extends HttpServlet{
   }
 
 
-  protected static void writeResponse(HttpServletResponse resp, String[] results)
+  protected static void writeResponse(HttpServletResponse resp, Object[] results)
       throws IOException {
+    if(results==null)return;
     Joiner joiner = Joiner.on(",").skipNulls();
     System.out.println(joiner.join(results));
-    resp.getWriter().write(joiner.join(results));
+    resp.getOutputStream().write(joiner.join(results).getBytes());
   }
   static final void info(Throwable t, String msg, Object... args) {
     logger.log(Level.INFO, String.format(msg, args), t);
@@ -921,4 +919,15 @@ public abstract class APIServlet extends HttpServlet{
     return la;
   }
   private static final Logger logger = Logger.getLogger(APIServlet.class.getName());
+
+  public void writeResponse(HttpServletResponse resp, int[] results) throws IOException {
+    String r[] = new String[results.length];
+    int i =0;
+    for(int s:results){
+      r[i] = Integer.toString(s);
+      i++;
+    }
+    writeResponse(resp,r);
+    
+  }
 }

@@ -34,6 +34,8 @@ public class LoginServletTest extends ModelTest{
   @Before
 	public void setUpData() throws Exception {
 	   user = new User("9173489948","my password","my secret");
+	   User admin = new User("999","p","s");
+	   dao.save(admin);
 	   dao.save(user);
 	}
 
@@ -58,7 +60,7 @@ public class LoginServletTest extends ModelTest{
 	    		responses[i]= mock(HttpServletResponse.class);
 	    		when(responses[i].getWriter()).thenReturn(writer);
 	    		when(responses[i].getOutputStream()).thenReturn(streamwriter);
-	    		login.doPost(requests[i], responses[i]);
+	    		login.execute(requests[i], responses[i],false);
 	    }
 	    
 	    Date after = new Date();
@@ -68,14 +70,14 @@ public class LoginServletTest extends ModelTest{
 	    verify(responses[2]).setStatus(HttpServletResponse.SC_BAD_REQUEST);
 	    
 	  
-	    verifyUserInDB(rightUser.getPhone(),user,before,after,writer);
+	    verifyUserInDB(rightUser.getPhone(),user,before,after,streamwriter);
 	}
-	    public void verifyUserInDB(String mobileNumber,User mockUser, Date before, Date after,PrintWriter writer) throws IOException{
+	    public void verifyUserInDB(String mobileNumber,User mockUser, Date before, Date after,ServletOutputStream writer) throws IOException{
 	    	  User userEntity=dao.get(mockUser.getEntityKey(), User.class);
 	    	  String secret = userEntity.getSecret();
 	    		String key = userEntity.getKey();
 	    		String res[]={key,secret,Long.toString(userEntity.getId())};
-	        verify(writer).write(getResponse(res));
+	        verify(writer).write(getResponse(res).getBytes());
 	  	    
 	  	    Date dateSeq[] = {
 	  		  	   userEntity.getCreateTime()

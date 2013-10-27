@@ -26,6 +26,6 @@ public class GetFriendsDetailsServlet extends APIServlet {
   }     
   public void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws IOException {
-    API.get_friends_details.execute(req, resp);
+    execute(req, resp);
   }
 }

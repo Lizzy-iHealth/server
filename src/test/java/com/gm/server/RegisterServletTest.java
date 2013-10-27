@@ -25,6 +25,7 @@ import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Query;
+import com.google.appengine.api.images.ImagesServicePb.OutputSettingsOrBuilder;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.gm.common.model.Rpc.Friendship;
@@ -58,12 +59,13 @@ public class RegisterServletTest extends ModelTest{
     HttpServletRequest request = mock(HttpServletRequest.class);
       HttpServletResponse response1 = mock(HttpServletResponse.class);
       PrintWriter writer = mock(PrintWriter.class);
-
+      ServletOutputStream swriter = mock(ServletOutputStream.class);
       
       when(request.getParameter("phone")).thenReturn(phone);
       when(request.getParameter("token")).thenReturn(verifyCode);
       when(request.getParameter("password")).thenReturn(password);
       when(response1.getWriter()).thenReturn(writer);
+      when(response1.getOutputStream()).thenReturn(swriter);
       Date priorToRequest = new Date();
 
       binder.doPost(request, response1);
@@ -82,7 +84,7 @@ public class RegisterServletTest extends ModelTest{
       String secret = newUser.getSecret();
       String key = newUser.getKey();
       String res[]={key,secret,Long.toString(newUserId)};
-      verify(writer).write(getResponse(res));
+      verify(swriter).write(getResponse(res).getBytes());
 
       
       assertEquals(1,newUser.getFriends().getFriendCount());
@@ -111,12 +113,13 @@ public class RegisterServletTest extends ModelTest{
 		HttpServletRequest request = mock(HttpServletRequest.class);
 	    HttpServletResponse response1 = mock(HttpServletResponse.class);
 	    PrintWriter writer = mock(PrintWriter.class);
-
+	    ServletOutputStream swriter = mock (ServletOutputStream.class);
 
 	    when(request.getParameter("phone")).thenReturn(phone);
 	    when(request.getParameter("token")).thenReturn(verifyCode);
 	    when(request.getParameter("password")).thenReturn(password);
 	    when(response1.getWriter()).thenReturn(writer);
+	    when(response1.getOutputStream()).thenReturn(swriter);
 	    Date priorToRequest = new Date();
 
 	    binder.doPost(request, response1);
@@ -131,7 +134,7 @@ public class RegisterServletTest extends ModelTest{
 	    String secret = (String)e.getProperty("secret");
 	    String key = KeyFactory.keyToString(e.getKey());
       String res[]={key,secret,Long.toString(e.getKey().getId())};
-      verify(writer).write(getResponse(res));
+      verify(swriter).write(getResponse(res).getBytes());
 
       
 	    assertEquals(phone, e.getProperty("phone"));

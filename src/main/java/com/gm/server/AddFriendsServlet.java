@@ -22,9 +22,10 @@ public class AddFriendsServlet extends APIServlet {
 
       long[] friendIDs = ParamKey.user_id.getLongs(req,-1);
       String key = ParamKey.key.getValue(req);
-      addFriends(key,friendIDs);
-  
+      int[] results = addFriends(key,friendIDs);
+      writeResponse(resp, results);
   }
+
   public void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws IOException {
     execute(req, resp);

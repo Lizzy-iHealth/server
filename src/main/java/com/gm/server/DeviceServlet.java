@@ -31,7 +31,7 @@ public class DeviceServlet extends APIServlet {
   }
   public void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws IOException {
-    API.device.execute(req, resp);
+    execute(req, resp);
   }
 }
 
