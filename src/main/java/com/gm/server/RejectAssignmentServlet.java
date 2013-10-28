@@ -41,6 +41,4 @@ public class RejectAssignmentServlet extends APIServlet {
     resp.getOutputStream().write(Integer.toString(status).getBytes());
   }
 
-
-
 }

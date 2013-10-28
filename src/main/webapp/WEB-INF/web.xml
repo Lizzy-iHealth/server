@@ -110,6 +110,15 @@
 		<url-pattern>/social/get_friends_details</url-pattern>
 	</servlet-mapping>
 
+	<servlet>
+		<servlet-name>checkin</servlet-name>
+		<servlet-class>com.gm.server.CheckinServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>checkin</servlet-name>
+		<url-pattern>/social/checkin</url-pattern>
+	</servlet-mapping>
+
 	<!-- <servlet> -->
 	<!-- <servlet-name>get_phone_details</servlet-name> -->
 	<!-- <servlet-class>com.gm.server.GetPhoneDetailsServlet</servlet-class> -->
@@ -240,7 +249,14 @@
 		<url-pattern>/quest/approve_application</url-pattern>
 	</servlet-mapping>
 
-
+	<servlet>
+		<servlet-name>submit_daily_quest</servlet-name>
+		<servlet-class>com.gm.server.SubmitDailyQuestServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>submit_daily_quest</servlet-name>
+		<url-pattern>/quest/submit_daily_quest</url-pattern>
+	</servlet-mapping>
 
 	<!--- Feed Servlet -->
 	<servlet>
@@ -260,6 +276,14 @@
 	<servlet-mapping>
 		<servlet-name>send_gold</servlet-name>
 		<url-pattern>/reward/send_gold</url-pattern>
+	</servlet-mapping>
+	<servlet>
+		<servlet-name>get_currency</servlet-name>
+		<servlet-class>com.gm.server.GetCurrencyServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>get_currency</servlet-name>
+		<url-pattern>/reward/get_currency</url-pattern>
 	</servlet-mapping>
 
 

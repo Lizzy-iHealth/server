@@ -15,23 +15,23 @@ import com.google.appengine.api.datastore.Key;
  * Servlet implementation class GetCurrency
  */
 public class GetCurrencyServlet extends APIServlet {
-	private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-    /**
-     * Default constructor. 
-     */
-    public GetCurrencyServlet() {
-        this.requiresHmac = true;
-    }
+  /**
+   * Default constructor.
+   */
+  public GetCurrencyServlet() {
+    this.requiresHmac = true;
+  }
 
-
-	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
-	 */
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		execute(request,response);
-	}
-
+  /**
+   * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse
+   *      response)
+   */
+  protected void doPost(HttpServletRequest request, HttpServletResponse response)
+      throws ServletException, IOException {
+    execute(request, response);
+  }
 
   @Override
   public void handle(HttpServletRequest req, HttpServletResponse resp)
@@ -40,7 +40,7 @@ public class GetCurrencyServlet extends APIServlet {
     User user = dao.get(userKey, User.class);
     Currency c = Currency.newBuilder().setGold(user.getGoldBalance()).build();
     resp.getOutputStream().write(c.toByteArray());
-    
+
   }
 
 }

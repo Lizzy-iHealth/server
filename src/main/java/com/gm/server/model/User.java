@@ -24,12 +24,12 @@ import com.google.appengine.api.datastore.KeyFactory;
 @Entity
 public class User extends Persistable<User> {
 
-  //public static final User _ = new User();
+  // public static final User _ = new User();
 
   public static final boolean existsByPhone(String phone) {
     return DAO.get().querySingle("phone", phone, User.class) != null;
   }
-  
+
   @Property
   private String phone = "";
 
@@ -40,45 +40,46 @@ public class User extends Persistable<User> {
   private String secret = "";
 
   @Property
-  private Date createTime ;
+  private Date createTime;
 
   @Property
-  private Date lastLoginTime ;
-  
+  private Date lastLoginTime;
+
   @Property
   private Friends.Builder friends;
 
   @Property
   private EntityKeys.Builder activities = EntityKeys.newBuilder();
- 
+
   @Property
   private String deviceID = "";
 
   @Property
-  private String name="";
-  
+  private String name = "";
+
   @Property
-  private Thumbnail.Builder thumbnail = Thumbnail.newBuilder().setSmallUrl("/images/user-256.png").setLargeUrl("/images/user-512.png");
-  
+  private Thumbnail.Builder thumbnail = Thumbnail.newBuilder()
+      .setSmallUrl("/images/user-256.png").setLargeUrl("/images/user-512.png");
+
   @Property
   private Rating.Builder rating = Rating.newBuilder();
- 
+
   @Property
-  private GeoPt geo = new GeoPt(0,0) ;
-  
+  private GeoPt geo = new GeoPt(0, 0);
+
   @Property
   private long goldBalance = 0;
-  
+
   @Property
   private long experience = 0;
-  
+
   @Property
   private com.gm.common.model.Rpc.Quests.Builder favouriteQuests = null;
-  
+
   @Property
   private CheckinsPb.Builder mostCheckin = null;
-  
-	public long getExperience() {
+
+  public long getExperience() {
     return experience;
   }
 
@@ -103,11 +104,11 @@ public class User extends Persistable<User> {
   }
 
   public void login(String secret) {
-		this.secret = secret;
-		lastLoginTime = new Date();
-	}
+    this.secret = secret;
+    lastLoginTime = new Date();
+  }
 
-	public long getGoldBalance() {
+  public long getGoldBalance() {
     return goldBalance;
   }
 
@@ -116,68 +117,66 @@ public class User extends Persistable<User> {
   }
 
   public String getPhone() {
-		return phone;
-	}
+    return phone;
+  }
 
-	public Friends.Builder getFriends() {
-	  if(friends==null){
-	    friends= Friends.newBuilder();
-	  }
+  public Friends.Builder getFriends() {
+    if (friends == null) {
+      friends = Friends.newBuilder();
+    }
     return friends;
   }
 
   public void setFriends(Friends.Builder friends) {
-    if(friends==null){
+    if (friends == null) {
       friends = Friends.newBuilder();
     }
     this.friends = friends;
   }
 
   public void setPhone(String phone) {
-		this.phone = phone;
-	}
+    this.phone = phone;
+  }
 
-	public String getPassword() {
-		return password;
-	}
+  public String getPassword() {
+    return password;
+  }
 
-	public void setPassword(String password) {
-		this.password = password;
-	}
+  public void setPassword(String password) {
+    this.password = password;
+  }
 
-	public String getSecret() {
-		return secret;
-	}
+  public String getSecret() {
+    return secret;
+  }
 
-	public void setSecret(String secret) {
-		this.secret = secret;
-	}
+  public void setSecret(String secret) {
+    this.secret = secret;
+  }
 
-	public String getKey() {
-		return KeyFactory.keyToString(getEntityKey());
-	}
+  public String getKey() {
+    return KeyFactory.keyToString(getEntityKey());
+  }
 
-	public Date getCreateTime() {
-		return createTime;
-	}
+  public Date getCreateTime() {
+    return createTime;
+  }
 
-
-	public void setCreateTime(Date createTime) {
+  public void setCreateTime(Date createTime) {
     this.createTime = createTime;
   }
 
   public Date getLastLoginTime() {
-		return lastLoginTime;
-	}
-
-	public void setLastLoginTime(Date lastLoginTime) {
-		this.lastLoginTime = lastLoginTime;
-	}
-  
-	public long getUserID() {
-    return getEntityKey().getId();
+    return lastLoginTime;
   }
 
+  public void setLastLoginTime(Date lastLoginTime) {
+    this.lastLoginTime = lastLoginTime;
+  }
+
+  public long getUserID() {
+    return getEntityKey().getId();
+  }
 
   public String getDeviceID() {
     return deviceID;
@@ -186,8 +185,6 @@ public class User extends Persistable<User> {
   public void setDeviceID(String deviceID) {
     this.deviceID = deviceID;
   }
-  
-  
 
   public String getName() {
     return name;
@@ -220,8 +217,6 @@ public class User extends Persistable<User> {
   public void setGeo(GeoPt geo) {
     this.geo = geo;
   }
-  
-  
 
   public EntityKeys.Builder getActivities() {
     return activities;
@@ -232,93 +227,97 @@ public class User extends Persistable<User> {
   }
 
   @Override
-	public User touch() {
-		return this;
-	}
+  public User touch() {
+    return this;
+  }
 
-	public User(String mobileNumber, String password, String secret) {
-		super();
-		this.phone = mobileNumber;
-		this.password = password;
-		this.secret = secret;
-		this.createTime = new Date();
-		this.lastLoginTime = createTime;
-		this.friends = Friends.newBuilder();
+  public User(String mobileNumber, String password, String secret) {
+    super();
+    this.phone = mobileNumber;
+    this.password = password;
+    this.secret = secret;
+    this.createTime = new Date();
+    this.lastLoginTime = createTime;
+    this.friends = Friends.newBuilder();
     this.favouriteQuests = Quests.newBuilder();
     this.mostCheckin = CheckinsPb.newBuilder();
-		
-		//TODO:for test only
-		this.deviceID = "APA91bFWFxgXtR57p3Jj2umYFFV8-U1N9PKKLQydheMybhU_2DxdngHbuYijPRHc1Y2a9dLkhdu9pyLCNd61uRBn9d2i6dggDxjMSkADyAET6rHGCQ9PFQi7HAc_hIsRBA_Z4LAkUddPSH9NxTvIjJZe-ImYHpoNgA";
-	}
 
-	public User() {
-		// TODO Auto-generated constructor stub
-	  createTime = new Date();
-	  lastLoginTime = new Date();
-	  friends= Friends.newBuilder();
-	  this.favouriteQuests = Quests.newBuilder();
-	  this.mostCheckin = CheckinsPb.newBuilder();
-	  
-	}
-	
+    // TODO:for test only
+    this.deviceID = "APA91bFWFxgXtR57p3Jj2umYFFV8-U1N9PKKLQydheMybhU_2DxdngHbuYijPRHc1Y2a9dLkhdu9pyLCNd61uRBn9d2i6dggDxjMSkADyAET6rHGCQ9PFQi7HAc_hIsRBA_Z4LAkUddPSH9NxTvIjJZe-ImYHpoNgA";
+  }
+
+  public User() {
+    // TODO Auto-generated constructor stub
+    createTime = new Date();
+    lastLoginTime = new Date();
+    friends = Friends.newBuilder();
+    this.favouriteQuests = Quests.newBuilder();
+    this.mostCheckin = CheckinsPb.newBuilder();
+
+  }
+
   public void addFriend(long id, Friendship type) {
     // TODO Auto-generated method stub
     int i = findFriend(id);
-    if(i != -1 ){
-        updateFriends(i,type);
-    }else{
-      Friend.Builder newFriend = Friend.newBuilder().setFriendship(type).setId(id);
-    
-        if(type == Friendship.CONFIRMED){
-          newFriend.setScore(0);
-        }
-        friends.addFriend(newFriend.build());
+    if (i != -1) {
+      updateFriends(i, type);
+    } else {
+      Friend.Builder newFriend = Friend.newBuilder().setFriendship(type)
+          .setId(id);
+
+      if (type == Friendship.CONFIRMED) {
+        newFriend.setScore(0);
       }
+      friends.addFriend(newFriend.build());
+    }
   }
+
   public void updateFriends(int index, Friendship type) {
     // TODO Auto-generated method stub
-    
-        Friend.Builder f = friends.getFriendBuilder(index);
-  
-        if(type==f.getFriendship()){
-            return;
+
+    Friend.Builder f = friends.getFriendBuilder(index);
+
+    if (type == f.getFriendship()) {
+      return;
+    }
+
+    if (type == Friendship.WAIT_MY_CONFIRM || type == Friendship.ADDED) {
+      switch (f.getFriendship()) {
+      case ADDED:
+        type = Friendship.CONFIRMED;
+        break;
+      case WAIT_MY_CONFIRM:
+        type = Friendship.CONFIRMED;
+        break;
+      case BLOCKED:
+        if (type == Friendship.WAIT_MY_CONFIRM) {
+          return;
         }
-       
-        if(type==Friendship.WAIT_MY_CONFIRM||type==Friendship.ADDED){
-          switch (f.getFriendship()){
-            case ADDED:
-              type = Friendship.CONFIRMED;
-              break;
-            case WAIT_MY_CONFIRM:
-              type = Friendship.CONFIRMED;
-              break;
-            case BLOCKED:
-               if(type == Friendship.WAIT_MY_CONFIRM){
-                  return;
-               }
-            case INVITED:
-              if(type == Friendship.WAIT_MY_CONFIRM){
-                  type = Friendship.CONFIRMED;
-              }
-              break;
-            default:
-            return;
-         }
+      case INVITED:
+        if (type == Friendship.WAIT_MY_CONFIRM) {
+          type = Friendship.CONFIRMED;
         }
-        
-        if(type==Friendship.CONFIRMED){
-          f.setScore(0);
-        }
-      
-        friends.setFriend(index, f.setFriendship(type).build());
-      
+        break;
+      default:
+        return;
+      }
+    }
+
+    if (type == Friendship.CONFIRMED) {
+      f.setScore(0);
+    }
+
+    friends.setFriend(index, f.setFriendship(type).build());
+
   }
+
   private int findFriend(long id) {
     // TODO Auto-generated method stub
-    if(friends==null) return -1;
-    for (int i=0; i<friends.getFriendCount();i++){
+    if (friends == null)
+      return -1;
+    for (int i = 0; i < friends.getFriendCount(); i++) {
       Friend f = friends.getFriend(i);
-      if (f.getId()==id){
+      if (f.getId() == id) {
         return i;
       }
     }
@@ -327,31 +326,31 @@ public class User extends Persistable<User> {
 
   public void addFriends(long[] friendIDs) {
     // TODO Auto-generated method stub
-    for(int i=0;i<friendIDs.length;i++){
+    for (int i = 0; i < friendIDs.length; i++) {
       int index = findFriend(friendIDs[i]);
-      if(index!=-1){
-        updateFriends(index,Friendship.ADDED);
-      }else{
-        friends.addFriend(Friend.newBuilder().setFriendship(Friendship.ADDED).setId(friendIDs[i]).build());
+      if (index != -1) {
+        updateFriends(index, Friendship.ADDED);
+      } else {
+        friends.addFriend(Friend.newBuilder().setFriendship(Friendship.ADDED)
+            .setId(friendIDs[i]).build());
       }
-      
+
     }
   }
-  
-  //return the index of the added key
-  public int addActivity(String questKey){
+
+  // return the index of the added key
+  public int addActivity(String questKey) {
     int i = findActivity(questKey);
-    if(i==-1){
+    if (i == -1) {
       activities.addKey(questKey);
-      i=0;
+      i = 0;
     }
     return i;
   }
-  
-  
+
   private int findActivity(String questKey) {
-    for(int i = 0; i< activities.getKeyCount(); i++){
-      if (activities.getKey(i).equals(questKey)){
+    for (int i = 0; i < activities.getKeyCount(); i++) {
+      if (activities.getKey(i).equals(questKey)) {
         return i;
       }
     }
@@ -361,75 +360,75 @@ public class User extends Persistable<User> {
   public void deleteFriend(long l) {
     // TODO Auto-generated method stub
     int index = findFriend(l);
-    if(index!=-1){
+    if (index != -1) {
       friends.removeFriend(index);
     }
   }
+
   public void muteFriend(long l) {
     // TODO Auto-generated method stub
     int index = findFriend(l);
-    if(index!=-1){
-        updateFriends(index, Friendship.MUTED);
+    if (index != -1) {
+      updateFriends(index, Friendship.MUTED);
     }
   }
+
   public void blockFriend(long l) {
     // TODO Auto-generated method stub
     int index = findFriend(l);
-    if(index!=-1){
-      updateFriends(index,Friendship.BLOCKED);
-    }else{
-      friends.addFriend(Friend.newBuilder().setId(l).setFriendship(Friendship.BLOCKED));
+    if (index != -1) {
+      updateFriends(index, Friendship.BLOCKED);
+    } else {
+      friends.addFriend(Friend.newBuilder().setId(l)
+          .setFriendship(Friendship.BLOCKED));
     }
   }
 
   public UserPb.Builder getMSG(long id) {
-    
-    EntityLog log = EntityLog.newBuilder().setCreatedAt(createTime.getTime()).setUpdatedAt(lastLoginTime.getTime()).build();
-    GeoPoint geopt = GeoPoint.newBuilder().setLatitude(geo.getLatitude()).setLongitude(geo.getLatitude()).build();
-    
-    UserPb.Builder msg = UserPb.newBuilder().setId(getId())
-                                            .setLog(log)
-                                            .setRating(rating)
-                                            .setPhone(phone)
-                                            .setExperience(experience)
-                                            .setFriendScore(this.getFriendshipScore(id));
-    
-    if(id==this.getId()
-        ||getFriendship(id)==Friendship.ADDED
-        ||getFriendship(id)==Friendship.CONFIRMED
-        ||getFriendship(id)==Friendship.STARED
-        ||getFriendship(id)==Friendship.INVITED
-        ||getFriendship(id)==Friendship.MUTED ){
-        msg.setName(name)
-           .setLocation(geopt)
-           .setThumbnail(thumbnail);
-    }else{
-        msg.setName("-")
-           .setThumbnail(Thumbnail.newBuilder().setSmallUrl("/images/user-256.png").setLargeUrl("/images/user-512.png"));
+
+    EntityLog log = EntityLog.newBuilder().setCreatedAt(createTime.getTime())
+        .setUpdatedAt(lastLoginTime.getTime()).build();
+    GeoPoint geopt = GeoPoint.newBuilder().setLatitude(geo.getLatitude())
+        .setLongitude(geo.getLatitude()).build();
+
+    UserPb.Builder msg = UserPb.newBuilder().setId(getId()).setLog(log)
+        .setRating(rating).setPhone(phone).setExperience(experience)
+        .setFriendScore(this.getFriendshipScore(id));
+
+    if (id == this.getId() || getFriendship(id) == Friendship.ADDED
+        || getFriendship(id) == Friendship.CONFIRMED
+        || getFriendship(id) == Friendship.STARED
+        || getFriendship(id) == Friendship.INVITED
+        || getFriendship(id) == Friendship.MUTED) {
+      msg.setName(name).setLocation(geopt).setThumbnail(thumbnail);
+    } else {
+      msg.setName("-").setThumbnail(
+          Thumbnail.newBuilder().setSmallUrl("/images/user-256.png")
+              .setLargeUrl("/images/user-512.png"));
     }
 
     return msg;
   }
-  
-  public Friendship getFriendship(long id){
+
+  public Friendship getFriendship(long id) {
     int i = findFriend(id);
-    if(i!=-1){
-      
+    if (i != -1) {
+
       return friends.getFriend(i).getFriendship();
-      
-    }else{
-    //set default value for required fields:
-    
-     return Friendship.UNKNOWN;
+
+    } else {
+      // set default value for required fields:
+
+      return Friendship.UNKNOWN;
     }
-    
+
   }
 
   public long[] getFriendIds() {
     long ids[] = new long[friends.getFriendCount()];
-    int i=0;
-    for(Friend f : friends.getFriendList()){
-      ids[i]=f.getId();
+    int i = 0;
+    for (Friend f : friends.getFriendList()) {
+      ids[i] = f.getId();
     }
     return ids;
   }
@@ -437,33 +436,41 @@ public class User extends Persistable<User> {
   public void deleteActivity(String key) {
     List<String> keys = activities.getKeyList();
     activities.clearKey();
-    for(String k:keys){
-      if(key.equals(k)) continue;
+    for (String k : keys) {
+      if (key.equals(k))
+        continue;
       activities.addKey(k);
     }
-    
+
   }
 
   public void increaseFriendshipScore(long friendId) {
     // TODO Auto-generated method stub
     int i = this.findFriend(friendId);
-    if(i != -1){
+    if (i != -1) {
       Friend.Builder f = friends.getFriendBuilder(i);
       long s = f.getScore();
-      f.setScore(s+1);
+      f.setScore(s + 1);
       friends.setFriend(i, f);
     }
   }
+
   public long getFriendshipScore(long friendId) {
 
     long s = 0;
     int i = this.findFriend(friendId);
-    if(i != -1){
+    if (i != -1) {
       Friend.Builder f = friends.getFriendBuilder(i);
       s = f.getScore();
 
     }
     return s;
   }
-  
+
+  public void setGeo(GeoPoint geoPoint) {
+    GeoPt point = new GeoPt(geoPoint.getLatitude(), geoPoint.getLongitude());
+    setGeo(point);
+
+  }
+
 }

@@ -13,33 +13,33 @@ import com.gm.server.model.User;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 
-
 public class ApplyQuestServlet extends APIServlet {
   /**
    * 
    */
   private static final long serialVersionUID = 1L;
+
   public void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws IOException {
     execute(req, resp);
   }
-  
-  //Input Param: "key"        user's index
-  //             "id"      quest id
-  //              "user_id"   assignment list
-  //Output: push notification
-  
+
+  // Input Param: "key" user's index
+  // "id" quest id
+  // "user_id" assignment list
+  // Output: push notification
+
   public void handle(HttpServletRequest req, HttpServletResponse resp)
       throws ApiException, IOException {
-    
+
     // get quest key
-    
+
     Key questKey = getQuestKeyFromReq(req);
     Key applierKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
-    Applicant applicant  = getApplicant(req);
-    
+    Applicant applicant = getApplicant(req);
+
     int status = applyQuest(questKey, applierKey, applicant);
     resp.getWriter().write(Integer.toString(status));
   }
-  
+
 }
