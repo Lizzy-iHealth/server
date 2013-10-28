@@ -52,7 +52,7 @@ public abstract class Persistable<T extends Persistable<?>> {
         if (value instanceof Blob) {
           value = toBuilder.invoke(parseFrom.invoke(null, ((Blob) value).getBytes()));
         }
-        System.out.println(field.getName()+" "+ value);
+  //      System.out.println(field.getName()+" "+ value);
         field.set(instance, value);
       } catch (Exception e) {
         throw new ModelException(e);

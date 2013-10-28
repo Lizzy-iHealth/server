@@ -318,11 +318,13 @@ public abstract class APIServlet extends HttpServlet{
     int status = quest.updateApplicantStatus(index, Applicant.Status.REJECTTED).getNumber();
 
     dao.save(quest);
-
+    
+    //delete the activity at the applier's view.
+/*
     User applier = dao.get(applierKey, User.class);
     applier.deleteActivity(KeyFactory.keyToString(questKey));
     dao.save(applier);
-   
+*/ 
     // push message to quest owner.
     long[] receivers = { quest.getParent().getId() };
     push(receivers, "quest", "reject assignment");

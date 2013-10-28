@@ -49,7 +49,7 @@ public class StreamCopyFilter implements Filter {
       super(request);
       this.content = content;
       table = HttpUtils.parsePostData(content.length, new CacheInputStream(content));
-      System.out.println(table);
+ //     System.out.println(table);
     }
 
     @Override
@@ -86,7 +86,7 @@ public class StreamCopyFilter implements Filter {
     if (request instanceof HttpServletRequest
         && response instanceof HttpServletResponse) {
       byte[] content = readStream(request.getInputStream());
-      log.info("read " + new String(content));
+   //   log.info("read " + new String(content));
       chain.doFilter(new StreamCacheRequest((HttpServletRequest) request, content), response);
     } else {
       chain.doFilter(request, response);

@@ -102,6 +102,17 @@ public class Feed extends Persistable<Feed> {
 
 
 
+
+  public void deleteQuest(Key questKey) {
+    int i = this.findQuest(questKey.getId(), questKey.getParent().getId());
+    if(i!=-1){
+      deleteQuest(i);
+    }
+    
+  }
+
+
+
   //change the feeds' owner's status of the quest in "ith" feed 
 
 

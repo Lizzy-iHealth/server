@@ -331,11 +331,14 @@ public class APITest extends ModelTest {
     //prepare data in datastore 
     for(int i =0; i<n; i++){
       friends[i] = new User(String.valueOf(i),"p","s");
+
       dao.save(friends[i]);
       
       newfriendIds[i]=String.valueOf(friends[i].getId());
       user.addFriend(friends[i].getId(), Friendship.CONFIRMED);
       friends[i].addFriend(user.getId(), Friendship.CONFIRMED);
+      friends[i].increaseFriendshipScore(user.getId());
+      user.increaseFriendshipScore(friends[i].getId());
       dao.save(user);
       dao.save(friends[i]);
     }
@@ -344,6 +347,7 @@ public class APITest extends ModelTest {
       friendInDB = dao.get(friends[i].getEntityKey(), User.class);
       friendMsg = friendInDB.getMSG(user.getId());
       friendMsg.setFriendship(Friendship.CONFIRMED);
+      friendMsg.setFriendScore(1);
       newusers.addUser(friendMsg);
     }
     when(req.getParameterValues(ParamKey.user_id.name())).thenReturn(newfriendIds);

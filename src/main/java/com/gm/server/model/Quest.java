@@ -139,6 +139,9 @@ public class Quest extends Persistable<Quest> {
     return config.getAutoConfirmAll();
   }
   
+  public boolean isAutoAccept(){
+    return config.getAutoAccept();
+  }
   public boolean isAutoClaim(){
     return config.getAutoClaim();
   }
@@ -192,12 +195,11 @@ public class Quest extends Persistable<Quest> {
     }
     
   }
- public Quest(String title, String description, int prize, boolean autoConfirm,int status) {
+ public Quest(String title, String description, int prize, Config.Builder config,int status) {
     this.title = title;
     this.description = description;
     start_time = new Date();
-    config.setAllowSharing(false).setAutoAccepth(false).setAutoClaim(false).setAutoConfirmAll(autoConfirm)
-          .setAutoConfirmFirstApplicant(autoConfirm).setAutoReward(false).setFavourite(false);
+    this.config = config;
     this.prize = prize;
     this.status = status;
   }
@@ -471,7 +473,7 @@ public void updateQuest(QuestPb q) {
         
       
       //confirmed + autoAccept = pass
-      if(newType==Applicant.Status.CONFIRMED && this.isAutoConfirm()){
+      if(newType==Applicant.Status.CONFIRMED && this.isAutoAccept()){
         newType = Applicant.Status.PASS;
       }
       

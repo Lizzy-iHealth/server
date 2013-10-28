@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.gm.common.model.Rpc.QuestPb;
 import com.gm.common.model.Rpc.Quests;
 import com.gm.common.net.ErrorCode;
+import com.gm.server.model.Feed;
 import com.gm.server.model.Quest;
 import com.gm.server.model.User;
 import com.google.appengine.api.datastore.Key;
@@ -39,7 +40,14 @@ for(String questKeyStr: activityKeys){
 
 Key questKey = KeyFactory.stringToKey(questKeyStr);
 // get quest from datastore and add an application 
-Quest quest = checkNotNull(dao.get(questKey, Quest.class),ErrorCode.quest_quest_not_found);
+Quest quest = dao.get(questKey, Quest.class);
+if(quest == null){
+  user.deleteActivity(KeyFactory.keyToString(questKey));
+  Feed feed = dao.querySingle(Feed.class, user.getEntityKey());
+  feed.deleteQuest(questKey);
+  dao.save(user);
+  dao.save(feed);
+}
 QuestPb qMsg = quest.getMSG(user.getId()).build();
 questsMsg.addQuest(qMsg);
 }
