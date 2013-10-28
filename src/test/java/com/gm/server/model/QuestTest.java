@@ -14,6 +14,23 @@ import java.util.HashSet;
 
 import com.gm.common.model.Rpc.Applicant;
 public class QuestTest extends ModelTest {
+  @Test
+  public void testQuest(){
+    int n = 10;
+    User users[] = new User[n];
+    for(int i = 0; i<n; i++){
+     users[i] = new User();
+    dao.save(users[i]);
+    Quest q1 = new Quest();
+    Quest q2 = new Quest();
+    Feed f1 = new Feed();
+    dao.save(q1,users[i].getEntityKey());
+    dao.save(q2,users[i].getEntityKey());
+    dao.save(f1,users[i].getEntityKey());
+    System.out.println(users[i].getId());
+    System.out.println("has quests:"+q1.getId()+"  "+ q2.getId()+ " and feed: "+f1.getId());
+    }
+  }
   
   @Test
   public void testQuestMSG(){

@@ -7,4 +7,9 @@
     <system-properties>
         <property name="java.util.logging.config.file" value="WEB-INF/logging.properties"/>
     </system-properties>
+    
+<auto-id-policy>
+  default
+</auto-id-policy>
+  
 </appengine-web-app>

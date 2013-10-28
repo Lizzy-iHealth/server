@@ -19,7 +19,7 @@ public class InitServlet extends APIServlet {
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
 	  this.requiresHmac = false;
 	  execute(request, response);
@@ -47,8 +47,8 @@ public class InitServlet extends APIServlet {
         ,1
         ,true
         ,QuestPb.Status.PUBLISHED.getNumber());
-
-    dao.save(checkIn,taskAdmin.getEntityKey());
+      dao.save(checkIn,taskAdmin.getEntityKey());
+   
     }
   }
 

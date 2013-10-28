@@ -40,7 +40,8 @@ public class GenerateFeedServlet extends APIServlet {
       Feed feed = dao.querySingle(Feed.class,receiverKey);
       if(feed==null){
         feed = new Feed();
-        dao.save(feed,receiverKey);
+        dao.create(feed,receiverKey);
+        info("new feed entity generated:"+feed.getParent().getId()+feed.getEntityKey().getKind()+feed.getId() + "for "+ receiverKey.getId());
       }
       int i = feed.findQuest(questMsg.getId(),questMsg.getOwnerId());
       if(i!=-1){

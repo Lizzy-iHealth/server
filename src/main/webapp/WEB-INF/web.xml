@@ -1,313 +1,316 @@
 <?xml version="1.0" encoding="utf-8"?>
-<web-app
-        version="2.5"
-        xmlns="http://java.sun.com/xml/ns/javaee"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
-   	<filter>
-        <filter-name>StreamCopyFilter</filter-name>
-        <filter-class>com.gm.server.StreamCopyFilter</filter-class>
-    </filter>
-    <filter-mapping>
-        <filter-name>StreamCopyFilter</filter-name>
-        <url-pattern>/*</url-pattern>
- </filter-mapping>
- 
-    
- <!-- to remove before upload -->
-<!--    <filter> -->
-<!--     <filter-name>_ah_DevSocketFilter</filter-name> -->
-<!--     <filter-class> -->
-<!--       com.google.appengine.api.socket.dev.DevSocketFilter -->
-<!--     </filter-class> -->
-<!--     <init-param> -->
-<!--       <param-name>use-native-sockets</param-name> -->
-<!--       <param-value>true</param-value> -->
-<!--     </init-param> -->
-<!--   </filter> -->
+<web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+	<filter>
+		<filter-name>StreamCopyFilter</filter-name>
+		<filter-class>com.gm.server.StreamCopyFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>StreamCopyFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
 
-<!--   <filter-mapping> -->
-<!--     <filter-name>_ah_DevSocketFilter</filter-name> -->
-<!--     <url-pattern>/*</url-pattern> -->
-<!--   </filter-mapping> -->
 
-  
-  
-   	<servlet>
-        <servlet-name>register</servlet-name>
-        <servlet-class>com.gm.server.RegisterServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>register</servlet-name>
-        <url-pattern>/auth/register</url-pattern>
-    </servlet-mapping>
-    
-    <servlet>
-        <servlet-name>bind</servlet-name>
-        <servlet-class>com.gm.server.RequestTokenServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>bind</servlet-name>
-        <url-pattern>/auth/request_token</url-pattern>
-    </servlet-mapping>
-       
-    <servlet>
-        <servlet-name>login</servlet-name>
-        <servlet-class>com.gm.server.LoginServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>login</servlet-name>
-        <url-pattern>/auth/login</url-pattern>
-    </servlet-mapping>
-    
-    <servlet>
-        <servlet-name>device</servlet-name>
-        <servlet-class>com.gm.server.DeviceServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>device</servlet-name>
-        <url-pattern>/auth/device</url-pattern>
-    </servlet-mapping>
-     <servlet>
-        <servlet-name>add_friends</servlet-name>
-        <servlet-class>com.gm.server.AddFriendsServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>add_friends</servlet-name>
-        <url-pattern>/social/add_friends</url-pattern>
-    </servlet-mapping> 
-         <servlet>
-        <servlet-name>invite_friends</servlet-name>
-        <servlet-class>com.gm.server.InviteFriendsServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>invite_friends</servlet-name>
-        <url-pattern>/social/invite_friends</url-pattern>
-    </servlet-mapping>   
-    <servlet>
-        <servlet-name>ping</servlet-name>
-        <servlet-class>com.gm.server.PingServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>ping</servlet-name>
-        <url-pattern>/ping</url-pattern>
-    </servlet-mapping>
+	<!-- to remove before upload -->
+	<!-- <filter> -->
+	<!-- <filter-name>_ah_DevSocketFilter</filter-name> -->
+	<!-- <filter-class> -->
+	<!-- com.google.appengine.api.socket.dev.DevSocketFilter -->
+	<!-- </filter-class> -->
+	<!-- <init-param> -->
+	<!-- <param-name>use-native-sockets</param-name> -->
+	<!-- <param-value>true</param-value> -->
+	<!-- </init-param> -->
+	<!-- </filter> -->
 
-        
-    <servlet>
-        <servlet-name>get_friends</servlet-name>
-        <servlet-class>com.gm.server.GetFriendsServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>get_friends</servlet-name>
-        <url-pattern>/social/get_friends</url-pattern>
-    </servlet-mapping> 
-    
-    <servlet>
-        <servlet-name>get_friends_details</servlet-name>
-        <servlet-class>com.gm.server.GetFriendsDetailsServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>get_friends_details</servlet-name>
-        <url-pattern>/social/get_friends_details</url-pattern>
-    </servlet-mapping> 
-    
-<!--         <servlet> -->
-<!--         <servlet-name>get_phone_details</servlet-name> -->
-<!--         <servlet-class>com.gm.server.GetPhoneDetailsServlet</servlet-class> -->
-<!--     </servlet> -->
-<!--     <servlet-mapping> -->
-<!--         <servlet-name>get_phone_details</servlet-name> -->
-<!--         <url-pattern>/social/get_phone_details</url-pattern> -->
-<!--     </servlet-mapping>  -->
-    
-    
-        <servlet>
-        <servlet-name>post_quest</servlet-name>
-        <servlet-class>com.gm.server.PostQuestServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>post_quest</servlet-name>
-        <url-pattern>/quest/post_quest</url-pattern>
-    </servlet-mapping> 
-    
-           <servlet>
-        <servlet-name>test_post_quest</servlet-name>
-        <servlet-class>com.gm.server.TestPostQuestServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>test_post_quest</servlet-name>
-        <url-pattern>/test/test_post_quest</url-pattern>
-    </servlet-mapping> 
-    
-    <servlet>
-        <servlet-name>share_quest</servlet-name>
-        <servlet-class>com.gm.server.ShareQuestServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>share_quest</servlet-name>
-        <url-pattern>/quest/share_quest</url-pattern>
-    </servlet-mapping> 
-    
-            <servlet>
-        <servlet-name>update_quest</servlet-name>
-        <servlet-class>com.gm.server.UpdateQuestServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>update_quest</servlet-name>
-        <url-pattern>/quest/update_quest</url-pattern>
-    </servlet-mapping> 
-    
-                <servlet>
-        <servlet-name>assign_quest</servlet-name>
-        <servlet-class>com.gm.server.AssignQuestServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>assign_quest</servlet-name>
-        <url-pattern>/quest/assign_quest</url-pattern>
-    </servlet-mapping> 
-    
-                    <servlet>
-        <servlet-name>deal_quest</servlet-name>
-        <servlet-class>com.gm.server.DealQuestServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>deal_quest</servlet-name>
-        <url-pattern>/quest/deal_quest</url-pattern>
-    </servlet-mapping> 
+	<!-- <filter-mapping> -->
+	<!-- <filter-name>_ah_DevSocketFilter</filter-name> -->
+	<!-- <url-pattern>/*</url-pattern> -->
+	<!-- </filter-mapping> -->
 
-    
-    
-        <servlet>
-        <servlet-name>get_quests</servlet-name>
-        <servlet-class>com.gm.server.GetQuestsServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>get_quests</servlet-name>
-        <url-pattern>/quest/get_quests</url-pattern>
-    </servlet-mapping> 
-    
-            <servlet>
-        <servlet-name>delete_quests</servlet-name>
-        <servlet-class>com.gm.server.DeleteQuestsServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>delete_quests</servlet-name>
-        <url-pattern>/quest/delete_quests</url-pattern>
-    </servlet-mapping> 
-    
-        <servlet>
-        <servlet-name>get_activities</servlet-name>
-        <servlet-class>com.gm.server.GetActivitiesServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>get_activities</servlet-name>
-        <url-pattern>/quest/get_activities</url-pattern>
-    </servlet-mapping> 
-    
-    
-                <servlet>
-        <servlet-name>apply_quest</servlet-name>
-        <servlet-class>com.gm.server.ApplyQuestServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>apply_quest</servlet-name>
-        <url-pattern>/quest/apply_quest</url-pattern>
-    </servlet-mapping> 
-    
-                <servlet>
-        <servlet-name>reject_assignment</servlet-name>
-        <servlet-class>com.gm.server.RejectAssignmentServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>reject_assignment</servlet-name>
-        <url-pattern>/quest/reject_assignment</url-pattern>
-    </servlet-mapping> 
-    
-                    <servlet>
-        <servlet-name>reject_application</servlet-name>
-        <servlet-class>com.gm.server.RejectApplicationServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>reject_application</servlet-name>
-        <url-pattern>/quest/reject_application</url-pattern>
-    </servlet-mapping> 
-    
-                        <servlet>
-        <servlet-name>approve_application</servlet-name>
-        <servlet-class>com.gm.server.ApproveApplicationServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>approve_application</servlet-name>
-        <url-pattern>/quest/approve_application</url-pattern>
-    </servlet-mapping> 
-    
-    
-    
-    <!--- Feed Servlet-->
-                    <servlet>
-        <servlet-name>get_feeds</servlet-name>
-        <servlet-class>com.gm.server.GetFeedsServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>get_feeds</servlet-name>
-        <url-pattern>/feed/get_feeds</url-pattern>
-    </servlet-mapping> 
-    
-    <!-- Reward Servlet -->
-                        <servlet>
-        <servlet-name>send_gold</servlet-name>
-        <servlet-class>com.gm.server.SendGoldServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>send_gold</servlet-name>
-        <url-pattern>/reward/send_gold</url-pattern>
-    </servlet-mapping> 
-    
-    
-    <!-- Task Queue Handles -->
-    
-        <servlet>
-        <servlet-name>generate_feed</servlet-name>
-        <servlet-class>com.gm.server.GenerateFeedServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>generate_feed</servlet-name>
-        <url-pattern>/queue/generate_feed</url-pattern>
-    </servlet-mapping> 
-    
-            <servlet>
-        <servlet-name>delete_feed</servlet-name>
-        <servlet-class>com.gm.server.DeleteFeedServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>delete_feed</servlet-name>
-        <url-pattern>/queue/delete_feed</url-pattern>
-    </servlet-mapping> 
-    
-                    <servlet>
-        <servlet-name>push</servlet-name>
-        <servlet-class>com.gm.server.PushServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>push</servlet-name>
-        <url-pattern>/queue/push</url-pattern>
-    </servlet-mapping> 
-    
-    
-    <!-- Admin Servlet -->
-            <servlet>
-        <servlet-name>init</servlet-name>
-        <servlet-class>com.gm.server.InitServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>init</servlet-name>
-        <url-pattern>/admin/init</url-pattern>
-    </servlet-mapping> 
 
-    
-    
-    <welcome-file-list>
-        <welcome-file>TestPush.jsp</welcome-file>
-    </welcome-file-list>
+
+	<servlet>
+		<servlet-name>register</servlet-name>
+		<servlet-class>com.gm.server.RegisterServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>register</servlet-name>
+		<url-pattern>/auth/register</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>bind</servlet-name>
+		<servlet-class>com.gm.server.RequestTokenServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>bind</servlet-name>
+		<url-pattern>/auth/request_token</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>login</servlet-name>
+		<servlet-class>com.gm.server.LoginServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>login</servlet-name>
+		<url-pattern>/auth/login</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>device</servlet-name>
+		<servlet-class>com.gm.server.DeviceServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>device</servlet-name>
+		<url-pattern>/auth/device</url-pattern>
+	</servlet-mapping>
+	<servlet>
+		<servlet-name>add_friends</servlet-name>
+		<servlet-class>com.gm.server.AddFriendsServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>add_friends</servlet-name>
+		<url-pattern>/social/add_friends</url-pattern>
+	</servlet-mapping>
+	<servlet>
+		<servlet-name>invite_friends</servlet-name>
+		<servlet-class>com.gm.server.InviteFriendsServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>invite_friends</servlet-name>
+		<url-pattern>/social/invite_friends</url-pattern>
+	</servlet-mapping>
+	<servlet>
+		<servlet-name>ping</servlet-name>
+		<servlet-class>com.gm.server.PingServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>ping</servlet-name>
+		<url-pattern>/ping</url-pattern>
+	</servlet-mapping>
+
+
+	<servlet>
+		<servlet-name>get_friends</servlet-name>
+		<servlet-class>com.gm.server.GetFriendsServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>get_friends</servlet-name>
+		<url-pattern>/social/get_friends</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>get_friends_details</servlet-name>
+		<servlet-class>com.gm.server.GetFriendsDetailsServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>get_friends_details</servlet-name>
+		<url-pattern>/social/get_friends_details</url-pattern>
+	</servlet-mapping>
+
+	<!-- <servlet> -->
+	<!-- <servlet-name>get_phone_details</servlet-name> -->
+	<!-- <servlet-class>com.gm.server.GetPhoneDetailsServlet</servlet-class> -->
+	<!-- </servlet> -->
+	<!-- <servlet-mapping> -->
+	<!-- <servlet-name>get_phone_details</servlet-name> -->
+	<!-- <url-pattern>/social/get_phone_details</url-pattern> -->
+	<!-- </servlet-mapping> -->
+
+
+	<servlet>
+		<servlet-name>post_quest</servlet-name>
+		<servlet-class>com.gm.server.PostQuestServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>post_quest</servlet-name>
+		<url-pattern>/quest/post_quest</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>test_post_quest</servlet-name>
+		<servlet-class>com.gm.server.TestPostQuestServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>test_post_quest</servlet-name>
+		<url-pattern>/test/test_post_quest</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>share_quest</servlet-name>
+		<servlet-class>com.gm.server.ShareQuestServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>share_quest</servlet-name>
+		<url-pattern>/quest/share_quest</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>update_quest</servlet-name>
+		<servlet-class>com.gm.server.UpdateQuestServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>update_quest</servlet-name>
+		<url-pattern>/quest/update_quest</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>assign_quest</servlet-name>
+		<servlet-class>com.gm.server.AssignQuestServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>assign_quest</servlet-name>
+		<url-pattern>/quest/assign_quest</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>deal_quest</servlet-name>
+		<servlet-class>com.gm.server.DealQuestServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>deal_quest</servlet-name>
+		<url-pattern>/quest/deal_quest</url-pattern>
+	</servlet-mapping>
+
+
+
+	<servlet>
+		<servlet-name>get_quests</servlet-name>
+		<servlet-class>com.gm.server.GetQuestsServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>get_quests</servlet-name>
+		<url-pattern>/quest/get_quests</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>delete_quests</servlet-name>
+		<servlet-class>com.gm.server.DeleteQuestsServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>delete_quests</servlet-name>
+		<url-pattern>/quest/delete_quests</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>get_activities</servlet-name>
+		<servlet-class>com.gm.server.GetActivitiesServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>get_activities</servlet-name>
+		<url-pattern>/quest/get_activities</url-pattern>
+	</servlet-mapping>
+
+
+	<servlet>
+		<servlet-name>apply_quest</servlet-name>
+		<servlet-class>com.gm.server.ApplyQuestServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>apply_quest</servlet-name>
+		<url-pattern>/quest/apply_quest</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>reject_assignment</servlet-name>
+		<servlet-class>com.gm.server.RejectAssignmentServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>reject_assignment</servlet-name>
+		<url-pattern>/quest/reject_assignment</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>reject_application</servlet-name>
+		<servlet-class>com.gm.server.RejectApplicationServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>reject_application</servlet-name>
+		<url-pattern>/quest/reject_application</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>approve_application</servlet-name>
+		<servlet-class>com.gm.server.ApproveApplicationServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>approve_application</servlet-name>
+		<url-pattern>/quest/approve_application</url-pattern>
+	</servlet-mapping>
+
+
+
+	<!--- Feed Servlet -->
+	<servlet>
+		<servlet-name>get_feeds</servlet-name>
+		<servlet-class>com.gm.server.GetFeedsServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>get_feeds</servlet-name>
+		<url-pattern>/feed/get_feeds</url-pattern>
+	</servlet-mapping>
+
+	<!-- Reward Servlet -->
+	<servlet>
+		<servlet-name>send_gold</servlet-name>
+		<servlet-class>com.gm.server.SendGoldServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>send_gold</servlet-name>
+		<url-pattern>/reward/send_gold</url-pattern>
+	</servlet-mapping>
+
+
+	<!-- Task Queue Handles -->
+
+	<servlet>
+		<servlet-name>generate_feed</servlet-name>
+		<servlet-class>com.gm.server.GenerateFeedServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>generate_feed</servlet-name>
+		<url-pattern>/queue/generate_feed</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>delete_feed</servlet-name>
+		<servlet-class>com.gm.server.DeleteFeedServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>delete_feed</servlet-name>
+		<url-pattern>/queue/delete_feed</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>push</servlet-name>
+		<servlet-class>com.gm.server.PushServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>push</servlet-name>
+		<url-pattern>/queue/push</url-pattern>
+	</servlet-mapping>
+
+
+	<!-- Admin Servlet -->
+	<servlet>
+		<servlet-name>init</servlet-name>
+		<servlet-class>com.gm.server.InitServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>init</servlet-name>
+		<url-pattern>/admin/init</url-pattern>
+	</servlet-mapping>
+
+	<!-- warm up servlet -->
+	<servlet>
+		<servlet-name>_ah_warmup</servlet-name>
+		<servlet-class>com.gm.server.InitServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+	<welcome-file-list>
+		<welcome-file>TestPush.jsp</welcome-file>
+	</welcome-file-list>
 </web-app>

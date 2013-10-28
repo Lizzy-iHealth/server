@@ -30,10 +30,10 @@ public class Quest extends Persistable<Quest> {
   private Applicants.Builder applicants = Applicants.newBuilder();
   
   @Property
-  private Date start_time ; //set by user
+  private Date start_time = new Date() ; //set by user
 
   @Property
-  private Date end_time ;//= new Date();//set by user
+  private Date end_time;// = new Date();//set by user
   
   @Property
   private Date createAt = new Date(); //set by server
@@ -45,7 +45,7 @@ public class Quest extends Persistable<Quest> {
   private String title="";
 
   @Property
-  private PostalAddress address;//=new PostalAddress("");
+  private PostalAddress address;//=new PostalAddress("Input Address Here:");
 
   @Property
   private GeoPt geo_point;//=new GeoPt(0,0);
@@ -57,7 +57,7 @@ public class Quest extends Persistable<Quest> {
   private String description="";
  
   @Property
-  private Link attach_link;//=new Link("");
+  private Link attach_link;//=new Link("http://help-hand.appspot.com");
   
   @Property
   private PostRecordsPb.Builder posts=PostRecordsPb.newBuilder();
@@ -130,7 +130,7 @@ public class Quest extends Persistable<Quest> {
   public void setStatus(QuestPb.Status status) {
     this.status = status.getNumber();
   }
-  public void setStatus(int status) {
+  public void setStatus(long status) {
     this.status = status;
   }
   
@@ -158,16 +158,38 @@ public class Quest extends Persistable<Quest> {
   }
 
   public Quest(QuestPb q) {
-    start_time = new Date(q.getLifespan().getCreateTime());
+    if(q.hasLifespan()){
+      if(q.getLifespan().hasCreateTime()){
+    start_time = new Date(q.getLifespan().getCreateTime());}
+      if(q.getLifespan().hasDeleteTime()){
     end_time = new Date(q.getLifespan().getDeleteTime());
+      }
+    }
+    if(q.hasTitle()){
     title = q.getTitle();
+    }
+    if(q.hasAddress()){
     address = new PostalAddress(q.getAddress());
+    }
+    if(q.hasGeoPoint()){
     geo_point = new GeoPt(q.getGeoPoint().getLatitude(),q.getGeoPoint().getLongitude());
+    }
+    
+    if(q.hasReward()){
     prize = q.getReward().getGold();
+    }
+    if(q.hasDescription()){
     description = q.getDescription();
+    }
+    if(q.hasConfig()){
     config = q.getConfig().toBuilder();
+    }
+    if(q.hasUrl()){
     attach_link = new Link(q.getUrl());
+    }
+    if(q.hasStatus()){
     status = q.getStatus().getNumber();
+    }
     
   }
  public Quest(String title, String description, int prize, boolean autoConfirm,int status) {

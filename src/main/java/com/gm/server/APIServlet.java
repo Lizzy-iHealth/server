@@ -130,7 +130,7 @@ public abstract class APIServlet extends HttpServlet{
 
     user.login(secret);
   
-    initLoginUser(user);
+ //   initLoginUser(user);
     dao.save(user);
     String results[] = {user.getKey(),secret,Long.toString(user.getId())};
     return results;
@@ -929,5 +929,17 @@ public abstract class APIServlet extends HttpServlet{
     }
     writeResponse(resp,r);
     
+  }
+  
+  public Quest createQuestEntity(Key owner){
+    Quest q = new Quest();
+    dao.save(q,owner);
+    return q;
+  }
+  
+  public Feed createFeedEntity(Key owner){
+   Feed f = new Feed();
+    dao.save(f,owner);
+    return f;
   }
 }
