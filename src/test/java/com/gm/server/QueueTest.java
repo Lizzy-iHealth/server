@@ -23,13 +23,18 @@ import com.gm.server.model.DAO;
 import com.gm.server.model.Feed;
 import com.gm.server.model.User;
 
-public abstract class ModelTest {
+public abstract class QueueTest {
+	
+    protected final LocalTaskQueueTestConfig.TaskCountDownLatch latch =
+            new LocalTaskQueueTestConfig.TaskCountDownLatch(1);
 
 
   
   private final LocalServiceTestHelper helper =
       new LocalServiceTestHelper(
-    		  new LocalTaskQueueTestConfig()
+    		  new LocalTaskQueueTestConfig().setDisableAutoTaskExecution(false)
+    		  								.setCallbackClass(LocalTaskQueueTestConfig.DeferredTaskCallback.class)
+    		  								.setTaskExecutionLatch(latch)
     		  ,new LocalDatastoreServiceTestConfig())
           .setEnvAuthDomain("localhost")
           .setEnvEmail("test@localhost")
