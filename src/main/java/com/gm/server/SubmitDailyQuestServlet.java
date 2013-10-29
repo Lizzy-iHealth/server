@@ -45,12 +45,15 @@ public class SubmitDailyQuestServlet extends APIServlet {
     // retrive quest from data store
     Quest quest = checkNotNull(dao.get(questKey, Quest.class),
         ErrorCode.quest_quest_not_found);
-    Applicant.Status status = applicant.getType();
-    if (status == Applicant.Status.CONFIRMED) {
-      status = submitDailyQuest(quest, applicant);
+    int status = applicant.getType().getNumber();
+    if (status == Applicant.Status.CONFIRMED_VALUE) {
+      status = submitDailyQuest(quest, applicant).getNumber();
+    }
+    if(status == Applicant.Status.PASS_VALUE){
+    	status = super.rewardUser(questAdmin.getAdminKey(), userKey.getId(), quest);
     }
     resp.getOutputStream().write(
-        Integer.toString(status.getNumber()).getBytes());
+        Integer.toString(status).getBytes());
     // push to receivers
 
   }

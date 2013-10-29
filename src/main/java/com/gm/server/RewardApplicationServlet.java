@@ -15,9 +15,6 @@ import com.google.appengine.api.datastore.KeyFactory;
 
 public class RewardApplicationServlet extends APIServlet {
 
-	/**
-   * 
-   */
 	private static final long serialVersionUID = 1L;
 
 	// Input: key: user key
@@ -31,39 +28,34 @@ public class RewardApplicationServlet extends APIServlet {
 
 		Key userKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
 		long id = ParamKey.id.getLong(req, -1);
-		long receiverId[] = ParamKey.user_id.getLongs(req, -1);
-
-		int results[] = new int[receiverId.length];
-		for (int i : results) {
-			i = -1;
-		}
-
+		long receiverIds[] = ParamKey.user_id.getLongs(req, -1);
 		Key questKey = KeyFactory.createKey(userKey, "Quest", id);
+		int[] results = rewardApplications(userKey, receiverIds, questKey);
+
+		// response is the status of the applicant
+		super.writeResponse(resp, results);
+
+	}
+
+	protected int[] rewardApplications(Key senderKey, long[] receiverIds,
+			Key questKey) throws ApiException, IOException {
 		Quest quest = dao.get(questKey, Quest.class);
 		checkNotNull(quest, ErrorCode.quest_quest_not_found);
+		int results[] = new int[receiverIds.length];
 
-		long amount = quest.getPrize();
 		int k = 0;
-		for (long rId : receiverId) {
-			int i = quest.findApplicant(rId);
-			if (i != -1) {
-				try{
-				super.transferGold(userKey.getId(), rId, amount);
-				results[k] = quest.updateApplicantStatus(i,
-						Applicant.Status.REWARDED).getNumber();
-				dao.save(quest);
-				}catch(ApiException e){
-					e.printStackTrace();
-					
-				}
+		for (long rId : receiverIds) {
+			try {
+				results[k] = super.rewardUser(senderKey, rId, quest);
+				increaseFriendshipScore(senderKey.getId(), rId);
+				increaseFriendshipScore(rId, senderKey.getId());
+			} catch (ApiException e) {
+				e.printStackTrace();
 
 			}
 			k++;
 		}
-		// response is the status of the applicant
-
-		super.writeResponse(resp, results);
-
+		return results;
 	}
 
 	public void doPost(HttpServletRequest req, HttpServletResponse resp)
