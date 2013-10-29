@@ -20,6 +20,7 @@ import javax.servlet.http.HttpUtils;
 
 import com.gm.server.model.User;
 import com.google.appengine.api.datastore.GeoPt;
+import com.google.common.base.Joiner;
 
 public class LocationFilter extends APIServlet implements Filter{
   
@@ -55,9 +56,18 @@ public class LocationFilter extends APIServlet implements Filter{
     // TODO Auto-generated method stub
 	  String key = ParamKey.key.getValue(req);
     User user = dao.get(key, User.class);
-    
-    GeoPt geo = new GeoPt(0,0);
+    String contry = req.getHeader("X-AppEngine-Country");
+    String region = req.getHeader("X-AppEngine-Region");
+    String city = req.getHeader("X-AppEngine-City");
+    String latLong[] = req.getHeader("X-AppEngine-CityLatLong").split(",");
+    if(latLong!=null&&latLong.length==2){
+    GeoPt geo = new GeoPt(Float.parseFloat((latLong[0])),Float.parseFloat(latLong[1]));
     user.setGeo(geo);
+    }
+    Joiner joiner = Joiner.on(",").skipNulls();
+    String address = joiner.join(contry, region, city);
+    info("request from: "+ address);
+    
   }
 
 }
