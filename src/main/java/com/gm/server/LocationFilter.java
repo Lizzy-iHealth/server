@@ -18,6 +18,9 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpUtils;
 
+import com.gm.server.model.User;
+import com.google.appengine.api.datastore.GeoPt;
+
 public class LocationFilter extends APIServlet implements Filter{
   
   private static final Logger log = Logger.getLogger(LocationFilter.class.getName());
@@ -31,6 +34,7 @@ public class LocationFilter extends APIServlet implements Filter{
         && response instanceof HttpServletResponse) {
       execute((HttpServletRequest)request,(HttpServletResponse)response);
     }
+    chain.doFilter(request, response);
   }
 
   @Override
@@ -49,7 +53,11 @@ public class LocationFilter extends APIServlet implements Filter{
   public void handle(HttpServletRequest req, HttpServletResponse resp)
       throws ApiException, IOException {
     // TODO Auto-generated method stub
+	  String key = ParamKey.key.getValue(req);
+    User user = dao.get(key, User.class);
     
+    GeoPt geo = new GeoPt(0,0);
+    user.setGeo(geo);
   }
 
 }

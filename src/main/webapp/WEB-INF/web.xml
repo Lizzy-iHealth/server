@@ -183,6 +183,15 @@
 		<url-pattern>/quest/deal_quest</url-pattern>
 	</servlet-mapping>
 
+	<servlet>
+		<servlet-name>reward_application</servlet-name>
+		<servlet-class>com.gm.server.RewardApplicationServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>reward_application</servlet-name>
+		<url-pattern>/quest/reward_application</url-pattern>
+	</servlet-mapping>
+
 
 
 	<servlet>
