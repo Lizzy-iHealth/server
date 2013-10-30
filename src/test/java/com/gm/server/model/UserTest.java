@@ -1,5 +1,6 @@
 package com.gm.server.model;
 
+import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.*;
 
@@ -7,8 +8,11 @@ import java.util.Date;
 
 import org.junit.Test;
 
+import com.gm.common.model.Rpc.CheckinPb;
 import com.gm.common.model.Rpc.Friendship;
+import com.gm.common.model.Rpc.GeoPoint;
 import com.gm.server.ModelTest;
+import com.google.appengine.api.datastore.GeoPt;
 
 
 public class UserTest extends ModelTest{
@@ -44,7 +48,7 @@ public class UserTest extends ModelTest{
 		assertEquals(mobileNumber,user.getPhone());
 		assertEquals(password,user.getPassword());
 		assertEquals(secret,user.getSecret());
-		assertEquals(user.getCreateTime(),user.getLastLoginTime());
+		assertTrue(!user.getCreateTime().after(user.getLastLoginTime()));
 		Date date = user.getLastLoginTime();
 	    assertTrue("The date in the entity [" + date + "] is prior to the request being performed",
 		        before.before(date) || before.equals(date));
@@ -79,4 +83,32 @@ public class UserTest extends ModelTest{
 	    dao.save(u1);
 	    assertEquals(Friendship.BLOCKED,u1.getFriendship(u2.getId()));
 	  }
+	 
+	 @Test
+		public void testCheckinCheckout () {
+		
+			User user = new User();
+			CheckinPb.Builder msg = CheckinPb.newBuilder()
+									.setDescription("home")
+									.setCheckinTimes(100)
+									.setGeoPoint(GeoPoint.newBuilder().setLatitude(1).setLongitude(1).setTimestamp(new Date().getTime()))
+									.setValidUntil(new Date().getTime()+1000*60*60);
+			user.checkin(msg.build());
+			dao.save(user);
+			user = dao.get(user.getEntityKey(), User.class);
+	
+			assertNotNull(user);
+			assertTrue(user.isCheckedIn());
+			//System.out.println(user.getGeo());
+			
+			assertEquals(0,user.getGeo().compareTo(new GeoPt((float)1.0,(float)1.0)));
+			
+			user.checkout();
+			assertFalse(user.isCheckedIn());
+			/*CheckinRecord cr= dao.query(CheckinRecord.class).setAncestor(user.getEntityKey()).prepare().asList().get(0);
+			assertNotNull(cr);
+			assertEquals("home",cr.getDescription());
+			assertEquals(100,cr.checkin_times);
+			*/
+		}
 }

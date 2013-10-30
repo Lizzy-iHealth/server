@@ -15,37 +15,41 @@ import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 
 public class CheckinServlet extends APIServlet {
-  /**
+	/**
    * 
    */
-  private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
-  public void doPost(HttpServletRequest req, HttpServletResponse resp)
-      throws IOException {
-    execute(req, resp);
-  }
+	public void doPost(HttpServletRequest req, HttpServletResponse resp)
+			throws IOException {
+		execute(req, resp);
+	}
 
-  // Input Param: "key" user's index
-  // "pb" Base64 encoded QuestPb object
+	// Input Param: "key" user's index
+	// "pb" Base64 encoded QuestPb object
 
-  public void handle(HttpServletRequest req, HttpServletResponse resp)
-      throws ApiException, IOException {
+	public void handle(HttpServletRequest req, HttpServletResponse resp)
+			throws ApiException, IOException {
 
-    CheckinPb checkinMsg = CheckinPb.parseFrom(ParamKey.pb.getPb(req));
-    Key ownerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
+		CheckinPb checkinMsg = CheckinPb.parseFrom(ParamKey.pb.getPb(req));
+		Key ownerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
 
-    // save quest and post record to DB
-    CheckinRecord cr = new CheckinRecord(checkinMsg);
-    dao.create(cr, ownerKey);
-    if (checkinMsg.hasGeoPoint()) {
-      User user = dao.get(ownerKey, User.class);
-      user.setGeo(checkinMsg.getGeoPoint());
-      dao.save(user);
-    }
-    info("new checkin record:" + cr.getParent().getId()
-        + cr.getEntityKey().getKind() + cr.getId() + "by " + ownerKey.getId());
+		// save quest and post record to DB
+		CheckinRecord cr = new CheckinRecord(checkinMsg);
+		dao.create(cr, ownerKey);
+		if (checkinMsg.hasGeoPoint()) {
+			User user = dao.get(ownerKey, User.class);
+			user.checkin(checkinMsg);
+			user.addExperience(1);
+			dao.save(user);
 
-    // push to receivers
+			resp.getOutputStream().write(
+					user.getMSG(user.getId()).build().toByteArray());
+			info("new checkin record:" + cr.getParent().getId()
+					+ cr.getEntityKey().getKind() + cr.getId() + "by "
+					+ ownerKey.getId());
+		}
+		// push to receivers
 
-  }
+	}
 }

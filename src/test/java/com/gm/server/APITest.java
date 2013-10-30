@@ -1,13 +1,17 @@
 package com.gm.server;
 
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
+
+import static junit.framework.Assert.assertTrue;
+
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Date;
 import java.util.List;
 
 import javax.servlet.ServletOutputStream;
@@ -19,15 +23,19 @@ import org.junit.Test;
 import com.gm.common.net.ErrorCode;
 import com.gm.common.crypto.Base64;
 import com.gm.common.model.Rpc.Applicant;
+import com.gm.common.model.Rpc.CheckinPb;
 import com.gm.common.model.Rpc.Friendship;
+import com.gm.common.model.Rpc.GeoPoint;
 import com.gm.common.model.Rpc.UserPb;
 import com.gm.common.model.Rpc.UsersPb;
 import com.gm.common.model.Server;
 import com.gm.common.model.Rpc.Friend;
+import com.gm.server.model.CheckinRecord;
 import com.gm.server.model.Feed;
 import com.gm.server.model.PendingUser;
 import com.gm.server.model.Quest;
 import com.gm.server.model.User;
+import com.google.appengine.api.datastore.GeoPt;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.taskqueue.DeferredTask;
 
@@ -590,6 +598,34 @@ public class APITest extends ModelTest {
 		assertEquals(deviceID, user.getDeviceID());
 
 	}
+	
+	 @Test
+		public void testCheckin () throws IOException {
+		
+			User user = new User();
+			dao.save(user);
+			CheckinPb.Builder msg = CheckinPb.newBuilder()
+									.setDescription("home")
+									.setCheckinTimes(100)
+									.setGeoPoint(GeoPoint.newBuilder().setLatitude(1).setLongitude(1).setTimestamp(new Date().getTime()))
+									.setValidUntil(new Date().getTime()+1000*60*60);
+			
+			HttpServletRequest req = super.getMockRequestWithUser(user);
+			when(req.getParameter(ParamKey.pb.name())).thenReturn(Base64.encodeToString(msg.build().toByteArray(),Base64.DEFAULT));
+			HttpServletResponse resp = mock (HttpServletResponse.class);
+			new CheckinServlet().execute(req, resp,false);
+			user = dao.get(user.getEntityKey(), User.class);
+	
+			assertTrue(user.isCheckedIn());
+			//System.out.println(user.getGeo());
+			
+			assertEquals(0,user.getGeo().compareTo(new GeoPt((float)1.0,(float)1.0)));
+		
+			CheckinRecord cr= dao.query(CheckinRecord.class).setAncestor(user.getEntityKey()).prepare().asList().get(0);
+			assertEquals("home",cr.getDescription());
+			assertEquals(100,cr.getCheckin_times());
+			
+		}
 
 	/*
 	 * @Test public void testPing() { String key = UUID.randomUUID().toString();

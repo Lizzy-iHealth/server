@@ -19,6 +19,9 @@ public class CheckinRecord extends Persistable<CheckinRecord> {
 
   @Property
   Date last_checkin_time = new Date();
+  
+  @Property
+  Date valid_until = new Date();
 
   public CheckinRecord() {
 
@@ -28,13 +31,23 @@ public class CheckinRecord extends Persistable<CheckinRecord> {
     if (msg.hasCheckinTimes()) {
       checkin_times = msg.getCheckinTimes();
     }
-    if (msg.hasDescription()) {
-      description = msg.getDescription();
-    }
+
 
     if (msg.hasGeoPoint()) {
       this.geoPoint = new GeoPt(msg.getGeoPoint().getLatitude(), msg
           .getGeoPoint().getLongitude());
+      if(msg.getGeoPoint().hasAddress()){
+    	  description = msg.getGeoPoint().getAddress();
+      }
+    }
+    
+    //overwrite address in GeoPoint
+    if (msg.hasDescription()) {
+        description = msg.getDescription();
+      }
+    
+    if(msg.hasValidUntil()){
+    	this.valid_until = new Date(msg.getValidUntil());
     }
   }
 

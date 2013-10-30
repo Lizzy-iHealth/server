@@ -127,6 +127,15 @@
 		<servlet-name>checkin</servlet-name>
 		<url-pattern>/social/checkin</url-pattern>
 	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>profile</servlet-name>
+		<servlet-class>com.gm.server.GetProfileServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>profile</servlet-name>
+		<url-pattern>/social/profile</url-pattern>
+	</servlet-mapping>
 
 	<!-- <servlet> -->
 	<!-- <servlet-name>get_phone_details</servlet-name> -->
