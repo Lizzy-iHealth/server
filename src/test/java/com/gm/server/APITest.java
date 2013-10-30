@@ -613,6 +613,8 @@ public class APITest extends ModelTest {
 			HttpServletRequest req = super.getMockRequestWithUser(user);
 			when(req.getParameter(ParamKey.pb.name())).thenReturn(Base64.encodeToString(msg.build().toByteArray(),Base64.DEFAULT));
 			HttpServletResponse resp = mock (HttpServletResponse.class);
+			ServletOutputStream writer = mock(ServletOutputStream.class);
+			when(resp.getOutputStream()).thenReturn(writer);
 			new CheckinServlet().execute(req, resp,false);
 			user = dao.get(user.getEntityKey(), User.class);
 	
@@ -624,6 +626,7 @@ public class APITest extends ModelTest {
 			CheckinRecord cr= dao.query(CheckinRecord.class).setAncestor(user.getEntityKey()).prepare().asList().get(0);
 			assertEquals("home",cr.getDescription());
 			assertEquals(100,cr.getCheckin_times());
+			verify(writer).write(user.getMSG(user.getId()).build().toByteArray());
 			
 		}
 

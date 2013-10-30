@@ -430,7 +430,7 @@ public class User extends Persistable<User> {
 				|| getFriendship(id) == Friendship.MUTED) {
 			msg.setName(name).setLocation(geopt).setThumbnail(thumbnail);
 			if(id == this.getId()){
-				msg.setBalance(Currency.newBuilder().setGold(goldBalance));
+				msg.setBalance(Currency.newBuilder().setGold(goldBalance)).setFriendship(Friendship.SELF);
 			}
 		} else {
 			msg.setName("-").setThumbnail(
