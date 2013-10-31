@@ -26,7 +26,7 @@ public class CheckinServlet extends APIServlet {
 	}
 
 	// Input Param: "key" user's index
-	// "pb" Base64 encoded QuestPb object
+	// "pb" Base64 encoded CheckinPb object
 
 	public void handle(HttpServletRequest req, HttpServletResponse resp)
 			throws ApiException, IOException {

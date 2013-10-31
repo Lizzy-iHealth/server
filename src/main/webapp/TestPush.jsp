@@ -11,6 +11,14 @@
 <%@ page import="com.gm.server.model.DAO" %>
 <%@ page import="com.gm.server.model.*" %>
 <%@ page import="com.gm.server.*" %>
+
+<%@ page import="com.google.appengine.api.blobstore.BlobstoreServiceFactory" %>
+<%@ page import="com.google.appengine.api.blobstore.BlobstoreService" %>
+
+<%
+    BlobstoreService blobstoreService = BlobstoreServiceFactory.getBlobstoreService();
+%>
+
 <html>
 <head>
 <meta charset="UTF-8">
@@ -18,14 +26,36 @@
 </head>
 <body>
 
+    <form action="<%= blobstoreService.createUploadUrl("/social/upload_image") %>" method="post" enctype="multipart/form-data">
+        <input type="file" name="image">
+        <select name="key" multiple>
+<%
+    DAO dao = DAO.get();
+    List<User> users = dao.query(User.class).prepare().asList();
+	
+    if (!users.isEmpty()) {
+   	 	for (User user : users) {
+   	 	 
+   	 		if(user.getEntityKey()!=null){
+       			         
+%>
+		<option value= <%= KeyFactory.keyToString(user.getEntityKey())%>><%= user.getUserID()%></option>
+<%
+			} 
+		}
+	}
+%>
+</select >
 
+        <input type="submit" value="Submit">
+    </form>
 
 <form action="/util/push" method="post">
 Please choose users by ID:<br>
 <select name="friend_id" multiple>
 <%
-    DAO dao = DAO.get();
-    List<User> users = dao.query(User.class).prepare().asList();
+ 
+ 
 	
     if (!users.isEmpty()) {
    	 	for (User user : users) {

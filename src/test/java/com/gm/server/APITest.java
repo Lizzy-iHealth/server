@@ -622,6 +622,7 @@ public class APITest extends ModelTest {
 			//System.out.println(user.getGeo());
 			
 			assertEquals(0,user.getGeo().compareTo(new GeoPt((float)1.0,(float)1.0)));
+			assertEquals(1,user.getExperience());
 		
 			CheckinRecord cr= dao.query(CheckinRecord.class).setAncestor(user.getEntityKey()).prepare().asList().get(0);
 			assertEquals("home",cr.getDescription());

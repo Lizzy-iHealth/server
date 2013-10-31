@@ -435,7 +435,7 @@ public class User extends Persistable<User> {
 		} else {
 			msg.setName("-").setThumbnail(
 					Thumbnail.newBuilder().setSmallUrl("/images/user-256.png")
-							.setLargeUrl("/images/user-512.png"));
+							.setLargeUrl("/images/user-512.png").setBlobKey("-"));
 		}
 
 		return msg;
@@ -506,6 +506,7 @@ public class User extends Persistable<User> {
 
 	public void checkin(CheckinPb checkinMsg) {
 		// TODO Auto-generated method stub
+		
 		setGeo(checkinMsg.getGeoPoint());
 		if(checkinMsg.getGeoPoint().hasAddress()){
 			this.setCheckinAddress(checkinMsg.getGeoPoint().getAddress());

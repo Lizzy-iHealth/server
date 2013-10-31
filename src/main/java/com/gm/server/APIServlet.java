@@ -490,6 +490,7 @@ public abstract class APIServlet extends HttpServlet {
 																	// validation
 				resp.getOutputStream().write(
 						Integer.toString(e.error).getBytes());
+				info(e,"API error %s",e.getMessage()); // TODO:delete
 			} catch (Exception e) {
 				resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // Unknown
 																				// error
@@ -546,6 +547,7 @@ public abstract class APIServlet extends HttpServlet {
 			resp.setStatus(HttpServletResponse.SC_BAD_REQUEST); // API failed on
 																// validation
 			info("api error with code = %d", e.error);
+			info(e, "unknow API error %s", e.getMessage());
 			resp.getOutputStream().write(Integer.toString(e.error).getBytes());
 		} catch (Exception e) {
 			resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // Unknown

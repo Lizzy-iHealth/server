@@ -63,11 +63,14 @@ public class LocationFilter extends APIServlet implements Filter{
     if(latLong!=null&&latLong.length==2){
     GeoPt geo = new GeoPt(Float.parseFloat((latLong[0])),Float.parseFloat(latLong[1]));
     user.setGeo(geo);
-    dao.save(user);
+
     }
+ 
     Joiner joiner = Joiner.on(",").skipNulls();
     String address = joiner.join(contry, region, city);
     info("request from: "+ address);
+    user.setCheckinAddress(address);
+    dao.save(user);
     
   }
 
