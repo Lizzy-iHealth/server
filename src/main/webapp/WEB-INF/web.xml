@@ -138,12 +138,12 @@
 	</servlet-mapping>
 
 		<servlet>
-		<servlet-name>upload_image</servlet-name>
-		<servlet-class>com.gm.server.UploadImageServlet</servlet-class>
+		<servlet-name>update_thumbnail</servlet-name>
+		<servlet-class>com.gm.server.UpdateThumbnailServlet</servlet-class>
 	</servlet>
 	<servlet-mapping>
-		<servlet-name>upload_image</servlet-name>
-		<url-pattern>/social/upload_image</url-pattern>
+		<servlet-name>update_thumbnail</servlet-name>
+		<url-pattern>/social/update_thumbnail</url-pattern>
 	</servlet-mapping>
 	
 	<!-- <servlet> -->
