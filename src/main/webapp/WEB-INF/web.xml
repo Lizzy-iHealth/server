@@ -136,6 +136,15 @@
 		<servlet-name>profile</servlet-name>
 		<url-pattern>/social/profile</url-pattern>
 	</servlet-mapping>
+	
+		<servlet>
+		<servlet-name>update_profile</servlet-name>
+		<servlet-class>com.gm.server.UpdateProfileServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>profile</servlet-name>
+		<url-pattern>/social/update_profile</url-pattern>
+	</servlet-mapping>
 
 		<servlet>
 		<servlet-name>update_thumbnail</servlet-name>
