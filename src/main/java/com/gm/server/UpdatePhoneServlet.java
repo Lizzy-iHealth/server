@@ -26,7 +26,8 @@ public class UpdatePhoneServlet extends APIServlet {
   }
   
   //Input Param: "key"        user's index
-  //             "pb"      Base64 encoded UserPb object with name or thumbnail
+  //			"phone"       new phone
+  //             "token"      new token
   //Output: UserPb
 
       @Override
