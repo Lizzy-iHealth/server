@@ -735,7 +735,7 @@ public abstract class APIServlet extends HttpServlet {
 		long myId = getId(key);
 
 		User user = dao.get(key, User.class);
-
+		check(user.getQuota().getFriendNum()>user.getFriends().getFriendCount(),ErrorCode.quota_friend_usedup);
 		Key friendKeys[] = new Key[friendIDs.length];
 		int results[] = new int[friendIDs.length];
 

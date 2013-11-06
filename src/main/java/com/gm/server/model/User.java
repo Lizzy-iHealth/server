@@ -12,6 +12,7 @@ import com.gm.common.model.Rpc.Friendship;
 import com.gm.common.model.Rpc.GeoPoint;
 import com.gm.common.model.Rpc.QuestPb;
 import com.gm.common.model.Rpc.Quests;
+import com.gm.common.model.Rpc.Quota;
 import com.gm.common.model.Rpc.Rating;
 import com.gm.common.model.Rpc.UserPb;
 import com.gm.common.model.Rpc.Thumbnail;
@@ -87,6 +88,17 @@ public class User extends Persistable<User> {
 
 	@Property
 	private CheckinsPb.Builder mostCheckin = null;
+	
+	@Property
+	private Quota.Builder quota = Quota.newBuilder().setActivityNum(10).setDailyQuestNum(10).setFriendNum(200).setQuestNum(30);
+
+	public Quota.Builder getQuota() {
+		return quota;
+	}
+
+	public void setQuota(Quota.Builder quota) {
+		this.quota = quota;
+	}
 
 	public long getExperience() {
 		return experience;
@@ -421,6 +433,7 @@ public class User extends Persistable<User> {
 
 		UserPb.Builder msg = UserPb.newBuilder().setId(getId()).setLog(log)
 				.setRating(rating).setPhone(phone).setExperience(experience)
+				.setQuota(this.quota)
 				.setFriendScore(this.getFriendshipScore(id));
 
 		if (id == this.getId() || getFriendship(id) == Friendship.ADDED
