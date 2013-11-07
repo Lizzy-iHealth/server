@@ -43,9 +43,8 @@ public class DeleteQuestsServlet extends APIServlet {
     long questId = ParamKey.id.getLong(req, -1);
     Key questKey = KeyFactory.createKey(ownerKey, "Quest", questId);
     // save quest and post record to DB
-    Quest quest = checkNotNull(dao.get(questKey, Quest.class),
-        ErrorCode.quest_quest_not_found);
-
+    Quest quest = dao.get(questKey, Quest.class);
+    if(quest!=null){
     long[] applierIds = quest.getAllApplicantsIds();
     deleteActivity(applierIds, quest.getEntityKey());
 
@@ -55,7 +54,11 @@ public class DeleteQuestsServlet extends APIServlet {
 
     deleteFeed(receiverIds, questId, ownerKey.getId());
     dao.delete(quest);
+    returnTotalQuestQuota(ownerKey);
+    }
 
   }
+
+
 
 }

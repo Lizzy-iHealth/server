@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.gm.common.model.Rpc.QuestPb;
 import com.gm.server.model.Quest;
+import com.gm.server.model.User;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 
@@ -34,6 +35,8 @@ public class AssignQuestServlet extends APIServlet {
     Key ownerKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
     long receiverIds[] = ParamKey.user_id.getLongs(req, -1);
 
+    getQuestQuota(ownerKey);
+
     // save quest and post record to DB
     Quest quest = new Quest(questMsg);
     dao.create(quest, ownerKey);
@@ -57,4 +60,7 @@ public class AssignQuestServlet extends APIServlet {
     // push to receivers
 
   }
+
+
+
 }

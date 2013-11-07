@@ -90,7 +90,8 @@ public class User extends Persistable<User> {
 	private CheckinsPb.Builder mostCheckin = null;
 	
 	@Property
-	private Quota.Builder quota = Quota.newBuilder().setActivityNum(10).setDailyQuestNum(10).setFriendNum(200).setQuestNum(30);
+	private Quota.Builder quota = Quota.newBuilder().setActivityNum(10).setDailyQuestNum(10).setFriendNum(200).setQuestNum(30)
+													.setUsedDailyQuestNum(0).setUsedQuestNum(0);
 
 	public Quota.Builder getQuota() {
 		return quota;

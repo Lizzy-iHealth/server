@@ -45,14 +45,11 @@ public class RewardApplicationServlet extends APIServlet {
 
 		int k = 0;
 		for (long rId : receiverIds) {
-			try {
-				results[k] = super.rewardUser(senderKey, rId, quest);
-				increaseFriendshipScore(senderKey.getId(), rId);
-				increaseFriendshipScore(rId, senderKey.getId());
-			} catch (ApiException e) {
-				e.printStackTrace();
 
-			}
+			results[k] = super.rewardUser(senderKey, rId, quest);
+			increaseFriendshipScore(senderKey.getId(), rId);
+			increaseFriendshipScore(rId, senderKey.getId());
+
 			k++;
 		}
 		return results;

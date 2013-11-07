@@ -39,6 +39,7 @@ public class ShareQuestServlet extends APIServlet {
          long receiverIds[]= ParamKey.user_id.getLongs(req,-1);
 
          // get quest from datastore and add a post record the quest entity 
+         super.getDailyQuestQuota(sharerKey);
          Quest quest = checkNotNull(dao.get(questKey, Quest.class),ErrorCode.quest_quest_not_found);
          check(quest.isAllow_sharing(),ErrorCode.quest_not_allow_sharing);
          check(!quest.isDeal(),ErrorCode.quest_is_deal);     

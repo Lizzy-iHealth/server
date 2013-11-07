@@ -658,12 +658,13 @@ public abstract class APIServlet extends HttpServlet {
 		return user;
 	}
 
-	protected static String[] inviteFriends(String key, String[] friendPhones) {
+	protected static String[] inviteFriends(String key, String[] friendPhones) throws ApiException {
 		long invitorId = getId(key);
 		String[] results = new String[friendPhones.length]; // "0" not our user,
 															// "1"
 															// already our user.
 		User invitor = dao.get(key, User.class);
+		check(invitor.getQuota().getFriendNum()>invitor.getFriends().getFriendCount(),ErrorCode.quota_friend_usedup);
 		int i = 0;
 		for (String phone : friendPhones) {
 			results[i] = "0";
@@ -983,5 +984,41 @@ public abstract class APIServlet extends HttpServlet {
 		Feed f = new Feed();
 		dao.save(f, owner);
 		return f;
+	}
+	
+	public void getQuestQuota(Key userKey) throws ApiException {
+		// TODO Auto-generated method stub
+		User user = dao.get(userKey, User.class);
+		int dailyUsed = user.getQuota().getUsedDailyQuestNum();
+		int totalUsed = user.getQuota().getUsedQuestNum();
+		check(user.getQuota().getDailyQuestNum()>dailyUsed, ErrorCode.quota_daily_quest_usedup);
+		check(user.getQuota().getQuestNum()>totalUsed, ErrorCode.quota_total_quest_usedup);
+		user.getQuota().setUsedDailyQuestNum(dailyUsed+1);
+		user.getQuota().setUsedQuestNum(totalUsed+1);
+		dao.save(user);
+	}
+	
+	protected void returnTotalQuestQuota(Key ownerKey) throws ApiException {
+		// TODO Auto-generated method stub
+		User user = dao.get(ownerKey, User.class);
+		int totalUsed = user.getQuota().getUsedQuestNum();
+		user.getQuota().setUsedQuestNum(totalUsed-1);
+		dao.save(user);
+	}
+	protected void refreshDailyQuestQuota(Key ownerKey) throws ApiException {
+		// TODO Auto-generated method stub
+		User user = dao.get(ownerKey, User.class);
+		int dailyUsed = user.getQuota().getUsedDailyQuestNum();
+		user.getQuota().setUsedDailyQuestNum(dailyUsed+1);
+		dao.save(user);
+	}
+
+	protected void getDailyQuestQuota(Key userKey) throws ApiException {
+		// TODO Auto-generated method stub
+		User user = dao.get(userKey, User.class);
+		int dailyUsed = user.getQuota().getUsedDailyQuestNum();
+		check(user.getQuota().getDailyQuestNum()>dailyUsed, ErrorCode.quota_daily_quest_usedup);
+		user.getQuota().setUsedDailyQuestNum(dailyUsed+1);
+		dao.save(user);
 	}
 }

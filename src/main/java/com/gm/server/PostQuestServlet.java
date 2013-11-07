@@ -40,6 +40,7 @@ public class PostQuestServlet extends APIServlet {
        long receiverIds[]= ParamKey.user_id.getLongs(req,-1);
        checkNotNull(receiverIds,ErrorCode.quest_receiver_not_found);
        // save quest and post record to DB  
+       super.getQuestQuota(ownerKey);
        Quest quest = new Quest(questMsg);
        dao.create(quest, ownerKey);
        postExistedQuest(ownerKey, receiverIds, quest);
