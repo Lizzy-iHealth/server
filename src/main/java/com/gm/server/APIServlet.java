@@ -112,7 +112,7 @@ public abstract class APIServlet extends HttpServlet {
 
 		// push message to quest owner.
 		long[] receivers = { quest.getParent().getId() };
-		push(receivers, "quest", "new application");
+		push(receivers, "type", "quest");
 		return status;
 	}
 
@@ -213,6 +213,21 @@ public abstract class APIServlet extends HttpServlet {
 		queue.add(task);
 	}
 
+	protected static void push(long id, String data_key, String data_value)
+			throws IOException {
+
+		TaskOptions task = withUrl("/queue/push").method(
+				TaskOptions.Method.POST);
+		task.param("data_key", data_key).param("data_value", data_value);
+
+		String device_id = dao
+				.get(KeyFactory.createKey("User", id), User.class)
+				.getDeviceID();
+		task.param("device_id", device_id);
+
+		queue.add(task);
+	}
+
 	protected static void generateFeed(long[] receiverIds,
 			QuestPb.Builder questMsg, String pushMsg) {
 		// TODO Auto-generated method stub
@@ -293,16 +308,17 @@ public abstract class APIServlet extends HttpServlet {
 		check(index != -1, ErrorCode.quest_applicant_not_found);
 		quest.updateApplicantStatus(index, Applicant.Status.REJECTTED);
 
-		User applier = checkNotNull(
-				dao.get(KeyFactory.createKey("User", toReject), User.class),
-				ErrorCode.quest_applicant_not_found);
-		// applier.deleteActivity(KeyFactory.keyToString(questKey));
-		dao.save(applier);
+		/*
+		 * User applier = checkNotNull( dao.get(KeyFactory.createKey("User",
+		 * toReject), User.class), ErrorCode.quest_applicant_not_found);
+		 * applier.deleteActivity(KeyFactory.keyToString(questKey));
+		 * dao.save(applier);
+		 */
 		dao.save(quest);
 
 		// push message to quest owner.
 		long[] receivers = { toReject };
-		push(receivers, "delete_quest", Long.toString(quest.getId()));
+		push(receivers, "type", "activity");
 	}
 
 	protected int rejectAssignment(Key questKey, Key applierKey)
@@ -330,7 +346,7 @@ public abstract class APIServlet extends HttpServlet {
 		 */
 		// push message to quest owner.
 		long[] receivers = { quest.getParent().getId() };
-		push(receivers, "quest", "reject assignment");
+		push(receivers, "type", "quest");
 		return status;
 	}
 
@@ -371,23 +387,24 @@ public abstract class APIServlet extends HttpServlet {
 		dao.save(quest, ownerKey);
 
 		HashSet<Long> receiversSet = quest.getAllReceiversIdsSet();
-		long[] receiverIds = getLongs(receiversSet.toArray());
-		if (receiverIds.length > 0) {
+		HashSet<Long> applicantsSet = quest.getAllApplicantsIdsSet();
+		receiversSet.removeAll(applicantsSet);
+		long applicants[] = getLongs(applicantsSet.toArray());
+		long diff[] = getLongs(receiversSet.toArray());
+		if (applicantsSet.size() > 0) {
 			// notify user some quest is updated with the quest key.
-			push(receiverIds, "quest",
-					KeyFactory.keyToString(quest.getEntityKey()));
+			push(applicants, "type", "activity");
 
 			// option 2 implementation:
 			// also update related feeds: receivers - applicants
-			HashSet<Long> applicantsSet = quest.getAllApplicantsIdsSet();
-
-			receiversSet.removeAll(applicantsSet);
-			long diff[] = getLongs(receiversSet.toArray());
-			QuestPb.Builder questFeed = quest.getMSG();
-			if (diff.length > 0) {
-				generateFeed(diff, questFeed, "update");
-			}
 		}
+
+		if (diff.length > 0) {
+			QuestPb.Builder questFeed = quest.getMSG();
+
+			generateFeed(diff, questFeed, "update");
+		}
+
 	}
 
 	protected Status updateApplicantStatus(Quest quest, long applicantId,
@@ -490,7 +507,7 @@ public abstract class APIServlet extends HttpServlet {
 																	// validation
 				resp.getOutputStream().write(
 						Integer.toString(e.error).getBytes());
-				info(e,"API error %s",e.getMessage()); // TODO:delete
+				info(e, "API error %s", e.getMessage()); // TODO:delete
 			} catch (Exception e) {
 				resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // Unknown
 																				// error
@@ -658,13 +675,15 @@ public abstract class APIServlet extends HttpServlet {
 		return user;
 	}
 
-	protected static String[] inviteFriends(String key, String[] friendPhones) throws ApiException {
+	protected static String[] inviteFriends(String key, String[] friendPhones)
+			throws ApiException {
 		long invitorId = getId(key);
 		String[] results = new String[friendPhones.length]; // "0" not our user,
 															// "1"
 															// already our user.
 		User invitor = dao.get(key, User.class);
-		check(invitor.getQuota().getFriendNum()>invitor.getFriends().getFriendCount(),ErrorCode.quota_friend_usedup);
+		check(invitor.getQuota().getFriendNum() > invitor.getFriends()
+				.getFriendCount(), ErrorCode.quota_friend_usedup);
 		int i = 0;
 		for (String phone : friendPhones) {
 			results[i] = "0";
@@ -736,12 +755,13 @@ public abstract class APIServlet extends HttpServlet {
 		long myId = getId(key);
 
 		User user = dao.get(key, User.class);
-		check(user.getQuota().getFriendNum()>user.getFriends().getFriendCount(),ErrorCode.quota_friend_usedup);
+		check(user.getQuota().getFriendNum() > user.getFriends()
+				.getFriendCount(), ErrorCode.quota_friend_usedup);
 		Key friendKeys[] = new Key[friendIDs.length];
 		int results[] = new int[friendIDs.length];
 
 		Map<String, String> notice = new HashMap<String, String>();
-		notice.put("notice", "friend");
+		notice.put("type", "friend");
 		ArrayList<String> idsToNotify = new ArrayList<String>(friendIDs.length);
 		for (int i = 0; i < friendIDs.length; i++) {
 			friendKeys[i] = KeyFactory.createKey("User", friendIDs[i]);
@@ -841,29 +861,21 @@ public abstract class APIServlet extends HttpServlet {
 		}
 		return users;
 	}
-/*
-	protected int[] rewardApplications(Key senderKey, long[] receiverIds,
-			Key questKey) throws ApiException, IOException {
-		Quest quest = dao.get(questKey, Quest.class);
-		checkNotNull(quest, ErrorCode.quest_quest_not_found);
-		int results[] = new int[receiverIds.length];
 
-		long amount = quest.getPrize();
-		int k = 0;
-		for (long rId : receiverIds) {
-			try {
-				transferGold(senderKey.getId(), rId, amount);
-				results[k] = updateApplicantStatus(quest, rId,
-						Applicant.Status.REWARDED).getNumber();
-			} catch (ApiException e) {
-				e.printStackTrace();
-
-			}
-			k++;
-		}
-		return results;
-	}
-*/
+	/*
+	 * protected int[] rewardApplications(Key senderKey, long[] receiverIds, Key
+	 * questKey) throws ApiException, IOException { Quest quest =
+	 * dao.get(questKey, Quest.class); checkNotNull(quest,
+	 * ErrorCode.quest_quest_not_found); int results[] = new
+	 * int[receiverIds.length];
+	 * 
+	 * long amount = quest.getPrize(); int k = 0; for (long rId : receiverIds) {
+	 * try { transferGold(senderKey.getId(), rId, amount); results[k] =
+	 * updateApplicantStatus(quest, rId, Applicant.Status.REWARDED).getNumber();
+	 * } catch (ApiException e) { e.printStackTrace();
+	 * 
+	 * } k++; } return results; }
+	 */
 	protected int rewardUser(Key senderKey, long userId, Quest quest)
 			throws ApiException, IOException {
 
@@ -985,31 +997,34 @@ public abstract class APIServlet extends HttpServlet {
 		dao.save(f, owner);
 		return f;
 	}
-	
+
 	public void getQuestQuota(Key userKey) throws ApiException {
 		// TODO Auto-generated method stub
 		User user = dao.get(userKey, User.class);
 		int dailyUsed = user.getQuota().getUsedDailyQuestNum();
 		int totalUsed = user.getQuota().getUsedQuestNum();
-		check(user.getQuota().getDailyQuestNum()>dailyUsed, ErrorCode.quota_daily_quest_usedup);
-		check(user.getQuota().getQuestNum()>totalUsed, ErrorCode.quota_total_quest_usedup);
-		user.getQuota().setUsedDailyQuestNum(dailyUsed+1);
-		user.getQuota().setUsedQuestNum(totalUsed+1);
+		check(user.getQuota().getDailyQuestNum() > dailyUsed,
+				ErrorCode.quota_daily_quest_usedup);
+		check(user.getQuota().getQuestNum() > totalUsed,
+				ErrorCode.quota_total_quest_usedup);
+		user.getQuota().setUsedDailyQuestNum(dailyUsed + 1);
+		user.getQuota().setUsedQuestNum(totalUsed + 1);
 		dao.save(user);
 	}
-	
+
 	protected void returnTotalQuestQuota(Key ownerKey) throws ApiException {
 		// TODO Auto-generated method stub
 		User user = dao.get(ownerKey, User.class);
 		int totalUsed = user.getQuota().getUsedQuestNum();
-		user.getQuota().setUsedQuestNum(totalUsed-1);
+		user.getQuota().setUsedQuestNum(totalUsed - 1);
 		dao.save(user);
 	}
+
 	protected void refreshDailyQuestQuota(Key ownerKey) throws ApiException {
 		// TODO Auto-generated method stub
 		User user = dao.get(ownerKey, User.class);
 		int dailyUsed = user.getQuota().getUsedDailyQuestNum();
-		user.getQuota().setUsedDailyQuestNum(dailyUsed+1);
+		user.getQuota().setUsedDailyQuestNum(dailyUsed + 1);
 		dao.save(user);
 	}
 
@@ -1017,8 +1032,9 @@ public abstract class APIServlet extends HttpServlet {
 		// TODO Auto-generated method stub
 		User user = dao.get(userKey, User.class);
 		int dailyUsed = user.getQuota().getUsedDailyQuestNum();
-		check(user.getQuota().getDailyQuestNum()>dailyUsed, ErrorCode.quota_daily_quest_usedup);
-		user.getQuota().setUsedDailyQuestNum(dailyUsed+1);
+		check(user.getQuota().getDailyQuestNum() > dailyUsed,
+				ErrorCode.quota_daily_quest_usedup);
+		user.getQuota().setUsedDailyQuestNum(dailyUsed + 1);
 		dao.save(user);
 	}
 }

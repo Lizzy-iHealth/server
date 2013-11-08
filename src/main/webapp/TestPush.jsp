@@ -50,9 +50,9 @@
         <input type="submit" value="Submit">
     </form>
 
-<form action="/util/push" method="post">
+<form action="/queue/push" method="post">
 Please choose users by ID:<br>
-<select name="friend_id" multiple>
+<select name="device_id" multiple>
 <%
  
  
@@ -63,14 +63,24 @@ Please choose users by ID:<br>
    	 		if(user.getDeviceID()!=null){
        			         
 %>
-		<option value= <%= user.getUserID()%>><%= user.getUserID()%></option>
+		<option value= <%= user.getDeviceID()%>><%= user.getUserID()%></option>
 <%
 			} 
 		}
 	}
 %>
 </select >
-Total user number is     <%= users.size() %>
+
+<select name="data_key">
+
+		<option value="quest" >quest</option>
+		<option value="feed" >feed</option>
+		<option value="activity" >activity</option>
+		<option value="friend" >friend</option>
+
+</select >
+
+<input type = "text" name = "data_value">
 <input type="submit">
 </form>
 

@@ -10,8 +10,8 @@
 		<filter-name>StreamCopyFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-	
-		<filter>
+
+	<filter>
 		<filter-name>LocationFilter</filter-name>
 		<filter-class>com.gm.server.LocationFilter</filter-class>
 	</filter>
@@ -37,8 +37,40 @@
 	<!-- <filter-name>_ah_DevSocketFilter</filter-name> -->
 	<!-- <url-pattern>/*</url-pattern> -->
 	<!-- </filter-mapping> -->
+	
+	<!--  Security Constraints -->
+	<security-constraint>
+		<web-resource-collection>
+			<web-resource-name>cron</web-resource-name>
+			<url-pattern>/cron/*</url-pattern>
+		</web-resource-collection>
+		<auth-constraint>
+			<role-name>admin</role-name>
+		</auth-constraint>
+	</security-constraint>
 
+	<security-constraint>
+		<web-resource-collection>
+			<web-resource-name>queue</web-resource-name>
+			<url-pattern>/queue/*</url-pattern>
+		</web-resource-collection>
+		<auth-constraint>
+			<role-name>admin</role-name>
+		</auth-constraint>
+	</security-constraint>
 
+	<security-constraint>
+		<web-resource-collection>
+			<web-resource-name>admin</web-resource-name>
+			<url-pattern>/admin/*</url-pattern>
+		</web-resource-collection>
+		<auth-constraint>
+			<role-name>admin</role-name>
+		</auth-constraint>
+	</security-constraint>
+	
+	
+	<!-- Normal API -->
 
 	<servlet>
 		<servlet-name>register</servlet-name>
@@ -127,7 +159,7 @@
 		<servlet-name>checkin</servlet-name>
 		<url-pattern>/social/checkin</url-pattern>
 	</servlet-mapping>
-	
+
 	<servlet>
 		<servlet-name>profile</servlet-name>
 		<servlet-class>com.gm.server.GetProfileServlet</servlet-class>
@@ -136,8 +168,8 @@
 		<servlet-name>profile</servlet-name>
 		<url-pattern>/social/profile</url-pattern>
 	</servlet-mapping>
-	
-		<servlet>
+
+	<servlet>
 		<servlet-name>update_profile</servlet-name>
 		<servlet-class>com.gm.server.UpdateProfileServlet</servlet-class>
 	</servlet>
@@ -146,7 +178,7 @@
 		<url-pattern>/social/update_profile</url-pattern>
 	</servlet-mapping>
 
-		<servlet>
+	<servlet>
 		<servlet-name>update_thumbnail</servlet-name>
 		<servlet-class>com.gm.server.UpdateThumbnailServlet</servlet-class>
 	</servlet>
@@ -154,7 +186,7 @@
 		<servlet-name>update_thumbnail</servlet-name>
 		<url-pattern>/social/update_thumbnail</url-pattern>
 	</servlet-mapping>
-	
+
 	<!-- <servlet> -->
 	<!-- <servlet-name>get_phone_details</servlet-name> -->
 	<!-- <servlet-class>com.gm.server.GetPhoneDetailsServlet</servlet-class> -->
@@ -255,6 +287,15 @@
 	<servlet-mapping>
 		<servlet-name>get_activities</servlet-name>
 		<url-pattern>/quest/get_activities</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>delete_activity</servlet-name>
+		<servlet-class>com.gm.server.DeleteActivityServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>delete_activity</servlet-name>
+		<url-pattern>/quest/delete_activity</url-pattern>
 	</servlet-mapping>
 
 
@@ -372,6 +413,16 @@
 		<url-pattern>/admin/init</url-pattern>
 	</servlet-mapping>
 
+	<servlet>
+		<servlet-name>daily_reset</servlet-name>
+		<servlet-class>com.gm.server.DailyResetServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>daily_reset</servlet-name>
+		<url-pattern>/cron/daily_reset</url-pattern>
+	</servlet-mapping>
+	
+	
 	<!-- warm up servlet -->
 	<servlet>
 		<servlet-name>_ah_warmup</servlet-name>

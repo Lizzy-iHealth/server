@@ -52,7 +52,7 @@ public class GenerateFeedServlet extends APIServlet {
       System.out.println(feed.toString());
       dao.save(feed,receiverKey);
     }
-    push(receiverIds,"Feed",message);
+    push(receiverIds,"type","feed");
   }
   
 }

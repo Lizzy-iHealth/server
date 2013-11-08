@@ -42,7 +42,8 @@ public class ApproveApplicationServlet extends APIServlet {
         dao.save(quest);
         
         
-        push(userIds,"activity","assign");
+        push(userIds,"type","activity");
+        
         
         // push to receivers
         

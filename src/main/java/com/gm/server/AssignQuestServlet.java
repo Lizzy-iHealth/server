@@ -55,7 +55,7 @@ public class AssignQuestServlet extends APIServlet {
     quest.setStatus(QuestPb.Status.PUBLISHED);
     dao.save(quest);
 
-    push(receiverIds, "activity", "assign");
+    push(receiverIds, "type","activity");
 
     // push to receivers
 

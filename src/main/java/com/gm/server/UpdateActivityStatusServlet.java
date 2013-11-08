@@ -71,10 +71,10 @@ public class UpdateActivityStatusServlet extends APIServlet {
 	   
 	    if (userId == ownerId) {
 	    	long receivers[]={ applicantId};
-	        push(receivers, "activity", KeyFactory.keyToString(quest.getEntityKey()));
+	        push(receivers,"type", "activity");
 	      }else{
 	    	    long receivers[] = {ownerId};
-	    	      push(receivers, "quest", KeyFactory.keyToString(quest.getEntityKey()));
+	    	      push(receivers, "type","quest");
 	      }
 	    return status;
   }

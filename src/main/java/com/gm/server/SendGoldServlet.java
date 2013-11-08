@@ -38,6 +38,6 @@ public class SendGoldServlet extends APIServlet {
      transferGold(senderKey.getId(),receiverId,amount.getGold());
      amount = amount.toBuilder().setGold(dao.get(senderKey, User.class).getGoldBalance()).build();
      resp.getOutputStream().write(amount.toByteArray());
-     
+     push(receiverId,"type","currency");
    }
 }
