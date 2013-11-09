@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.gm.common.model.Rpc.Config;
 import com.gm.common.model.Rpc.QuestPb;
+import com.gm.server.model.Office;
 import com.gm.server.model.Quest;
 import com.gm.server.model.User;
 import com.google.appengine.api.datastore.Link;
@@ -33,6 +34,15 @@ public class DailyResetServlet extends APIServlet {
 	@Override
 	public void handle(HttpServletRequest req, HttpServletResponse resp)
 			throws ApiException, IOException {
+		
+	    if(questAdmin==null){
+	    	questAdmin = new Office("999");
+	    }
+	    
+	    if (questAdmin.getAdminKey() == null
+				|| questAdmin.getQuestKeys().length == 0) {
+			questAdmin.init(dao);
+		}
 		Key[] questKeys = questAdmin.getQuestKeys();
 		Quest[] quests = new Quest[questKeys.length];
 		int i = 0;

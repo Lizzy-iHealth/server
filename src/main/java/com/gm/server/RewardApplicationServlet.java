@@ -35,6 +35,7 @@ public class RewardApplicationServlet extends APIServlet {
 		// response is the status of the applicant
 		super.writeResponse(resp, results);
 		push(receiverIds,"type","activity");
+		push(userKey.getId(),"type","profile");
 
 	}
 

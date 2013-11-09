@@ -63,15 +63,22 @@ Please choose users by ID:<br>
    	 		if(user.getDeviceID()!=null){
        			         
 %>
-		<option value= <%= user.getDeviceID()%>><%= user.getUserID()%></option>
+		<option value= <%= user.getDeviceID()%>><%= user.getPhone()%></option>
 <%
 			} 
 		}
 	}
 %>
 </select >
+<select name="data_value">
 
-<select name="data_key">
+		<option value="type" >type</option>
+		<option value="id" >id</option>
+		<option value="key" >key</option>
+		<option value="status" >status</option>
+
+</select >
+<select name="data_value">
 
 		<option value="quest" >quest</option>
 		<option value="feed" >feed</option>
@@ -80,7 +87,6 @@ Please choose users by ID:<br>
 
 </select >
 
-<input type = "text" name = "data_value">
 <input type="submit">
 </form>
 

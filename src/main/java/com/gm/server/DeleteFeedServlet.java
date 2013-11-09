@@ -31,6 +31,6 @@ public class DeleteFeedServlet extends APIServlet {
 
         deleteFeed(id, questId,owner_id);
       }
-      push(receiverIds,"Feed","delete");
+      push(receiverIds,"type","feed");
     }
 }

@@ -42,7 +42,7 @@ public class Quest extends Persistable<Quest> {
 	private Date updateAt = new Date();// = new Date();//set by server
 
 	@Property
-	private String title = "";
+	private String title;
 
 	@Property
 	private PostalAddress address;// =new PostalAddress("Input Address Here:");
@@ -55,7 +55,7 @@ public class Quest extends Persistable<Quest> {
 							// reward
 
 	@Property
-	private String description = "";
+	private String description ;//= "";
 
 	@Property
 	private Link attach_link;// =new Link("http://help-hand.appspot.com");
@@ -168,6 +168,8 @@ public class Quest extends Persistable<Quest> {
 			}
 			if (q.getLifespan().hasDeleteTime()) {
 				end_time = new Date(q.getLifespan().getDeleteTime());
+			}else{
+				end_time = new Date(start_time.getTime()+24*60*60*1000);
 			}
 		}
 		if (q.hasTitle()) {

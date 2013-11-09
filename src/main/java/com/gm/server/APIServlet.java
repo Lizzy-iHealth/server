@@ -26,6 +26,7 @@ import com.gm.common.crypto.Hmac;
 import com.gm.common.model.Rpc.Applicant;
 import com.gm.common.model.Rpc.Applicant.Status;
 import com.gm.common.model.Rpc.Applicants;
+import com.gm.common.model.Rpc.Config;
 import com.gm.common.model.Rpc.Currency;
 import com.gm.common.model.Rpc.Friendship;
 import com.gm.common.model.Rpc.QuestPb;
@@ -86,6 +87,42 @@ public abstract class APIServlet extends HttpServlet {
 
 	protected static Office questAdmin = new Office("999");
 	protected static Office bank = new Office("8");
+	protected static boolean ready = false;
+	public APIServlet() {
+		if(!ready)init();
+	}
+
+	public void init() {
+		// init data store:
+		String dailyQuestURL = "http://help-hand.appspot.com/quest/SubmitDailyQuestServlet";
+		try {
+			initBank();
+		} catch (ApiException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		User taskAdmin;
+		try {
+			taskAdmin = initTaskAdmin();
+			createDailyQuest("Check In",
+					"When you check in, your friends will see your location.",
+					dailyQuestURL, taskAdmin);
+		} catch (ApiException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		// init static variables:
+		if (questAdmin.getAdminKey() == null
+				|| questAdmin.getQuestKeys().length == 0) {
+			questAdmin.init(dao);
+		}
+		if (bank.getAdminKey() == null) {
+			bank.init(dao);
+		}
+		ready=true;
+
+	}
 
 	protected int applyQuest(Key questKey, Key applierKey, Applicant applicant)
 			throws ApiException, IOException {
@@ -132,7 +169,7 @@ public abstract class APIServlet extends HttpServlet {
 		return results;
 	}
 
-	private void initLoginUser(User user) throws ApiException {
+	private static void initUser(User user) throws ApiException {
 		// assign a checkin quest
 
 		if (questAdmin.getAdminKey() == null
@@ -625,10 +662,11 @@ public abstract class APIServlet extends HttpServlet {
 
 	protected static User assignQuest(Quest quest, User applier,
 			boolean deleteFeed) throws ApiException {
-		if (quest.isAutoReward()) {
-			transferGold(quest.getParent().getId(), bank.getAdminKey().getId(),
-					quest.getPrize());
-		}
+
+		/*
+		 * if (quest.isAutoReward()) { transferGold(quest.getParent().getId(),
+		 * bank.getAdminKey().getId(), quest.getPrize()); }
+		 */
 		Applicant applicant = Applicant.newBuilder().setUserId(applier.getId())
 				.setBid(Currency.newBuilder().setGold(quest.getPrize()))
 				.setType(Applicant.Status.ASSIGN).build();
@@ -671,6 +709,7 @@ public abstract class APIServlet extends HttpServlet {
 			rewardInvitors(user.getUserID(), pu.getInvitors().build());
 			dao.delete(pu);
 		}
+		initUser(user);
 		dao.save(user);
 		return user;
 	}
@@ -1036,5 +1075,42 @@ public abstract class APIServlet extends HttpServlet {
 				ErrorCode.quota_daily_quest_usedup);
 		user.getQuota().setUsedDailyQuestNum(dailyUsed + 1);
 		dao.save(user);
+	}
+
+	protected void createDailyQuest(String title, String description,
+			String dailyQuestURL, User taskAdmin) {
+		if (dao.querySingle("title", title, Quest.class) == null) {
+			Config.Builder config = Config.newBuilder().setAllowSharing(false)
+					.setAutoAccept(false).setAutoClaim(false)
+					.setAutoConfirmAll(true).setAutoConfirmFirstApplicant(true)
+					.setAutoReward(true).setFavourite(false);
+			Quest quest = new Quest(title, description, 1, config,
+					QuestPb.Status.PUBLISHED.getNumber());
+			quest.setAttach_link(new Link(dailyQuestURL));
+			dao.save(quest, taskAdmin.getEntityKey());
+
+		}
+	}
+
+	protected User initTaskAdmin() throws ApiException {
+		User taskAdmin = dao.querySingle("phone", "999", User.class);
+		if (taskAdmin == null) {
+			taskAdmin = createUser("999", "1234");
+			taskAdmin.setName("Quest Admin");
+			dao.save(taskAdmin);
+		} else {
+			if (taskAdmin.getGoldBalance() < 999999)
+				taskAdmin.setGoldBalance(999999999);
+		}
+		return taskAdmin;
+	}
+
+	protected void initBank() throws ApiException {
+		User bank = dao.querySingle("phone", "8", User.class);
+		if (bank == null) {
+			bank = createUser("8", "1234");
+			bank.setName("Bank");
+			dao.save(bank);
+		}
 	}
 }
