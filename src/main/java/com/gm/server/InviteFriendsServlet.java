@@ -19,7 +19,7 @@ execute(req, resp);
   
   //Input Param: "key"        user's key
   //             "phone"      phone list to be invited or added
-  //Output Param: N/A
+  //Output Param: FriendStatus
 
     public void handle(HttpServletRequest req, HttpServletResponse resp)
         throws ApiException, IOException {
@@ -27,7 +27,7 @@ execute(req, resp);
         String key = ParamKey.key.getValue(req);
         String[] friendPhones = ParamKey.phone.getValues(req);
         
-        String[] results = inviteFriends(key, friendPhones);
+        int[] results = inviteFriends(key, friendPhones);
         
         writeResponse(resp,results);
     }

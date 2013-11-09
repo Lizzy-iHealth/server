@@ -58,7 +58,7 @@ public class Quest extends Persistable<Quest> {
 	private String description ;//= "";
 
 	@Property
-	private Link attach_link;// =new Link("http://help-hand.appspot.com");
+	private String attach_link;// =new Link("http://help-hand.appspot.com");
 
 	@Property
 	private PostRecordsPb.Builder posts = PostRecordsPb.newBuilder();
@@ -106,11 +106,11 @@ public class Quest extends Persistable<Quest> {
 		config.setAllowSharing(allow_sharing);
 	}
 
-	public Link getAttach_link() {
+	public String getAttach_link() {
 		return attach_link;
 	}
 
-	public void setAttach_link(Link attach_link) {
+	public void setAttach_link(String attach_link) {
 		this.attach_link = attach_link;
 	}
 
@@ -193,7 +193,7 @@ public class Quest extends Persistable<Quest> {
 			config = q.getConfig().toBuilder();
 		}
 		if (q.hasUrl()) {
-			attach_link = new Link(q.getUrl());
+			attach_link = q.getUrl();
 		}
 		if (q.hasStatus()) {
 			status = q.getStatus().getNumber();
@@ -274,7 +274,7 @@ public class Quest extends Persistable<Quest> {
 			config = q.getConfig().toBuilder();
 		}
 		if (q.hasUrl()) {
-			attach_link = new Link(q.getUrl());
+			attach_link = q.getUrl();
 		}
 		if (q.hasStatus()) {
 			status = q.getStatus().getNumber();
@@ -333,7 +333,7 @@ public class Quest extends Persistable<Quest> {
 			qMsg.setGeoPoint(gmsg);
 		}
 		if (attach_link != null) {
-			qMsg.setUrl(attach_link.getValue());
+			qMsg.setUrl(attach_link);
 		}
 
 		return qMsg;

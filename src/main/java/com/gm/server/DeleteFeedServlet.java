@@ -13,6 +13,7 @@ public class DeleteFeedServlet extends APIServlet {
   private static final long serialVersionUID = 1L;
   public void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws IOException {
+	  this.requiresHmac = false;
     execute(req, resp);
   }
   //Input:       id  :quest id, 
@@ -31,6 +32,6 @@ public class DeleteFeedServlet extends APIServlet {
 
         deleteFeed(id, questId,owner_id);
       }
-      push(receiverIds,"type","feed");
+    //  push(receiverIds,"type","feed");
     }
 }

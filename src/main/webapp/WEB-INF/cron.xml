@@ -4,7 +4,7 @@
   <cron>
     <url>/cron/daily_reset</url>
     <description>Assign daily quest and reset daily quota</description>
-    <schedule>every day 14:00</schedule>
+    <schedule>every day 10:05</schedule>
     <timezone>America/New_York</timezone>
   </cron>
   

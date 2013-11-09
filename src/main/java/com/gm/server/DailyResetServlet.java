@@ -58,6 +58,7 @@ public class DailyResetServlet extends APIServlet {
 		for (User user : userItr) {
 
 			user.getQuota().setUsedDailyQuestNum(0);
+			user.setGoldBalance(user.getGoldBalance()+10);
 			dao.save(user);
 
 		}

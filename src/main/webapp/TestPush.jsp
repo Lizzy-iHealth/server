@@ -70,7 +70,7 @@ Please choose users by ID:<br>
 	}
 %>
 </select >
-<select name="data_value">
+<select name="data_key">
 
 		<option value="type" >type</option>
 		<option value="id" >id</option>
@@ -84,6 +84,7 @@ Please choose users by ID:<br>
 		<option value="feed" >feed</option>
 		<option value="activity" >activity</option>
 		<option value="friend" >friend</option>
+		<option value="profile" >friend</option>
 
 </select >
 
