@@ -156,7 +156,23 @@ public abstract class APIServlet extends HttpServlet {
 		push(applier.getId(), "type", "activity");
 		return status;
 	}
+	
+	
+	protected int acceptQuest(Key questKey, Key applierKey)
+			throws ApiException, IOException {
+		
+		// get quest from datastore and add an application
+		Quest quest = checkNotNull(dao.get(questKey, Quest.class),
+				ErrorCode.quest_quest_not_found);
+		
+		// check the quest hasn't reach a deal
+		check(!quest.isDeal(), ErrorCode.quest_is_deal);
+		int status = quest.updateApplicantStatus(applierKey.getId(), Applicant.Status.CONFIRMED).getNumber();
+		dao.save(quest);
 
+		return status;
+	}
+	
 	protected String[] login(String phone, String password) throws ApiException {
 		User user = checkNotNull(dao.querySingle("phone", phone, User.class),
 				ErrorCode.auth_phone_not_registered);
@@ -180,12 +196,19 @@ public abstract class APIServlet extends HttpServlet {
 				|| questAdmin.getQuestKeys().length == 0) {
 			questAdmin.init(dao);
 		}
-		for (Key qkey : questAdmin.getQuestKeys()) {
-			Quest quest = checkNotNull(dao.get(qkey, Quest.class),
-					ErrorCode.quest_quest_not_found);
+		for (Quest quest : getQuests(questAdmin.getAdminKey())) {
+			
+			if(quest != null){
+					
 			assignQuest(quest, user, false);
+			}
 		}
 
+	}
+
+	private static List<Quest> getQuests(Key userKey ) {
+		// TODO Auto-generated method stub
+		return dao.query(Quest.class).setAncestor(userKey).prepare().asList();
 	}
 
 	protected static void deleteActivity(long[] applierIds, Key entityKey)
@@ -759,12 +782,13 @@ public abstract class APIServlet extends HttpServlet {
 															// "1"
 															// already our user.
 	
-		int[] results = new int[friendPhones.length];
+		int[] results = new int[friendPhones.length];//friend Status
 		ArrayList<Long> toNotify = new ArrayList<Long>();
 		User invitor = dao.get(key, User.class);
-		check(invitor.getQuota().getFriendNum() > invitor.getFriends()
-				.getFriendCount(), ErrorCode.quota_friend_usedup);
+
+			
 		int i = 0;
+
 		for (String phone : friendPhones) {
 			results[i] = Friendship.INVITED_VALUE;
 			if (phone.equals(invitor.getId())) { // add oneself, response 0, do
@@ -780,8 +804,10 @@ public abstract class APIServlet extends HttpServlet {
 				User temp = dao.querySingle("phone", phone, User.class);
 				// already our user
 				if (temp != null) {
+					
 					results[i] = addFriend(temp.getId(),invitor);
 					toNotify.add(Long.valueOf(temp.getId()));
+				
 					/*
 					results[i] = "1";
 					temp.addFriend(invitorId, Friendship.WAIT_MY_CONFIRM);
@@ -802,10 +828,12 @@ public abstract class APIServlet extends HttpServlet {
 		}
 		try {
 			push(getLongs(toNotify.toArray()),"type","friend");
+			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
 		return results;
 	}
 
@@ -882,8 +910,10 @@ public abstract class APIServlet extends HttpServlet {
 		return results;
 	}
 
-	protected static int  addFriend(long friendID, User user)
+	protected static int  addFriend(long friendID, User user) throws ApiException
 			 {
+		check(user.getQuota().getFriendNum() > user.getFriends()
+				.getFriendCount(), ErrorCode.quota_friend_usedup);
 		Key friendKey= KeyFactory.createKey("User", friendID);
 
 		User friend = null;
@@ -913,6 +943,7 @@ public abstract class APIServlet extends HttpServlet {
 		}
 		*/
 		dao.save(friend);
+		dao.save(user);
 		return user.getFriendship(friendID).getNumber();
 	}
 
@@ -990,6 +1021,7 @@ public abstract class APIServlet extends HttpServlet {
 		transferGold(senderKey.getId(), userId, amount);
 		return updateApplicantStatus(quest, userId, Applicant.Status.REWARDED)
 				.getNumber();
+	
 
 	}
 

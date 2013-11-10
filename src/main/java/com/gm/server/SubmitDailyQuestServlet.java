@@ -54,7 +54,7 @@ public class SubmitDailyQuestServlet extends APIServlet {
     }
     resp.getOutputStream().write(
         Integer.toString(status).getBytes());
-    // push to receivers
+    push(userKey.getId(),"type","profile");
 
   }
 

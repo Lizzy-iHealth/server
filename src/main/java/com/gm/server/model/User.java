@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.gm.common.model.Rpc.Applicant.Status;
 import com.gm.common.model.Rpc.CheckinPb;
 import com.gm.common.model.Rpc.CheckinsPb;
 import com.gm.common.model.Rpc.Currency;
@@ -19,6 +20,8 @@ import com.gm.common.model.Rpc.Thumbnail;
 import com.gm.common.model.Rpc.Friend;
 import com.gm.common.model.Rpc.Friends;
 import com.gm.common.model.Rpc.UsersPb.Builder;
+import com.gm.common.model.Server.Activities;
+import com.gm.common.model.Server.Activity;
 import com.gm.common.model.Server.EntityKeys;
 import com.google.appengine.api.datastore.GeoPt;
 import com.google.appengine.api.datastore.Key;
@@ -55,7 +58,7 @@ public class User extends Persistable<User> {
 	private Friends.Builder friends;
 
 	@Property
-	private EntityKeys.Builder activities = EntityKeys.newBuilder();
+	private Activities.Builder activities = Activities.newBuilder();
 
 	@Property
 	private String deviceID = "";
@@ -248,11 +251,11 @@ public class User extends Persistable<User> {
 		this.geo = geo;
 	}
 
-	public EntityKeys.Builder getActivities() {
+	public Activities.Builder getActivities() {
 		return activities;
 	}
 
-	public void setActivities(EntityKeys.Builder activities) {
+	public void setActivities(Activities.Builder activities) {
 		this.activities = activities;
 	}
 
@@ -381,15 +384,25 @@ public class User extends Persistable<User> {
 	public int addActivity(String questKey) {
 		int i = findActivity(questKey);
 		if (i == -1) {
-			activities.addKey(questKey);
+			activities.addActivity(Activity.newBuilder().setKey(questKey));
 			i = 0;
 		}
 		return i;
 	}
-
+	public int addActivity(String questKey, Status status) {
+		// TODO Auto-generated method stub
+		int i = findActivity(questKey);
+		if (i == -1) {
+			activities.addActivity(Activity.newBuilder().setKey(questKey).setStatus(status));
+			i = 0;
+		}else{
+			activities.setActivity(i, Activity.newBuilder().setKey(questKey).setStatus(status));
+		}
+		return i;
+	}
 	private int findActivity(String questKey) {
-		for (int i = 0; i < activities.getKeyCount(); i++) {
-			if (activities.getKey(i).equals(questKey)) {
+		for (int i = 0; i < activities.getActivityCount(); i++) {
+			if (activities.getActivity(i).getKey().equals(questKey)) {
 				return i;
 			}
 		}
@@ -479,12 +492,12 @@ public class User extends Persistable<User> {
 	}
 
 	public void deleteActivity(String key) {
-		List<String> keys = activities.getKeyList();
-		activities.clearKey();
-		for (String k : keys) {
-			if (key.equals(k))
+		List<Activity> keys = activities.getActivityList();
+		activities.clearActivity();
+		for (Activity k : keys) {
+			if (key.equals(k.getKey()))
 				continue;
-			activities.addKey(k);
+			activities.addActivity(k);
 		}
 
 	}
@@ -544,4 +557,6 @@ public class User extends Persistable<User> {
 		experience+=i;
 		return experience;
 	}
+
+
 }

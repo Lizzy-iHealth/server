@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.gm.common.model.Rpc.QuestPb;
 import com.gm.common.model.Rpc.Quests;
+import com.gm.common.model.Server.Activity;
 import com.gm.common.net.ErrorCode;
 import com.gm.server.model.Feed;
 import com.gm.server.model.Quest;
@@ -37,11 +38,11 @@ public class GetActivitiesServlet extends APIServlet {
 
 		Key userKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
 		User user = dao.get(userKey, User.class);
-		List<String> activityKeys = user.getActivities().getKeyList();
+		List<Activity> activities = user.getActivities().getActivityList();
 		Quests.Builder questsMsg = Quests.newBuilder();
-		for (String questKeyStr : activityKeys) {
+		for (Activity activity : activities) {
 
-			Key questKey = KeyFactory.stringToKey(questKeyStr);
+			Key questKey = KeyFactory.stringToKey(activity.getKey());
 			// get quest from datastore and add an application
 			Quest quest = dao.get(questKey, Quest.class);
 			if (quest == null) {

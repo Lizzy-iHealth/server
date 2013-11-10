@@ -45,7 +45,7 @@ public class Quest extends Persistable<Quest> {
 	private String title;
 
 	@Property
-	private PostalAddress address;// =new PostalAddress("Input Address Here:");
+	private String address;//=new PostalAddress("Input Address Here:");
 
 	@Property
 	private GeoPt geo_point;// =new GeoPt(0,0);
@@ -176,7 +176,7 @@ public class Quest extends Persistable<Quest> {
 			title = q.getTitle();
 		}
 		if (q.hasAddress()) {
-			address = new PostalAddress(q.getAddress());
+			address = q.getAddress();
 		}
 		if (q.hasGeoPoint()) {
 			geo_point = new GeoPt(q.getGeoPoint().getLatitude(), q
@@ -258,7 +258,7 @@ public class Quest extends Persistable<Quest> {
 			title = q.getTitle();
 		}
 		if (q.hasAddress()) {
-			address = new PostalAddress(q.getAddress());
+			address = q.getAddress();
 		}
 		if (q.hasGeoPoint()) {
 			geo_point = new GeoPt(q.getGeoPoint().getLatitude(), q
@@ -327,7 +327,7 @@ public class Quest extends Persistable<Quest> {
 					entity.getParent().getId());
 		}
 		if (address != null) {
-			qMsg.setAddress(address.getAddress());
+			qMsg.setAddress(address);
 		}
 		if (gmsg != null) {
 			qMsg.setGeoPoint(gmsg);
@@ -363,11 +363,11 @@ public class Quest extends Persistable<Quest> {
 		this.title = title;
 	}
 
-	public PostalAddress getAddress() {
+	public String getAddress() {
 		return address;
 	}
 
-	public void setAddress(PostalAddress address) {
+	public void setAddress(String address) {
 		this.address = address;
 	}
 
@@ -493,7 +493,7 @@ public class Quest extends Persistable<Quest> {
 				}
 
 				if (newType == Applicant.Status.DONE) {
-					downWithApplicant(i);
+					doneWithApplicant(i);
 				}
 			}
 			curApp.setType(newType);
@@ -502,7 +502,7 @@ public class Quest extends Persistable<Quest> {
 
 	}
 
-	private void downWithApplicant(int i) {
+	private void doneWithApplicant(int i) {
 		// TODO Auto-generated method stub
 
 	}
@@ -523,6 +523,17 @@ public class Quest extends Persistable<Quest> {
 				.setType(status);
 		updateApplicant(index, newApp.build());
 		return applicants.getApplicantBuilder(index).getType();
+	}
+	public Applicant.Status updateApplicantStatus(long id, Status status) {
+		int index = findApplicant(id);
+		if(index!=-1){
+		Applicant.Builder newApp = applicants.getApplicantBuilder(index)
+				.setType(status);
+		updateApplicant(index, newApp.build());
+		return applicants.getApplicantBuilder(index).getType();
+		}else{
+			return Applicant.Status.REJECTTED;
+		}
 	}
 
 	public void restart() {

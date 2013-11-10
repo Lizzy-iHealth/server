@@ -798,29 +798,29 @@ reject_application("/quest",true){
 //Input:   key : the key of requester
 //        
 //Output:  Quests message, containing all the quests applied by or assigned to me. 
-get_activities("/quest/",true){
-
-  @Override
-  public void handle(HttpServletRequest req, HttpServletResponse resp)
-      throws ApiException, IOException {
-    
-    Key userKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
-    User user = dao.get(userKey, User.class);
-    List<String> activityKeys = user.getActivities().getKeyList();
-    Quests.Builder questsMsg = Quests.newBuilder();
-    for(String questKeyStr: activityKeys){
-    
-        Key questKey = KeyFactory.stringToKey(questKeyStr);
-        // get quest from datastore and add an application 
-        Quest quest = checkNotNull(dao.get(questKey, Quest.class),ErrorCode.quest_quest_not_found);
-        QuestPb qMsg = quest.getMSG(user.getId()).build();
-        questsMsg.addQuest(qMsg);
-    }
-    resp.getOutputStream().write(questsMsg.build().toByteArray());
-   
-  }
- 
-},
+//get_activities("/quest/",true){
+//
+//  @Override
+//  public void handle(HttpServletRequest req, HttpServletResponse resp)
+//      throws ApiException, IOException {
+//    
+//    Key userKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
+//    User user = dao.get(userKey, User.class);
+//    List<String> activityKeys = user.getActivities().getActivityList()
+//    Quests.Builder questsMsg = Quests.newBuilder();
+//    for(String questKeyStr: activityKeys){
+//    
+//        Key questKey = KeyFactory.stringToKey(questKeyStr);
+//        // get quest from datastore and add an application 
+//        Quest quest = checkNotNull(dao.get(questKey, Quest.class),ErrorCode.quest_quest_not_found);
+//        QuestPb qMsg = quest.getMSG(user.getId()).build();
+//        questsMsg.addQuest(qMsg);
+//    }
+//    resp.getOutputStream().write(questsMsg.build().toByteArray());
+//   
+//  }
+// 
+//},
 
 //Input:   key : the key of requester
 //

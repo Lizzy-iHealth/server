@@ -6,11 +6,13 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.gm.common.model.Rpc.Applicant;
 import com.gm.common.model.Rpc.Config;
 import com.gm.common.model.Rpc.QuestPb;
 import com.gm.server.model.Office;
 import com.gm.server.model.Quest;
 import com.gm.server.model.User;
+import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Link;
 import com.google.appengine.api.datastore.Key;
 
@@ -44,21 +46,16 @@ public class DailyResetServlet extends APIServlet {
 			questAdmin.init(dao);
 		}
 		Key[] questKeys = questAdmin.getQuestKeys();
-		Quest[] quests = new Quest[questKeys.length];
-		int i = 0;
-		for (Key key : questKeys) {
-			Quest quest= dao.get(key, Quest.class);
-			quest.restart();
-			dao.save(quest);
-			quests[i]  = quest;
-			i++;
-		}
-
+	
+		
 		Iterable<User> userItr = dao.query(User.class).prepare().asIterable();
 		for (User user : userItr) {
 
 			user.getQuota().setUsedDailyQuestNum(0);
 			user.setGoldBalance(user.getGoldBalance()+10);
+			for(Key qKey:questKeys){
+				user.addActivity(KeyFactory.keyToString(qKey),Applicant.Status.ASSIGN);
+			}
 			dao.save(user);
 
 		}
