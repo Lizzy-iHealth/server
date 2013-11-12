@@ -7,6 +7,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.gm.common.model.Rpc.Applicant;
+import com.gm.common.model.Rpc.Applicants;
 import com.gm.common.model.Rpc.QuestPb;
 import com.gm.common.model.Rpc.Quests;
 import com.gm.common.model.Server.Activity;
@@ -55,8 +57,17 @@ public class GetActivitiesServlet extends APIServlet {
 				dao.save(user);
 
 			} else {
-				QuestPb qMsg = quest.getMSG(user.getId()).build();
-				questsMsg.addQuest(qMsg);
+				QuestPb.Builder qMsg = null;
+				if(quest.isSystemQuest()){
+					qMsg = quest.getMSG();
+					Applicant.Builder app = Applicant.newBuilder()
+							.setUserId(user.getId())
+							.setType(user.getActivityStatus(quest.getEntityKey()));
+					qMsg.setApplicants(Applicants.newBuilder().addApplicant(app));
+				}else{
+				 qMsg = quest.getMSG(user.getId());
+				}
+				questsMsg.addQuest(qMsg.build());
 			}
 		}
 		resp.getOutputStream().write(questsMsg.build().toByteArray());

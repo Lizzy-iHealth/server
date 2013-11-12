@@ -389,7 +389,7 @@ public class APITest extends ModelTest {
 		when(resp.getWriter()).thenReturn(writer);
 		when(resp.getOutputStream()).thenReturn(swriter);
 		new InviteFriendsServlet().execute(req, resp, false);
-
+		
 		List<PendingUser> pu = dao.query(PendingUser.class)
 				.sortBy("phone", false).prepare().asList();
 		assertEquals(2, pu.size());
@@ -399,7 +399,7 @@ public class APITest extends ModelTest {
 		assertEquals(pu.get(1).getPhone(), friend_phone[1]);
 		assertEquals(pu.get(1).getInvitors().getFriend(0).getId(), user
 				.getEntityKey().getId());
-		verify(swriter).write("0,0".getBytes());
+		verify(swriter).write("3,3".getBytes());
 
 		// invite a person already our user:
 		User f = new User("42345", "p", "s");

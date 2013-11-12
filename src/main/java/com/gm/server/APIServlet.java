@@ -167,9 +167,11 @@ public abstract class APIServlet extends HttpServlet {
 		
 		// check the quest hasn't reach a deal
 		check(!quest.isDeal(), ErrorCode.quest_is_deal);
-		int status = quest.updateApplicantStatus(applierKey.getId(), Applicant.Status.CONFIRMED).getNumber();
+		int status = updateActivityStatus(quest,applierKey.getId(), Applicant.Status.CONFIRMED).getNumber();
 		dao.save(quest);
-
+		if(!quest.isSystemQuest()){
+			push(quest.getParent().getId(), "type", "quest");
+		}
 		return status;
 	}
 	
@@ -189,7 +191,7 @@ public abstract class APIServlet extends HttpServlet {
 		return results;
 	}
 
-	private static void initUser(User user) throws ApiException, IOException {
+	protected static void initUser(User user) throws ApiException, IOException {
 		// assign a checkin quest
 
 		if (questAdmin.getAdminKey() == null
@@ -286,10 +288,12 @@ public abstract class APIServlet extends HttpServlet {
 				TaskOptions.Method.POST);
 		task.param("data_key", data_key).param("data_value", data_value);
 		for (long id : ids) {
-			String device_id = dao.get(KeyFactory.createKey("User", id),
-					User.class).getDeviceID();
+			User user = dao.get(KeyFactory.createKey("User", id),
+					User.class);
+			if(user!=null){
+			String device_id = user.getDeviceID();
 			task.param("device_id", device_id);
-
+			}
 		}
 		queue.add(task);
 	}
@@ -301,12 +305,14 @@ public abstract class APIServlet extends HttpServlet {
 				TaskOptions.Method.POST);
 		task.param("data_key", data_key).param("data_value", data_value);
 
-		String device_id = dao
-				.get(KeyFactory.createKey("User", id), User.class)
-				.getDeviceID();
+		User user = dao.get(KeyFactory.createKey("User", id),
+				User.class);
+		if(user!=null){
+		String device_id = user.getDeviceID();
 		task.param("device_id", device_id);
-
+		
 		queue.add(task);
+		}
 	}
 
 	/*
@@ -400,10 +406,8 @@ public abstract class APIServlet extends HttpServlet {
 			throws ApiException, IOException {
 		Quest quest = checkNotNull(dao.get(questKey, Quest.class),
 				ErrorCode.quest_quest_not_found);
-		int index = quest.findApplicant(toReject);
-		check(index != -1, ErrorCode.quest_applicant_not_found);
-		quest.updateApplicantStatus(index, Applicant.Status.REJECTTED);
-
+		updateActivityStatus(quest,toReject,Applicant.Status.REJECTTED);
+	
 		/*
 		 * User applier = checkNotNull( dao.get(KeyFactory.createKey("User",
 		 * toReject), User.class), ErrorCode.quest_applicant_not_found);
@@ -422,6 +426,7 @@ public abstract class APIServlet extends HttpServlet {
 		Quest quest = checkNotNull(dao.get(questKey, Quest.class),
 				ErrorCode.quest_quest_not_found);
 
+		/*
 		int index = quest.findApplicant(applierKey.getId());
 		check(index != -1, ErrorCode.quest_applicant_not_found);
 
@@ -429,7 +434,8 @@ public abstract class APIServlet extends HttpServlet {
 				&& quest.getApplicants().getApplicant(index).getType() == Applicant.Status.ASSIGN) {
 			returnGold(quest, quest.getPrize());
 		}
-		int status = quest.updateApplicantStatus(index,
+		*/
+		int status = quest.updateApplicantStatus(applierKey.getId(),
 				Applicant.Status.REJECTTED).getNumber();
 
 		dao.save(quest);
@@ -503,17 +509,10 @@ public abstract class APIServlet extends HttpServlet {
 
 	}
 
-	protected Status updateApplicantStatus(Quest quest, long applicantId,
+	protected Status processApplicantStatus(Quest quest, long applicantId,
 			Applicant.Status status) throws ApiException, IOException {
 
-		// only update when user is owner, or the same applicant
-		long ownerId = quest.getParent().getId();
-		int index = quest.findApplicant(applicantId);
-		if (index != -1) {
-			status = quest.updateApplicantStatus(index, status);
-		}
-
-		dao.save(quest);
+	    status = updateActivityStatus(quest, applicantId, status);
 
 		// claimed + autoReward + transferBalance = rewarded
 		if (status == Applicant.Status.CLAIMED && quest.isAutoReward()) {
@@ -523,9 +522,8 @@ public abstract class APIServlet extends HttpServlet {
 						quest.getPrize());
 
 				status = Applicant.Status.REWARDED;
-				status = quest.updateApplicantStatus(index,
-						Applicant.Status.REWARDED);
-				dao.save(quest);
+				status = updateActivityStatus(quest,applicantId,Applicant.Status.REWARDED);
+		
 			} catch (ApiException e) {
 				if (e.error == ErrorCode.currency_less_than_zero)
 					;
@@ -535,6 +533,19 @@ public abstract class APIServlet extends HttpServlet {
 			}
 		}
 
+		return status;
+	}
+
+	protected static Applicant.Status updateActivityStatus(Quest quest,
+			long applicantId, Applicant.Status status) {
+		if(quest.isSystemQuest()){
+			User user = dao.get(KeyFactory.createKey("User", applicantId), User.class);
+			status = user.updateActivityStatus(quest.getEntityKey(),status);
+			dao.save(user);
+		}else{
+			status = quest.updateApplicantStatus(applicantId, status);
+			dao.save(quest);
+		}
 		return status;
 	}
 
@@ -726,6 +737,10 @@ public abstract class APIServlet extends HttpServlet {
 		 * if (quest.isAutoReward()) { transferGold(quest.getParent().getId(),
 		 * bank.getAdminKey().getId(), quest.getPrize()); }
 		 */
+		if(quest.isSystemQuest()){
+			applier.addActivity(KeyFactory.keyToString(quest.getEntityKey()), Status.ASSIGN);
+			dao.save(applier);
+		}else{
 		Applicant applicant = Applicant.newBuilder().setUserId(applier.getId())
 				.setBid(Currency.newBuilder().setGold(quest.getPrize()))
 				.setType(Applicant.Status.ASSIGN).build();
@@ -733,11 +748,13 @@ public abstract class APIServlet extends HttpServlet {
 		dao.save(quest);
 		applier.addActivity(KeyFactory.keyToString(quest.getEntityKey()));
 		dao.save(applier);
+		}
 		if (deleteFeed) {
 			deleteFeed(applier.getId(), quest.getId(), quest.getParent()
 					.getId());
 			// push(applier.getId(),"type","feed");
 		}
+		
 		return applier;
 	}
 
@@ -770,7 +787,7 @@ public abstract class APIServlet extends HttpServlet {
 			rewardInvitors(user.getUserID(), pu.getInvitors().build());
 			dao.delete(pu);
 		}
-		initUser(user);
+		
 		dao.save(user);
 		return user;
 	}
@@ -1019,7 +1036,7 @@ public abstract class APIServlet extends HttpServlet {
 		long amount = quest.getPrize();
 
 		transferGold(senderKey.getId(), userId, amount);
-		return updateApplicantStatus(quest, userId, Applicant.Status.REWARDED)
+		return processApplicantStatus(quest, userId, Applicant.Status.REWARDED)
 				.getNumber();
 	
 
@@ -1179,7 +1196,9 @@ public abstract class APIServlet extends HttpServlet {
 	protected void createDailyQuest(String title, String description,
 			String dailyQuestURL, User taskAdmin) {
 		if (dao.querySingle("title", title, Quest.class) == null) {
-			Config.Builder config = Config.newBuilder().setAllowSharing(false)
+			Config.Builder config = Config.newBuilder()
+					.setSystemQuest(true)
+					.setAllowSharing(false)
 					.setAutoAccept(false).setAutoClaim(false)
 					.setAutoConfirmAll(true).setAutoConfirmFirstApplicant(true)
 					.setAutoReward(true).setFavourite(false);
@@ -1213,4 +1232,16 @@ public abstract class APIServlet extends HttpServlet {
 			dao.save(bank);
 		}
 	}
+	
+	/*
+	private Applicant.Status updateApplicantStatus(Quest quest, long userId, Applicant.Status status){
+		Applicant.Status result = null;
+		if(quest.isSystemQuest()){
+			
+		}else{
+			result = quest.updateApplicantStatus(userId, status);
+		}
+		return result;
+	}
+	*/
 }

@@ -38,7 +38,9 @@ public class PushServlet extends APIServlet {
       String data_value = req.getParameter("data_value");
       Map<String, String> data = new HashMap<String, String>();
       data.put(data_key, data_value);
-  
+      if(device_ids==null||device_ids.length==0){
+    	  return;
+      }
 
       try {
         new Pusher(device_ids).push(data);

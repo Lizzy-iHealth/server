@@ -42,8 +42,8 @@ public class AcceptQuestServlet extends APIServlet {
     
     resp.getWriter().write(Integer.toString(status));
 	// push message to quest owner.
-	
-	push(owner_id, "type", "quest");
+
+
   }
 
 }

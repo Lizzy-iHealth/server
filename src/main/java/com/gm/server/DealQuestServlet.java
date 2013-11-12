@@ -51,7 +51,7 @@ public class DealQuestServlet extends APIServlet {
     dao.save(quest);
     // option 2 implementation:
     // prepare feed
-    long[] receiverIds = quest.getAllReceiversIds();
+    long[] receiverIds = quest.getNoActionReceiversIds();
     deleteFeed(receiverIds, questId, ownerKey.getId());
 
   }

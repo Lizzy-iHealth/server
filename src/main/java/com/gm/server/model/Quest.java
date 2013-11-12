@@ -42,10 +42,10 @@ public class Quest extends Persistable<Quest> {
 	private Date updateAt = new Date();// = new Date();//set by server
 
 	@Property
-	private String title;
+	private String title="";
 
 	@Property
-	private String address;//=new PostalAddress("Input Address Here:");
+	private String address="";//=new PostalAddress("Input Address Here:");
 
 	@Property
 	private GeoPt geo_point;// =new GeoPt(0,0);
@@ -55,7 +55,7 @@ public class Quest extends Persistable<Quest> {
 							// reward
 
 	@Property
-	private String description ;//= "";
+	private String description = "";
 
 	@Property
 	private String attach_link;// =new Link("http://help-hand.appspot.com");
@@ -153,7 +153,10 @@ public class Quest extends Persistable<Quest> {
 	public void setAutoConfirm(boolean autoConfirm) {
 		config.setAutoConfirmAll(autoConfirm);
 	}
-
+	
+	public boolean isSystemQuest(){
+		return config.getSystemQuest();
+	}
 	public Quest() {
 	}
 
@@ -236,7 +239,7 @@ public class Quest extends Persistable<Quest> {
 	}
 
 	// return the index of the applicant in applicants message
-	public int findApplicant(long id) {
+	private int findApplicant(long id) {
 		for (int i = 0; i < applicants.getApplicantCount(); i++) {
 			if (id == applicants.getApplicant(i).getUserId()) {
 				return i;
@@ -544,6 +547,14 @@ public class Quest extends Persistable<Quest> {
 					Applicant.Status.ASSIGN));
 		}
 		setApplicants(newApps);
+	}
+
+	public long[] getNoActionReceiversIds() {
+		HashSet<Long> rSet = getAllReceiversIdsSet();
+	    HashSet<Long> aSet = getAllApplicantsIdsSet();
+	    rSet.removeAll(aSet);
+	    return getLongs(rSet.toArray());
+
 	}
 
 }

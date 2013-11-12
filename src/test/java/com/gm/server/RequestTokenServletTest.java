@@ -17,6 +17,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.gm.server.model.Token;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.Query;
@@ -24,26 +25,9 @@ import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestC
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 
 
-public class RequestTokenServletTest {
+public class RequestTokenServletTest extends ModelTest{
 
-	  private RequestTokenServlet rt;
 
-	  private final LocalServiceTestHelper helper =
-	      new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig())
-	          .setEnvIsLoggedIn(true)
-	          .setEnvAuthDomain("localhost")
-	          .setEnvEmail("test@localhost");
-
-	  @Before
-	  public void setupRegister() {
-	    helper.setUp();
-	    rt = new RequestTokenServlet();
-	  }
-
-	  @After
-	  public void tearDownHelper() {
-	    helper.tearDown();
-	  }
 
 	@Test
 	public void testDoPost() throws IOException {
@@ -59,18 +43,18 @@ public class RequestTokenServletTest {
 	    //when(request.getParameter("password")).thenReturn(password);
 	    
 	    Date priorToRequest = new Date();
-
+	    RequestTokenServlet rt = new RequestTokenServlet();
 	    rt.doPost(request, response);
 
 	    Date afterRequest = new Date();
 
-	    Entity e = DatastoreServiceFactory.getDatastoreService().prepare(new Query()).asSingleEntity();
+	    Token e = dao.querySingle("phone",phone,Token.class);
 
 	 
-	    assertEquals(phone, e.getProperty("phone"));
-	    assertEquals(verifyCode, e.getProperty("token"));
+	    assertEquals(phone, e.getPhone());
+	    assertEquals(verifyCode, e.getToken());
 
-	    Date date = (Date) e.getProperty("generateTime");
+	    Date date = (Date) e.getGenerateTime();
 	    assertTrue("The date in the entity [" + date + "] is prior to the request being performed",
 	        priorToRequest.before(date) || priorToRequest.equals(date));
 	    assertTrue("The date in the entity [" + date + "] is after to the request completed",

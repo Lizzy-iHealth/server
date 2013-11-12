@@ -67,7 +67,7 @@ public class UpdateActivityStatusServlet extends APIServlet {
 	    check((userId == ownerId || userId == applicantId),
 	        ErrorCode.quest_access_denied);
 	    
-	   Applicant.Status status =  updateApplicantStatus(quest,applicantId,app.getType());
+	   Applicant.Status status =  processApplicantStatus(quest,applicantId,app.getType());
 	   
 	    if (userId == ownerId) {
 	    	long receivers[]={ applicantId};

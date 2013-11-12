@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.gm.common.model.Rpc.Applicant.Status;
+import com.gm.common.model.Rpc.Applicant;
 import com.gm.common.model.Rpc.CheckinPb;
 import com.gm.common.model.Rpc.CheckinsPb;
 import com.gm.common.model.Rpc.Currency;
@@ -76,7 +77,7 @@ public class User extends Persistable<User> {
 
 	@Property
 	private GeoPt geo = new GeoPt(0, 0);
-	
+
 	@Property
 	String checkinAddress = "";
 
@@ -91,10 +92,11 @@ public class User extends Persistable<User> {
 
 	@Property
 	private CheckinsPb.Builder mostCheckin = null;
-	
+
 	@Property
-	private Quota.Builder quota = Quota.newBuilder().setActivityNum(10).setDailyQuestNum(10).setFriendNum(200).setQuestNum(30)
-													.setUsedDailyQuestNum(0).setUsedQuestNum(0);
+	private Quota.Builder quota = Quota.newBuilder().setActivityNum(10)
+			.setDailyQuestNum(10).setFriendNum(200).setQuestNum(30)
+			.setUsedDailyQuestNum(0).setUsedQuestNum(0);
 
 	public Quota.Builder getQuota() {
 		return quota;
@@ -389,17 +391,21 @@ public class User extends Persistable<User> {
 		}
 		return i;
 	}
+
 	public int addActivity(String questKey, Status status) {
 		// TODO Auto-generated method stub
 		int i = findActivity(questKey);
 		if (i == -1) {
-			activities.addActivity(Activity.newBuilder().setKey(questKey).setStatus(status));
+			activities.addActivity(Activity.newBuilder().setKey(questKey)
+					.setStatus(status));
 			i = 0;
-		}else{
-			activities.setActivity(i, Activity.newBuilder().setKey(questKey).setStatus(status));
+		} else {
+			activities.setActivity(i, Activity.newBuilder().setKey(questKey)
+					.setStatus(status));
 		}
 		return i;
 	}
+
 	private int findActivity(String questKey) {
 		for (int i = 0; i < activities.getActivityCount(); i++) {
 			if (activities.getActivity(i).getKey().equals(questKey)) {
@@ -442,8 +448,8 @@ public class User extends Persistable<User> {
 				.setCreatedAt(createTime.getTime())
 				.setUpdatedAt(lastLoginTime.getTime()).build();
 		GeoPoint geopt = GeoPoint.newBuilder().setLatitude(geo.getLatitude())
-				.setLongitude(geo.getLatitude())
-				.setAddress(checkinAddress).build();
+				.setLongitude(geo.getLatitude()).setAddress(checkinAddress)
+				.build();
 
 		UserPb.Builder msg = UserPb.newBuilder().setId(getId()).setLog(log)
 				.setRating(rating).setPhone(phone).setExperience(experience)
@@ -456,13 +462,15 @@ public class User extends Persistable<User> {
 				|| getFriendship(id) == Friendship.INVITED
 				|| getFriendship(id) == Friendship.MUTED) {
 			msg.setName(name).setLocation(geopt).setThumbnail(thumbnail);
-			if(id == this.getId()){
-				msg.setBalance(Currency.newBuilder().setGold(goldBalance)).setFriendship(Friendship.SELF);
+			if (id == this.getId()) {
+				msg.setBalance(Currency.newBuilder().setGold(goldBalance))
+						.setFriendship(Friendship.SELF);
 			}
 		} else {
 			msg.setName("-").setThumbnail(
 					Thumbnail.newBuilder().setSmallUrl("/images/user-256.png")
-							.setLargeUrl("/images/user-512.png").setBlobKey("-"));
+							.setLargeUrl("/images/user-512.png")
+							.setBlobKey("-"));
 		}
 
 		return msg;
@@ -533,30 +541,55 @@ public class User extends Persistable<User> {
 
 	public void checkin(CheckinPb checkinMsg) {
 		// TODO Auto-generated method stub
-		
+
 		setGeo(checkinMsg.getGeoPoint());
-		if(checkinMsg.getGeoPoint().hasAddress()){
+		if (checkinMsg.getGeoPoint().hasAddress()) {
 			this.setCheckinAddress(checkinMsg.getGeoPoint().getAddress());
 		}
-		if(checkinMsg.hasValidUntil()){
+		if (checkinMsg.hasValidUntil()) {
 			this.checkinValidUntil = new Date(checkinMsg.getValidUntil());
 		}
-		
-		
+
 	}
-	
-	public boolean isCheckedIn(){
+
+	public boolean isCheckedIn() {
 		return this.checkinValidUntil.after(new Date());
 	}
-	public void checkout(){
+
+	public void checkout() {
 		this.checkinValidUntil = new Date();
 	}
 
 	public long addExperience(int i) {
 
-		experience+=i;
+		experience += i;
 		return experience;
 	}
 
+	public Status updateActivityStatus(Key entityKey, Status status) {
+		// TODO Auto-generated method stub
+		String questKey = KeyFactory.keyToString(entityKey);
+		int index = this.findActivity(questKey);
+		if (index != -1) {
+			activities.setActivity(index, Activity.newBuilder()
+					.setKey(questKey).setStatus(status));
+		}
+		return status;
+	}
+
+	public Status getActivityStatus(Key entityKey) {
+		// TODO Auto-generated method stub
+		String questKey = KeyFactory.keyToString(entityKey);
+		int index = this.findActivity(questKey);
+		if (index != -1) {
+
+			Activity activity = activities.getActivity(index);
+			if (activity.hasStatus()) {
+				return activity.getStatus();
+			}
+		}
+
+		return Applicant.Status.ARCHIVED;
+	}
 
 }

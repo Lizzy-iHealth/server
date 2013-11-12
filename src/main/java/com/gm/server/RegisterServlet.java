@@ -57,7 +57,7 @@ public class RegisterServlet extends APIServlet {
       check(!User.existsByPhone(phone), ErrorCode.auth_phone_registered);
 
       User user = createUser(phone, password);
-      
+      initUser(user);
       String results[] = {user.getKey(), user.getSecret(),Long.toString(user.getId())};
       writeResponse(resp,results);
     }
