@@ -26,7 +26,7 @@ public class AcceptQuestServlet extends APIServlet {
 
   // Input Param: "key" user's index
   // "id" quest id
-  // "user_id" quest owner id
+  // "owner_id" quest owner id
   // Output: push notification
 
   public void handle(HttpServletRequest req, HttpServletResponse resp)
@@ -35,7 +35,7 @@ public class AcceptQuestServlet extends APIServlet {
     // get quest key
 
     Key questKey = getQuestKeyFromReq(req);
-    long owner_id = ParamKey.user_id.getLong(req, -1);
+  
     Key applierKey = KeyFactory.stringToKey(ParamKey.key.getValue(req));
 
     int status = acceptQuest(questKey, applierKey);

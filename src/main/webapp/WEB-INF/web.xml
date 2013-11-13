@@ -345,12 +345,12 @@
 	</servlet-mapping>
 
 	<servlet>
-		<servlet-name>submit_daily_quest</servlet-name>
-		<servlet-class>com.gm.server.SubmitDailyQuestServlet</servlet-class>
+		<servlet-name>submit_quest</servlet-name>
+		<servlet-class>com.gm.server.SubmitSystemQuestServlet</servlet-class>
 	</servlet>
 	<servlet-mapping>
-		<servlet-name>submit_daily_quest</servlet-name>
-		<url-pattern>/quest/submit_daily_quest</url-pattern>
+		<servlet-name>submit_quest</servlet-name>
+		<url-pattern>/quest/submit_quest</url-pattern>
 	</servlet-mapping>
 
 	<!--- Feed Servlet -->

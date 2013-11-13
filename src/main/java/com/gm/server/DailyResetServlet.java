@@ -11,6 +11,8 @@ import com.gm.common.model.Rpc.Config;
 import com.gm.common.model.Rpc.QuestPb;
 import com.gm.server.model.Office;
 import com.gm.server.model.Quest;
+import com.gm.server.model.SystemQuest;
+import com.gm.server.model.SystemUser;
 import com.gm.server.model.User;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Link;
@@ -37,15 +39,15 @@ public class DailyResetServlet extends APIServlet {
 	public void handle(HttpServletRequest req, HttpServletResponse resp)
 			throws ApiException, IOException {
 		
-	    if(questAdmin==null){
-	    	questAdmin = new Office("999");
-	    }
 	    
-	    if (questAdmin.getAdminKey() == null
-				|| questAdmin.getQuestKeys().length == 0) {
-			questAdmin.init(dao);
-		}
-		Key[] questKeys = questAdmin.getQuestKeys();
+	    	SystemQuest[] sq = {SystemQuest.Checkin};
+	    	
+	    	// Daily quests is a subset of questAdmin's quests.
+	    	Office dailyQuestAdmin = new Office(SystemUser.questAdmin,sq);
+
+			dailyQuestAdmin.init(dao);
+		
+		Key[] questKeys = dailyQuestAdmin.getQuestKeys();
 	
 		
 		Iterable<User> userItr = dao.query(User.class).prepare().asIterable();
