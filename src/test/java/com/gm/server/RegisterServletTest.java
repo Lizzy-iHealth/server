@@ -29,6 +29,7 @@ import com.google.appengine.api.images.ImagesServicePb.OutputSettingsOrBuilder;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.gm.common.model.Rpc.Friendship;
+import com.gm.common.model.Rpc.UserPb;
 import com.gm.common.net.ErrorCode;
 
 public class RegisterServletTest extends ModelTest{
@@ -52,9 +53,17 @@ public class RegisterServletTest extends ModelTest{
     
     //setup a invitation:
     User invitor = new User("invitors phone","password","secret");
+    
     dao.save(invitor);
-    PendingUser pu = new PendingUser(phone,invitor.getUserID());
+ //   PendingUser pu = new PendingUser(phone,invitor.getUserID());
+    User pu = new User(phone,"p","s");
+    pu.setType(UserPb.Type.PENDING_VALUE);
+    pu.addFriend(invitor.getId(), Friendship.WAIT_MY_CONFIRM);
+   
     dao.save(pu);
+    invitor.addFriend(pu.getId(), Friendship.INVITED);
+    dao.save(invitor);
+    
     
     HttpServletRequest request = mock(HttpServletRequest.class);
       HttpServletResponse response1 = mock(HttpServletResponse.class);
@@ -92,17 +101,8 @@ public class RegisterServletTest extends ModelTest{
       
       assertEquals(phone, newUser.getPhone());
       assertEquals(password, newUser.getPassword());
-      
-      
-      Date createTime = (Date) newUser.getCreateTime();
-      Date lastLogin = (Date) newUser.getLastLoginTime();
-      
-      assertTrue("The date of last login [" + createTime + "] is after to the request completed",
-            lastLogin.after(createTime) || lastLogin.equals(createTime));
-      assertTrue("The date in the entity [" + createTime + "] is prior to the request being performed",
-          priorToRequest.before(createTime) || priorToRequest.equals(createTime));
-      assertTrue("The date in the entity [" + createTime + "] is after to the request completed",
-          afterRequest.after(createTime) || afterRequest.equals(createTime));
+
+     
       
       assertEquals(null,dao.get(pu.getEntityKey(), PendingUser.class));
       

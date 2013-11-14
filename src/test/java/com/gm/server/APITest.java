@@ -390,14 +390,14 @@ public class APITest extends ModelTest {
 		when(resp.getOutputStream()).thenReturn(swriter);
 		new InviteFriendsServlet().execute(req, resp, false);
 		
-		List<PendingUser> pu = dao.query(PendingUser.class)
+		List<User> pu = dao.query(User.class)
 				.sortBy("phone", false).prepare().asList();
-		assertEquals(2, pu.size());
+		assertEquals(3, pu.size());
 		assertEquals(pu.get(0).getPhone(), friend_phone[0]);
-		assertEquals(pu.get(0).getInvitors().getFriend(0).getId(), user
+		assertEquals(pu.get(0).getFriends().getFriend(0).getId(), user
 				.getEntityKey().getId());
 		assertEquals(pu.get(1).getPhone(), friend_phone[1]);
-		assertEquals(pu.get(1).getInvitors().getFriend(0).getId(), user
+		assertEquals(pu.get(1).getFriends().getFriend(0).getId(), user
 				.getEntityKey().getId());
 		verify(swriter).write("3,3".getBytes());
 
@@ -409,15 +409,9 @@ public class APITest extends ModelTest {
 				phoneList);
 		new InviteFriendsServlet().execute(req, resp, false);
 
-		pu = dao.query(PendingUser.class).sortBy("phone", false).prepare()
+		pu = dao.query(User.class).sortBy("phone", false).prepare()
 				.asList();
-		assertEquals(2, pu.size());
-		assertEquals(pu.get(0).getPhone(), friend_phone[0]);
-		assertEquals(pu.get(0).getInvitors().getFriend(0).getId(), user
-				.getEntityKey().getId());
-		assertEquals(pu.get(1).getPhone(), friend_phone[1]);
-		assertEquals(pu.get(1).getInvitors().getFriend(0).getId(), user
-				.getEntityKey().getId());
+		assertEquals(4, pu.size());
 		verify(swriter).write("1".getBytes());
 
 	}

@@ -18,14 +18,15 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpUtils;
 
+import com.gm.server.model.DAO;
 import com.gm.server.model.User;
 import com.google.appengine.api.datastore.GeoPt;
 import com.google.common.base.Joiner;
 
-public class LocationFilter extends APIServlet implements Filter{
+public class LocationFilter  implements Filter{
   
   private static final Logger log = Logger.getLogger(LocationFilter.class.getName());
-
+  private static final DAO dao = DAO.get();
 
 
   @Override
@@ -33,7 +34,12 @@ public class LocationFilter extends APIServlet implements Filter{
       FilterChain chain) throws IOException, ServletException {
     if (request instanceof HttpServletRequest
         && response instanceof HttpServletResponse) {
-      execute((HttpServletRequest)request,(HttpServletResponse)response);
+     try {
+		handle((HttpServletRequest)request,(HttpServletResponse)response);
+	} catch (ApiException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
     }
     chain.doFilter(request, response);
   }
@@ -50,7 +56,7 @@ public class LocationFilter extends APIServlet implements Filter{
     
   }
 
-  @Override
+
   public void handle(HttpServletRequest req, HttpServletResponse resp)
       throws ApiException, IOException {
     // TODO Auto-generated method stub
@@ -68,7 +74,7 @@ public class LocationFilter extends APIServlet implements Filter{
  
     Joiner joiner = Joiner.on(",").skipNulls();
     String address = joiner.join(contry, region, city);
-    info("request from: "+ address);
+ 
     user.setCheckinAddress(address);
     dao.save(user);
     

@@ -54,7 +54,7 @@ public class RegisterServlet extends APIServlet {
       check(token.equalsIgnoreCase(tokenStore.token),
           ErrorCode.auth_incorrect_token);
 
-      check(!User.existsByPhone(phone), ErrorCode.auth_phone_registered);
+     
 
       User user = createUser(phone, password);
       initUser(user);

@@ -759,66 +759,65 @@ public abstract class APIServlet extends HttpServlet {
 	protected static User createUser(String phone, String password)
 			throws ApiException, IOException {
 		String secret = UUID.randomUUID().toString();
-		User user = new User(phone, password, secret);
-		dao.create(user);
-		PendingUser pu = dao.querySingle("phone", phone, PendingUser.class);
-
-		if (pu != null) {
-			user.setFriends(pu.getInvitors());
-			rewardInvitors(user.getUserID(), pu.getInvitors().build());
-			dao.delete(pu);
+		User user = dao.querySingle("phone", phone, User.class);
+		if(user == null){ // new user
+				 user = new User(phone, password, secret);
+				 dao.create(user);
+		}else if(user.getType()==UserPb.Type.PENDING_VALUE)	{
+			//rewardInvitors(user.getUserID(), user.getFriends().build());
+			user.setPassword(password);
+			user.setSecret(secret);
+			dao.save(user);
+		}else{
+			throw new ApiException(ErrorCode.auth_phone_registered);
 		}
 
-		dao.save(user);
+		
 		return user;
 	}
 
-	protected static int[] inviteFriends(String key, String[] friendPhones)
+	protected static int[] inviteFriends(String key, UsersPb usersMsg)
 			throws ApiException {
-		long invitorId = getId(key);
+
 		// String[] results = new String[friendPhones.length]; // "0" not our
 		// user,
 		// "1"
 		// already our user.
 
-		int[] results = new int[friendPhones.length];// friend Status
+		int[] results = new int[usersMsg.getUserCount()];// friend Status
 		ArrayList<Long> toNotify = new ArrayList<Long>();
 		User invitor = dao.get(key, User.class);
 
 		int i = 0;
 
-		for (String phone : friendPhones) {
+		for (UserPb userMsg : usersMsg.getUserList()) {
 			results[i] = Friendship.INVITED_VALUE;
+			String phone = userMsg.getPhone();
 			if (phone.equals(invitor.getId())) { // add oneself, response 0, do
 				results[i] = Friendship.SELF_VALUE; // nothing
 				continue;
 			}
-			PendingUser pu = dao.querySingle("phone", phone, PendingUser.class);
-			// already invited;
-			if (pu != null) {
-				pu.addInvitor(invitorId);
-				dao.save(pu);
-			} else {
-				User temp = dao.querySingle("phone", phone, User.class);
-				// already our user
-				if (temp != null) {
 
-					results[i] = addFriend(temp.getId(), invitor);
-					toNotify.add(Long.valueOf(temp.getId()));
+			User temp = dao.querySingle("phone", phone, User.class);
 
-					/*
-					 * results[i] = "1"; temp.addFriend(invitorId,
-					 * Friendship.WAIT_MY_CONFIRM); dao.save(temp);
-					 * 
-					 * invitor.addFriend(temp.getEntityKey().getId(),
-					 * Friendship.ADDED); dao.save(invitor); continue;
-					 */
-				} else {
-					// newly invited user
-					pu = new PendingUser(phone, invitorId);
-					dao.create(pu);
-				}
+			if (temp == null) {// newly invited user, create Datastore entity;
+
+				temp = new User(userMsg);
+				temp.setType(UserPb.Type.PENDING_VALUE);
+				dao.create(temp);
 			}
+			results[i] = addFriend(temp.getId(), invitor);
+			if (temp.getType() != UserPb.Type.PENDING_VALUE) {
+				toNotify.add(Long.valueOf(temp.getId()));
+			}
+			/*
+			 * results[i] = "1"; temp.addFriend(invitorId,
+			 * Friendship.WAIT_MY_CONFIRM); dao.save(temp);
+			 * 
+			 * invitor.addFriend(temp.getEntityKey().getId(), Friendship.ADDED);
+			 * dao.save(invitor); continue;
+			 */
+
 			i++;
 		}
 		try {
@@ -865,12 +864,11 @@ public abstract class APIServlet extends HttpServlet {
 
 	protected static int[] addFriends(String key, long[] friendIDs)
 			throws IOException, ApiException {
-		long myId = getId(key);
 
 		User user = dao.get(key, User.class);
 		check(user.getQuota().getFriendNum() > user.getFriends()
 				.getFriendCount(), ErrorCode.quota_friend_usedup);
-		Key friendKeys[] = new Key[friendIDs.length];
+
 		int results[] = new int[friendIDs.length];
 
 		/*
@@ -923,7 +921,11 @@ public abstract class APIServlet extends HttpServlet {
 
 		}
 		;
-		user.addFriend(friendID, Friendship.ADDED);
+		if(friend.getType()==UserPb.Type.PENDING_VALUE){
+			user.addFriend(friendID, Friendship.INVITED);
+		}else{
+			user.addFriend(friendID, Friendship.ADDED);
+		}
 		friend.addFriend(user.getId(), Friendship.WAIT_MY_CONFIRM);
 
 		/*

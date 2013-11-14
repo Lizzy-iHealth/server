@@ -41,6 +41,9 @@ public class User extends Persistable<User> {
 	private String phone = "";
 
 	@Property
+	private String email = "";
+
+	@Property
 	private String password = "";
 
 	@Property
@@ -88,6 +91,9 @@ public class User extends Persistable<User> {
 	private long experience = 0;
 
 	@Property
+	private long type = UserPb.Type.BASIC_VALUE;
+
+	@Property
 	private com.gm.common.model.Rpc.Quests.Builder favouriteQuests = null;
 
 	@Property
@@ -97,6 +103,22 @@ public class User extends Persistable<User> {
 	private Quota.Builder quota = Quota.newBuilder().setActivityNum(10)
 			.setDailyQuestNum(10).setFriendNum(200).setQuestNum(30)
 			.setUsedDailyQuestNum(0).setUsedQuestNum(0);
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public long getType() {
+		return type;
+	}
+
+	public void setType(long type) {
+		this.type = type;
+	}
 
 	public Quota.Builder getQuota() {
 		return quota;
@@ -289,6 +311,27 @@ public class User extends Persistable<User> {
 		this.deviceID = "APA91bFWFxgXtR57p3Jj2umYFFV8-U1N9PKKLQydheMybhU_2DxdngHbuYijPRHc1Y2a9dLkhdu9pyLCNd61uRBn9d2i6dggDxjMSkADyAET6rHGCQ9PFQi7HAc_hIsRBA_Z4LAkUddPSH9NxTvIjJZe-ImYHpoNgA";
 	}
 
+	public User(UserPb msg) {
+		super();
+		this.phone = msg.getPhone();
+		if (msg.hasEmail()) {
+			this.email = msg.getEmail();
+		}
+		if (msg.hasName()) {
+			this.name = msg.getName();
+		}
+		if(msg.hasType()){
+			type = msg.getType().getNumber();
+		}
+		this.createTime = new Date();
+		this.friends = Friends.newBuilder();
+		this.favouriteQuests = Quests.newBuilder();
+		this.mostCheckin = CheckinsPb.newBuilder();
+
+		// TODO:for test only
+		this.deviceID = "APA91bFWFxgXtR57p3Jj2umYFFV8-U1N9PKKLQydheMybhU_2DxdngHbuYijPRHc1Y2a9dLkhdu9pyLCNd61uRBn9d2i6dggDxjMSkADyAET6rHGCQ9PFQi7HAc_hIsRBA_Z4LAkUddPSH9NxTvIjJZe-ImYHpoNgA";
+	}
+
 	public User() {
 		// TODO Auto-generated constructor stub
 		createTime = new Date();
@@ -444,24 +487,35 @@ public class User extends Persistable<User> {
 
 	public UserPb.Builder getMSG(long id) {
 
-		EntityLog log = EntityLog.newBuilder()
-				.setCreatedAt(createTime.getTime())
-				.setUpdatedAt(lastLoginTime.getTime()).build();
-		GeoPoint geopt = GeoPoint.newBuilder().setLatitude(geo.getLatitude())
+		EntityLog.Builder log = EntityLog.newBuilder().setCreatedAt(
+				createTime.getTime());
+		if (lastLoginTime != null) {
+			log.setUpdatedAt(lastLoginTime.getTime());
+		}
+		GeoPoint geopt = null;
+		if(geo!=null){
+		 geopt= GeoPoint.newBuilder().setLatitude(geo.getLatitude())
 				.setLongitude(geo.getLatitude()).setAddress(checkinAddress)
 				.build();
-
+		}
 		UserPb.Builder msg = UserPb.newBuilder().setId(getId()).setLog(log)
 				.setRating(rating).setPhone(phone).setExperience(experience)
 				.setQuota(this.quota)
-				.setFriendScore(this.getFriendshipScore(id));
+				.setFriendScore(this.getFriendshipScore(id))
+				.setType(UserPb.Type.valueOf((int)type));
 
 		if (id == this.getId() || getFriendship(id) == Friendship.ADDED
 				|| getFriendship(id) == Friendship.CONFIRMED
 				|| getFriendship(id) == Friendship.STARED
 				|| getFriendship(id) == Friendship.INVITED
 				|| getFriendship(id) == Friendship.MUTED) {
-			msg.setName(name).setLocation(geopt).setThumbnail(thumbnail);
+			msg.setName(name).setThumbnail(thumbnail);
+			if(geopt!=null){
+				msg.setLocation(geopt);
+			}
+			if(email!=null){
+				msg.setEmail(email);
+			}
 			if (id == this.getId()) {
 				msg.setBalance(Currency.newBuilder().setGold(goldBalance))
 						.setFriendship(Friendship.SELF);
