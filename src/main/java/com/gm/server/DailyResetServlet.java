@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.gm.common.model.Rpc.Applicant;
 import com.gm.common.model.Rpc.Config;
 import com.gm.common.model.Rpc.QuestPb;
+import com.gm.common.model.Rpc.UserPb;
 import com.gm.server.model.Office;
 import com.gm.server.model.Quest;
 import com.gm.server.model.SystemQuest;
@@ -38,28 +39,27 @@ public class DailyResetServlet extends APIServlet {
 	@Override
 	public void handle(HttpServletRequest req, HttpServletResponse resp)
 			throws ApiException, IOException {
-		
-	    
-	    	SystemQuest[] sq = {SystemQuest.Checkin};
-	    	
-	    	// Daily quests is a subset of questAdmin's quests.
-	    	Office dailyQuestAdmin = new Office(SystemUser.questAdmin,sq);
 
-			dailyQuestAdmin.init(dao);
-		
+		SystemQuest[] sq = { SystemQuest.Checkin };
+
+		// Daily quests is a subset of questAdmin's quests.
+		Office dailyQuestAdmin = new Office(SystemUser.questAdmin, sq);
+
+		dailyQuestAdmin.init(dao);
+
 		Key[] questKeys = dailyQuestAdmin.getQuestKeys();
-	
-		
+
 		Iterable<User> userItr = dao.query(User.class).prepare().asIterable();
 		for (User user : userItr) {
-
-			user.getQuota().setUsedDailyQuestNum(0);
-			user.setGoldBalance(user.getGoldBalance()+10);
-			for(Key qKey:questKeys){
-				user.addActivity(KeyFactory.keyToString(qKey),Applicant.Status.ASSIGN);
+			if (user.getType() != UserPb.Type.PENDING_VALUE) {
+				user.getQuota().setUsedDailyQuestNum(0);
+				user.setGoldBalance(user.getGoldBalance() + 10);
+				for (Key qKey : questKeys) {
+					user.addActivity(KeyFactory.keyToString(qKey),
+							Applicant.Status.ASSIGN);
+				}
+				dao.save(user);
 			}
-			dao.save(user);
-
 		}
 	}
 

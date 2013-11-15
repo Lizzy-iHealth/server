@@ -9,7 +9,7 @@
 	</system-properties>
 
 	<auto-id-policy>
-		legacy
+		default
 	</auto-id-policy>
 
 </appengine-web-app>

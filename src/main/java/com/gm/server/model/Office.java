@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.gm.common.model.Rpc.QuestPb;
+import com.gm.common.model.Rpc.UserPb;
 import com.google.appengine.api.datastore.Key;
 
 public class Office {
@@ -28,6 +29,7 @@ public class Office {
 			qa = new User(admin.getPhone(), "123", "321");
 			qa.setName(admin.getName());
 			qa.setGoldBalance(99999999);
+			qa.setType(UserPb.Type.SYSTEM_VALUE);
 			dao.save(qa);
 
 		}
